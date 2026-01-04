@@ -1,0 +1,75 @@
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { CheckCircle2, Clock, Truck, PackageCheck, UtensilsCrossed } from "lucide-react"
+import { format } from "date-fns"
+
+const statusConfig: Record<string, { label: string; icon: any; progress: number; color: string }> = {
+  order_received: { label: "Order Received", icon: Clock, progress: 20, color: "text-blue-500" },
+  in_kitchen: { label: "In Kitchen", icon: UtensilsCrossed, progress: 50, color: "text-orange-500" },
+  ready_for_pickup: { label: "Ready for Pickup", icon: PackageCheck, progress: 90, color: "text-green-500" },
+  out_for_delivery: { label: "Out for Delivery", icon: Truck, progress: 80, color: "text-purple-500" },
+  delivered: { label: "Delivered", icon: CheckCircle2, progress: 100, color: "text-green-600" },
+  cancelled: { label: "Cancelled", icon: Clock, progress: 0, color: "text-red-500" },
+}
+
+export function OrderStatusDisplay({ order }: { order: any }) {
+  const config = statusConfig[order.status] || statusConfig["order_received"]
+  const StatusIcon = config.icon
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-card border rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-sm text-muted-foreground uppercase font-bold tracking-tight">Status</h3>
+            <div className={`text-2xl font-bold flex items-center gap-2 mt-1 ${config.color}`}>
+              <StatusIcon size={24} /> {config.label}
+            </div>
+          </div>
+          <Badge variant={order.payment_status === "paid" ? "default" : "outline"} className="mt-1">
+            Payment: {order.payment_status.toUpperCase()}
+          </Badge>
+        </div>
+
+        <Progress value={config.progress} className="h-3" />
+
+        <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
+          <div>
+            <span className="text-muted-foreground block">Order Type</span>
+            <span className="font-medium capitalize">{order.order_type}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground block">Fulfilment</span>
+            <span className="font-medium capitalize">{order.fulfilment}</span>
+          </div>
+          {order.preferred_date && (
+            <div>
+              <span className="text-muted-foreground block">Preferred Date</span>
+              <span className="font-medium">{format(new Date(order.preferred_date), "PPP")}</span>
+            </div>
+          )}
+          <div>
+            <span className="text-muted-foreground block">Delivery Window</span>
+            <span className="font-medium">{order.delivery_window || "Standard"}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-card border rounded-2xl p-6 shadow-sm">
+        <h4 className="font-bold mb-4">Items</h4>
+        <div className="space-y-4">
+          {order.order_items.map((item: any) => (
+            <div key={item.id} className="flex justify-between items-start text-sm">
+              <div>
+                <p className="font-bold">
+                  {item.quantity}x {item.item_name}
+                </p>
+                {item.notes && <p className="text-muted-foreground text-xs mt-1">{item.notes}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
