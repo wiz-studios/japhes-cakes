@@ -210,9 +210,17 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         return new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const lat = position.coords.latitude
-                    const lng = position.coords.longitude
+                    let lat = position.coords.latitude
+                    let lng = position.coords.longitude
                     const accuracy = position.coords.accuracy
+
+                    // Fix potential coordinate order issues (some devices return lon, lat)
+                    if (Math.abs(lat) > Math.abs(lng)) {
+                        console.warn("🔄 Coordinates appear swapped (lat > lng in magnitude), correcting...")
+                        const temp = lat
+                        lat = lng
+                        lng = temp
+                    }
 
                     // Detailed logging for debugging
                     console.log("🎯 GPS SUCCESS:", {
@@ -281,20 +289,29 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         const lat = parseFloat(data.latitude)
         const lng = parseFloat(data.longitude)
 
+        // Fix potential coordinate order issues
+        let correctedLat = lat
+        let correctedLng = lng
+        if (Math.abs(correctedLat) > Math.abs(correctedLng)) {
+            console.warn("🔄 IP coordinates appear swapped, correcting...")
+            correctedLat = lng
+            correctedLng = lat
+        }
+
         console.log("🌐 IP Location:", {
-            latitude: lat,
-            longitude: lng,
+            latitude: correctedLat,
+            longitude: correctedLng,
             city: data.city,
             region: data.region,
             country: data.country_name,
             approximate: true
         })
 
-        if (isNaN(lat) || isNaN(lng)) {
+        if (isNaN(correctedLat) || isNaN(correctedLng)) {
             throw new Error("Invalid IP location data")
         }
 
-        return { lat, lng }
+        return { lat: correctedLat, lng: correctedLng }
     }
 
     /**
