@@ -153,186 +153,175 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     }
 
     /**
-     * GPS Auto-Location Handler (Robust Implementation)
+     * Production-Ready GPS Location Handler
      * 
-     * Attempts to acquire the user's precise coordinates via browser Geolocation API.
-     * Uses a two-phase approach for maximum accuracy:
-     * 1. Try getCurrentPosition first (fast)
-     * 2. If accuracy is poor, fall back to watchPosition (continuous monitoring)
+     * Attempts to get user's exact location with multiple fallback strategies:
+     * 1. Browser GPS (high accuracy, 15s timeout)
+     * 2. IP-based geolocation (fallback if GPS fails)
      * 
-     * Configuration:
-     * - enableHighAccuracy: true (uses GPS instead of network triangulation)
-     * - timeout: 30000ms (30 seconds - generous for poor GPS signal)
-     * - maximumAge: 0 (always get fresh position, no cache)
-     * 
-     * Accuracy Standards:
-     * - Excellent: < 20m (use immediately)
-     * - Acceptable: < 100m (use if timeout approaching)
-     * - Poor: > 100m (keep watching for better fix)
+     * Ensures coordinates are in correct order for Leaflet: [latitude, longitude]
      */
-    const handleUseGPS = () => {
+    const handleUseGPS = async () => {
         if (!navigator.geolocation) {
-            toast({ title: "GPS Error", description: "Geolocation not supported by this browser.", variant: "destructive" })
+            toast({
+                title: "GPS Not Supported",
+                description: "Your browser doesn't support location services.",
+                variant: "destructive"
+            })
             return
         }
 
         setIsGPSLoading(true)
 
-        // Track watch to allow cleanup
-        let watchId: number | null = null
-        let bestPosition: GeolocationPosition | null = null
-        let timeoutHandle: NodeJS.Timeout | null = null
+        try {
+            // Attempt GPS location first
+            const coords = await getGPSLocation()
+            applyLocation(coords.lat, coords.lng, 'GPS')
+        } catch (gpsError) {
+            console.warn("GPS failed, trying IP fallback:", gpsError)
 
-        /**
-         * Process a GPS position (from either getCurrentPosition or watchPosition)
-         * Only accepts positions with acceptable accuracy
-         */
-        const processPosition = (position: GeolocationPosition, source: 'initial' | 'watch') => {
-            const { latitude, longitude, accuracy } = position.coords
-
-            console.log(`📍 GPS ${source}:`, {
-                lat: latitude,
-                lng: longitude,
-                accuracy: `${accuracy.toFixed(1)}m`,
-                timestamp: new Date(position.timestamp).toISOString()
-            })
-
-            // Check if this position is better than what we have
-            if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
-                bestPosition = position
-            }
-
-            // If accuracy is excellent (< 20m), use immediately
-            if (accuracy < 20) {
-                console.log("✅ GPS: Excellent accuracy, using position")
-                finishWithPosition(bestPosition!)
-            }
-            // If accuracy is acceptable and we're not watching, use it
-            else if (accuracy < 100 && source === 'initial') {
-                console.log("⚠️ GPS: Acceptable accuracy, but starting watch for better fix...")
-                startWatchPosition()
-            }
-            // If we're watching and timeout is approaching, use best available
-            else if (source === 'watch') {
-                console.log(`🔄 GPS: Watching... accuracy ${accuracy.toFixed(1)}m`)
+            // Fallback to IP-based location
+            try {
+                const coords = await getIPLocation()
+                applyLocation(coords.lat, coords.lng, 'IP (Approximate)')
+            } catch (ipError) {
+                console.error("Both GPS and IP location failed:", ipError)
+                toast({
+                    title: "Location Unavailable",
+                    description: "Could not determine your location. Please drag the map manually.",
+                    variant: "destructive"
+                })
+                setIsGPSLoading(false)
             }
         }
+    }
 
-        /**
-         * Start continuous position monitoring for better accuracy
-         */
-        const startWatchPosition = () => {
-            if (watchId !== null) return // Already watching
+    /**
+     * Get precise GPS location using Geolocation API
+     * Returns { lat, lng } in correct order
+     */
+    const getGPSLocation = (): Promise<{ lat: number; lng: number }> => {
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude
+                    const lng = position.coords.longitude
+                    const accuracy = position.coords.accuracy
 
-            console.log("🔍 GPS: Starting continuous monitoring...")
+                    // Detailed logging for debugging
+                    console.log("🎯 GPS SUCCESS:", {
+                        latitude: lat,
+                        longitude: lng,
+                        accuracy: `${accuracy.toFixed(1)}m`,
+                        timestamp: new Date(position.timestamp).toISOString(),
+                        altitude: position.coords.altitude,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed
+                    })
 
-            watchId = navigator.geolocation.watchPosition(
-                (pos) => processPosition(pos, 'watch'),
-                handleError,
+                    // Validate coordinates (basic sanity check)
+                    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                        reject(new Error(`Invalid GPS coordinates: lat=${lat}, lng=${lng}`))
+                        return
+                    }
+
+                    // Warn if accuracy is poor
+                    if (accuracy > 100) {
+                        console.warn(`⚠️ GPS accuracy is poor: ${accuracy.toFixed(0)}m`)
+                    }
+
+                    resolve({ lat, lng })
+                },
+                (error) => {
+                    console.error("❌ GPS Error:", {
+                        code: error.code,
+                        message: error.message,
+                        PERMISSION_DENIED: error.code === 1,
+                        POSITION_UNAVAILABLE: error.code === 2,
+                        TIMEOUT: error.code === 3
+                    })
+
+                    let errorMsg = "GPS failed"
+                    if (error.code === 1) errorMsg = "Location permission denied"
+                    else if (error.code === 2) errorMsg = "Location unavailable"
+                    else if (error.code === 3) errorMsg = "GPS timeout"
+
+                    reject(new Error(errorMsg))
+                },
                 {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
+                    enableHighAccuracy: true,  // Force GPS (not just WiFi/cell tower)
+                    timeout: 15000,             // 15 seconds max
+                    maximumAge: 0               // No cached positions
                 }
             )
+        })
+    }
 
-            // After 25 seconds, use best position available
-            timeoutHandle = setTimeout(() => {
-                if (bestPosition) {
-                    console.log("⏰ GPS: Timeout reached, using best position:", bestPosition.coords.accuracy.toFixed(1) + "m")
-                    finishWithPosition(bestPosition)
-                } else {
-                    handleError({ code: 3, message: "Timeout", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 } as GeolocationPositionError)
-                }
-            }, 25000)
+    /**
+     * IP-based geolocation fallback (approximate)
+     * Uses ipapi.co (free, no token required)
+     */
+    const getIPLocation = async (): Promise<{ lat: number; lng: number }> => {
+        console.log("🌐 Attempting IP-based location...")
+
+        const response = await fetch('https://ipapi.co/json/')
+
+        if (!response.ok) {
+            throw new Error(`IP location API failed: ${response.status}`)
         }
 
-        /**
-         * Clean up and apply the final position
-         */
-        const finishWithPosition = (position: GeolocationPosition) => {
-            // Cleanup
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId)
-                watchId = null
-            }
-            if (timeoutHandle) {
-                clearTimeout(timeoutHandle)
-                timeoutHandle = null
-            }
+        const data = await response.json()
 
-            const { latitude, longitude, accuracy } = position.coords
+        const lat = parseFloat(data.latitude)
+        const lng = parseFloat(data.longitude)
 
-            // Apply to map
-            const newCenter: [number, number] = [latitude, longitude]
-            setMapCenter(newCenter)
-            handleMapSettled(latitude, longitude)
-            setIsGPSLoading(false)
+        console.log("🌐 IP Location:", {
+            latitude: lat,
+            longitude: lng,
+            city: data.city,
+            region: data.region,
+            country: data.country_name,
+            approximate: true
+        })
 
-            toast({
-                title: "Location Found",
-                description: `Pinned at ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${accuracy.toFixed(0)}m)`,
-                variant: "default"
-            })
+        if (isNaN(lat) || isNaN(lng)) {
+            throw new Error("Invalid IP location data")
         }
 
-        /**
-         * Handle GPS errors with specific user guidance
-         */
-        const handleError = (err: GeolocationPositionError) => {
-            // Cleanup
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId)
-                watchId = null
-            }
-            if (timeoutHandle) {
-                clearTimeout(timeoutHandle)
-                timeoutHandle = null
-            }
+        return { lat, lng }
+    }
 
-            console.error("❌ GPS Error:", err, "Code:", err.code)
+    /**
+     * Apply location to map with detailed logging
+     * Ensures coordinates are passed in correct order: [lat, lng]
+     */
+    const applyLocation = (lat: number, lng: number, source: string) => {
+        console.log(`✅ Applying ${source} location:`, {
+            latitude: lat,
+            longitude: lng,
+            coordinateOrder: '[lat, lng]',
+            source
+        })
 
-            let errorMessage = "Please drag the map manually to your location."
+        // Leaflet expects [latitude, longitude] order
+        const newCenter: [number, number] = [lat, lng]
 
-            // Provide actionable guidance based on error type
-            if (err.code === 1) {
-                // User explicitly denied permission
-                errorMessage = "Location permission denied. Please enable location services in your browser settings."
-            } else if (err.code === 2) {
-                // GPS hardware unavailable or disabled
-                errorMessage = "Location unavailable. Please check your device's GPS settings."
-            } else if (err.code === 3) {
-                // Timeout (most common indoors or with poor signal)
-                errorMessage = "GPS timeout. Try moving to an open area with clear sky and retry, or drag the map manually."
-            }
+        // Update map center
+        setMapCenter(newCenter)
 
-            toast({
-                title: "Could not auto-locate",
-                description: errorMessage,
-                variant: "destructive"
-            })
-            setIsGPSLoading(false)
-        }
+        // Trigger validation
+        handleMapSettled(lat, lng)
 
-        // Start with a quick getCurrentPosition attempt
-        navigator.geolocation.getCurrentPosition(
-            (pos) => processPosition(pos, 'initial'),
-            // If initial fails, try watch position
-            (err) => {
-                if (err.code === 3) {
-                    // Timeout on initial - try watching
-                    console.log("⚠️ Initial GPS timeout, starting watch...")
-                    startWatchPosition()
-                } else {
-                    handleError(err)
-                }
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000, // Quick initial attempt
-                maximumAge: 0
-            }
-        )
+        // Stop loading
+        setIsGPSLoading(false)
+
+        // Show success message
+        toast({
+            title: "Location Found",
+            description: `${source}: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+            variant: "default",
+            duration: 5000
+        })
     }
 
     return (
