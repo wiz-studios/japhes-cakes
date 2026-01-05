@@ -96,6 +96,8 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const [mapCenter, setMapCenter] = useState<[number, number]>([SHOP_LOCATION.lat, SHOP_LOCATION.lng])
     const [confirmedLocation, setConfirmedLocation] = useState<DeliveryLocation | null>(null)
     const [isGPSLoading, setIsGPSLoading] = useState(false) // "Use My Exact Location" button state
+    const [manualLat, setManualLat] = useState("")
+    const [manualLng, setManualLng] = useState("")
 
     // Reset loop
     useEffect(() => {
@@ -369,8 +371,8 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
                     {/* 3. Map Area */}
                     <div className="flex-1 relative bg-gray-100 min-h-0">
-                        {/* GPS Button */}
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+                        {/* GPS Button & Manual Input */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
                             <Button
                                 variant="default"
                                 size="sm"
@@ -381,6 +383,34 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                 {isGPSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
                                 {isGPSLoading ? "Locating..." : "Use My Exact Location"}
                             </Button>
+                            {/* Manual Coordinate Input */}
+                            <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 text-xs">
+                                <div className="font-semibold text-gray-700">Or enter coordinates:</div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Latitude"
+                                        value={manualLat}
+                                        onChange={(e) => setManualLat(e.target.value)}
+                                        className="w-24 px-2 py-1 border rounded text-xs"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Longitude"
+                                        value={manualLng}
+                                        onChange={(e) => setManualLng(e.target.value)}
+                                        className="w-24 px-2 py-1 border rounded text-xs"
+                                    />
+                                    <Button
+                                        size="sm"
+                                        onClick={handleManualInput}
+                                        className="h-7 px-3 text-xs"
+                                    >
+                                        Go
+                                    </Button>
+                                </div>
+                                <div className="text-gray-500 text-[10px]">Example: 1.144563, 37.060938</div>
+                            </div>
                         </div>
 
                         <div className="absolute inset-0 z-0">
