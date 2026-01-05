@@ -326,6 +326,37 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         })
     }
 
+    /**
+     * Handle manual coordinate input
+     * Allows users to directly enter lat/lng if GPS is unreliable
+     */
+    const handleManualInput = () => {
+        const lat = parseFloat(manualLat)
+        const lng = parseFloat(manualLng)
+
+        // Validate coordinates
+        if (isNaN(lat) || isNaN(lng)) {
+            toast({
+                title: "Invalid Coordinates",
+                description: "Please enter valid numbers for latitude and longitude.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            toast({
+                title: "Invalid Range",
+                description: "Latitude must be between -90 and 90, longitude between -180 and 180.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        console.log("📝 Manual coordinates entered:", { lat, lng })
+        applyLocation(lat, lng, 'Manual Input')
+    }
+
     return (
         <>
             {/* 1. Trigger Button */}
