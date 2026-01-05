@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef, useEffect, useCallback } from "react"
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet"
 import { validateDeliveryLocation } from "@/app/actions/validate-delivery"
