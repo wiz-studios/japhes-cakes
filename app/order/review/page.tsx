@@ -59,7 +59,10 @@ type Order = {
   phone: string
 }
 
-export default function OrderReviewPage() {
+import { Suspense } from "react"
+import { Loader2 } from "lucide-react"
+
+function OrderReviewContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   // Read order data from query string
@@ -81,6 +84,7 @@ export default function OrderReviewPage() {
 
   // Live price calculation
   useEffect(() => {
+    if (!order) return
     let total = order.items.reduce((sum: number, item: PizzaOrderItem | CakeOrderItem) => {
       let base = 0
 
@@ -102,7 +106,7 @@ export default function OrderReviewPage() {
     }, 0)
     total += order.deliveryFee
     setOrder((o: Order) => ({ ...o, total }))
-  }, [order.items, order.deliveryFee, order.type])
+  }, [order?.items, order?.deliveryFee, order?.type])
 
   // Inline edit handlers
   const updateItem = (idx: number, changes: Partial<PizzaOrderItem | CakeOrderItem>) => {
@@ -132,6 +136,7 @@ export default function OrderReviewPage() {
 
   // Validation (example: Nairobi min order, late-night cutoff)
   useEffect(() => {
+    if (!order) return
     setError("")
     if (order.fulfilment === "delivery" && order.deliveryZone.toLowerCase().includes("nairobi") && order.total < 2000) {
       setError("Nairobi pizza orders require a minimum value of KES 2,000")
@@ -188,6 +193,10 @@ export default function OrderReviewPage() {
           quantity: order.items[0].quantity,
           fulfilment: order.fulfilment,
           deliveryZoneId: order.deliveryZoneId,
+          deliveryLat: (order as any).deliveryLat,
+          deliveryLng: (order as any).deliveryLng,
+          deliveryAddress: (order as any).deliveryAddress,
+          deliveryDistance: (order as any).deliveryDistance,
           customerName: order.customerName || order.items[0].customerName || "",
           phone: order.phone,
           notes: order.items[0].notes,
@@ -204,7 +213,11 @@ export default function OrderReviewPage() {
           cakeMessage: (order.items[0] as CakeOrderItem).message || "",
           fulfilment: order.fulfilment,
           deliveryZoneId: order.deliveryZoneId,
-          preferredDate: order.scheduledDate,
+          deliveryLat: (order as any).deliveryLat,
+          deliveryLng: (order as any).deliveryLng,
+          deliveryAddress: (order as any).deliveryAddress,
+          deliveryDistance: (order as any).deliveryDistance,
+          preferredDate: order.scheduledDate ? new Date(order.scheduledDate) : new Date(),
           customerName: order.customerName || order.items[0].customerName || "",
           phone: order.phone,
           paymentMethod,
@@ -253,6 +266,8 @@ export default function OrderReviewPage() {
     const formPath = order.type === "cake" ? "/order/cake" : "/order/pizza"
     router.push(`${formPath}?order=${encodeURIComponent(JSON.stringify(order))}`)
   }
+
+  if (!order) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>
 
   // Date Logic Helper
   const getDateDisplay = () => {
@@ -461,6 +476,14 @@ export default function OrderReviewPage() {
         </motion.div>
       </main>
     </div>
+  )
+}
+
+export default function OrderReviewPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>}>
+      <OrderReviewContent />
+    </Suspense>
   )
 }
 
