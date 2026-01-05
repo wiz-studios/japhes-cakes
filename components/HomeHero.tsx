@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -14,12 +14,20 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 export default function HomeHero() {
   const [hoveredSide, setHoveredSide] = useState<"cake" | "pizza" | null>(null)
+  const [isDesktop, setIsDesktop] = useState(false)
   const router = useRouter()
 
+  useEffect(() => {
+    // Check initial size and listen for resize
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024)
+    checkDesktop()
+
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
+
   const handleHover = (side: "cake" | "pizza" | null) => {
-    // Only enable hover interaction on desktop (via CSS pointer query check if needed, 
-    // but React state logic suffices since mobile layout won't use width expansion)
-    setHoveredSide(side)
+    if (isDesktop) setHoveredSide(side)
   }
 
   return (
@@ -31,9 +39,11 @@ export default function HomeHero() {
       */}
       <motion.div
         className="relative flex-1 h-1/2 lg:h-full lg:flex-none overflow-hidden cursor-pointer group"
-        initial={{ width: "50%", opacity: 0, x: -50 }}
+        initial={{ width: "100%", opacity: 0, x: -50 }}
         animate={{
-          width: hoveredSide === "cake" ? "70%" : hoveredSide === "pizza" ? "30%" : "50%",
+          width: isDesktop
+            ? (hoveredSide === "cake" ? "70%" : hoveredSide === "pizza" ? "30%" : "50%")
+            : "100%",
           opacity: 1,
           x: 0,
         }}
@@ -100,9 +110,11 @@ export default function HomeHero() {
       */}
       <motion.div
         className="relative flex-1 h-1/2 lg:h-full lg:flex-none overflow-hidden cursor-pointer group"
-        initial={{ width: "50%", opacity: 0, x: 50 }}
+        initial={{ width: "100%", opacity: 0, x: 50 }}
         animate={{
-          width: hoveredSide === "pizza" ? "70%" : hoveredSide === "cake" ? "30%" : "50%",
+          width: isDesktop
+            ? (hoveredSide === "pizza" ? "70%" : hoveredSide === "cake" ? "30%" : "50%")
+            : "100%",
           opacity: 1,
           x: 0,
         }}
