@@ -1,12 +1,12 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
-// import { createServerSupabaseClient } from "@/lib/supabase-server" // Removed: client context fails RLS
 import { revalidatePath } from "next/cache"
 import { PAYMENT_CONFIG } from "@/lib/config/payments"
+import { Lipana } from "@lipana/sdk"
 
 /**
- * Initiates an M-Pesa STK Push for an existing order.
+ * Initiates an M-Pesa STK Push for an existing order using Lipana SDK.
  * - Validates phone number (basic Kenya format).
  * - Generates a NEW unique checkout_request_id per attempt.
  * - Updates the order status to "initiated".
@@ -42,58 +42,46 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
         return { success: false, error: "Order not found" }
     }
 
-    // 3. Prepare Lipana Payload
-    // In Sandbox, we preserve the "Sandbox-first" rule: use config values.
-    const url = `${PAYMENT_CONFIG.lipana.baseUrl}/v1/transactions/push-stk`
-    const headers = {
-        "Authorization": `Bearer ${PAYMENT_CONFIG.lipana.secretKey}`,
-        "Content-Type": "application/json",
-    }
-    const payload = {
-        phone_number: phone,
-        amount: order.total,
-        account_reference: `Order ${orderId.slice(0, 8)}`,
-        transaction_description: "Payment for order",
-        // callback_url is usually configured in dashboard, avoiding passing it here unless required.
-    }
+    // 3. Initialize Lipana SDK Client
+    const environment = (PAYMENT_CONFIG.env === "production" ? "production" : "sandbox") as "sandbox" | "production"
 
-    console.log(`[STK-INIT] Sending to Lipana (${PAYMENT_CONFIG.env}):`, payload)
+    const lipana = new Lipana({
+        apiKey: PAYMENT_CONFIG.lipana.secretKey!,
+        environment: environment
+    })
+
+    console.log(`[STK-INIT] Initiating STK via SDK (${PAYMENT_CONFIG.env}):`, {
+        phone,
+        amount: order.total,
+        orderId: orderId.slice(0, 8)
+    })
 
     try {
-        const response = await fetch(url, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(payload),
+        // 4. Call SDK Method
+        const result = await lipana.transactions.initiateStkPush({
+            phone: phone,
+            amount: order.total,
+            accountReference: `Order ${orderId.slice(0, 8)}`,
+            transactionDesc: "Payment for order",
         })
 
-        const result = await response.json()
+        console.log("[STK-INIT] SDK Response:", result)
 
-        if (!response.ok) {
-            console.error("[STK-INIT] Lipana API Error:", result)
-            return { success: false, error: result.message || "Payment initiation failed" }
-        }
-
-        // 4. Update Order
-        // "lipana_checkout_request_id" is the key we track.
-        // Assuming Lipana returns { checkout_request_id: "..." } or similar.
-        // If unknown, I will log it. But for now, I'll map common fields.
-        // Lipana docs (hypothetical): { data: { checkout_request_id: "..." } } or just { checkout_request_id: "..." }
-        // I will trust the user's checklist which implies we get a request ID.
-        // I'll assume `result.checkout_request_id` or `result.data.checkout_request_id`.
-        const checkoutRequestId = result.checkout_request_id || result.data?.checkout_request_id
+        // 5. Extract Checkout Request ID (note: SDK uses checkoutRequestID with capital ID)
+        const checkoutRequestId = result.checkoutRequestID
 
         if (!checkoutRequestId) {
-            console.error("[STK-INIT] No checkout_request_id in response:", result)
+            console.error("[STK-INIT] No checkoutRequestID in SDK response:", result)
             return { success: false, error: "Invalid response from payment provider" }
         }
 
+        // 6. Update Order
         const { error: updateError } = await supabase
             .from("orders")
             .update({
                 payment_status: "initiated",
                 mpesa_phone: phone,
                 lipana_checkout_request_id: checkoutRequestId,
-                // We do NOT set lipana_transaction_id yet; that comes in the callback (Phase 5).
             })
             .eq("id", orderId)
 
@@ -104,8 +92,11 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
 
         return { success: true, message: "Payment request sent", checkoutRequestId }
 
-    } catch (err) {
-        console.error("[STK-INIT] Network/Logic Error:", err)
-        return { success: false, error: "Internal payment error" }
+    } catch (err: any) {
+        console.error("[STK-INIT] SDK Error:", err)
+        return {
+            success: false,
+            error: err.message || "Internal payment error"
+        }
     }
 }
