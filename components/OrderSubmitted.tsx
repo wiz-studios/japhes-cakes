@@ -12,14 +12,20 @@ import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 
 type OrderSubmittedProps = {
-  order: any // relaxed type for now, or import strictly if available
+  order: any
+  isSandbox?: boolean
 }
 
-export default function OrderSubmitted({ order }: OrderSubmittedProps) {
+export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps) {
   const router = useRouter()
+  // Badge Logic: Only show if explicitly in Sandbox Mode AND not in Production Build (or if intended)
+  // User Feedback: "Gate this behind NODE_ENV !== 'production'"
+  const showSandboxBadge = isSandbox && process.env.NODE_ENV !== "production"
+
   const friendlyId = formatFriendlyId(order)
   const isCake = order.order_type === "cake"
   const isDelivery = order.fulfilment === "delivery"
+
 
   // Theme colors based on order type
   const theme = isCake ? {
@@ -124,6 +130,12 @@ export default function OrderSubmitted({ order }: OrderSubmittedProps) {
         </div>
       )}
 
+      {showSandboxBadge && (
+        <div className="bg-amber-100 border-amber-300 border text-amber-800 px-3 py-1 rounded-full text-xs font-bold mb-4 uppercase tracking-wider print:hidden">
+          Test Payment (Sandbox)
+        </div>
+      )}
+
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -140,7 +152,7 @@ export default function OrderSubmitted({ order }: OrderSubmittedProps) {
         className={`text-3xl font-serif font-bold ${theme.title} mb-2`}
       >
         {liveOrder.payment_status === "paid"
-          ? "Order Received!"
+          ? "Payment Confirmed"
           : liveOrder.payment_method === "cash"
             ? "Order Received!"
             : "Complete Payment"}
@@ -196,7 +208,7 @@ export default function OrderSubmitted({ order }: OrderSubmittedProps) {
               disabled={isRetrying || retryCooldown > 0}
               className="w-full bg-red-100 text-red-700 hover:bg-red-200"
             >
-              {isRetrying ? "Sending Request..." : retryCooldown > 0 ? `Wait ${retryCooldown}s` : (liveOrder.payment_status === "pending" ? "Pay Now" : "Retry Payment")}
+              {isRetrying ? "Sending Request..." : retryCooldown > 0 ? `Wait ${retryCooldown}s` : (liveOrder.payment_status === "pending" ? "Pay Now" : "Payment failed — retry")}
             </Button>
             <p className="text-xs text-muted-foreground mt-2">
               Did the prompt fail to appear? Click above to try again.
@@ -208,10 +220,10 @@ export default function OrderSubmitted({ order }: OrderSubmittedProps) {
         {liveOrder.payment_status === "initiated" && (
           <div className="mt-4 bg-amber-50 p-3 rounded-lg border border-amber-100">
             <p className="text-sm text-amber-800 font-medium">
-              A payment request was sent to <span className="font-bold">{liveOrder.mpesa_phone}</span>.
+              Waiting for M-Pesa confirmation...
             </p>
             <p className="text-sm text-amber-700 mt-1 animate-pulse">
-              Please check your phone and enter your M-Pesa PIN to complete payment.
+              Please check your phone ({liveOrder.mpesa_phone}) and enter your PIN.
             </p>
           </div>
         )}

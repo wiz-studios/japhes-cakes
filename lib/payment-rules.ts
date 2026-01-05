@@ -14,6 +14,32 @@ export function getInitialPaymentStatus(
     return fulfilment === "delivery" ? "pay_on_delivery" : "pay_on_pickup"
 }
 
+// Payment State Machine
+const ALLOWED_PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
+    "pending": ["initiated", "pay_on_delivery", "pay_on_pickup"], // Can move to initiated (STK) or Cash modes
+    "initiated": ["paid", "failed", "initiated"], // Can succeed, fail, or retry (re-initiate)
+    "paid": [], // TERMINAL STATE (Refunds handled separately if ever)
+    "failed": ["initiated"], // Can retry
+    "pay_on_delivery": ["paid", "failed"], // Can eventually be paid (e.g. driver collects) or fail
+    "pay_on_pickup": ["paid", "failed"], // Can eventually be paid (at counter) or fail
+}
+
+/**
+ * Validates if a payment status transition is allowed.
+ * Enforces strict flow: pending -> initiated -> paid/failed
+ */
+export function isValidPaymentTransition(
+    currentStatus: PaymentStatus,
+    newStatus: PaymentStatus
+): boolean {
+    // If status is not changing, it's technically valid (idempotent), 
+    // BUT for "initiated", re-initiating usually means a new attempt, which we allow.
+    if (currentStatus === newStatus) return true
+
+    const allowed = ALLOWED_PAYMENT_TRANSITIONS[currentStatus] || []
+    return allowed.includes(newStatus)
+}
+
 /**
  * Checks if an order requires payment before kitchen can prepare
  */

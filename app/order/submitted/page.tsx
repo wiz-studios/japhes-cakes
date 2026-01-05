@@ -23,5 +23,5 @@ export default async function OrderSubmittedPage({
 
   if (error || !order) return notFound()
 
-  return <OrderSubmitted order={order} />
+  return <OrderSubmitted order={order} isSandbox={process.env.PAYMENTS_ENV === "sandbox"} />
 }
