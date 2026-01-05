@@ -1,18 +1,18 @@
-"use client"
-
 import { useState, useRef, useEffect, useCallback } from "react"
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet"
 import { validateDeliveryLocation } from "@/app/actions/validate-delivery"
+import { reverseGeocode } from "@/app/actions/reverse-geocode" // Import new action
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Loader2, MapPin, CheckCircle2, XCircle, Navigation } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"
 import { SHOP_LOCATION } from "@/lib/delivery-logic"
 
-// Fix Leaflet icons
+// ... (Leaflet Icon fixes remain same)
 // @ts-ignore
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -21,6 +21,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// ... (Interfaces remain same)
 interface DeliveryLocation {
     lat: number
     lng: number
@@ -34,32 +35,16 @@ interface GPSLocationPickerProps {
     onLocationSelect: (location: DeliveryLocation | null) => void
 }
 
-// Helper to track map movement for the strict "Fixed Pin" UI
+// ... (MapController & ShopMarker remain same)
 function MapController({ onMoveStart, onMoveEnd, center }: any) {
     const map = useMap()
-
-    useEffect(() => {
-        if (center) {
-            map.flyTo(center, map.getZoom())
-        }
-    }, [center, map])
-
+    useEffect(() => { if (center) map.flyTo(center, map.getZoom()) }, [center, map])
     useEffect(() => {
         const handleMoveStart = () => onMoveStart()
-        const handleMoveEnd = () => {
-            const center = map.getCenter()
-            onMoveEnd(center.lat, center.lng)
-        }
-
-        map.on('movestart', handleMoveStart)
-        map.on('moveend', handleMoveEnd)
-
-        return () => {
-            map.off('movestart', handleMoveStart)
-            map.off('moveend', handleMoveEnd)
-        }
+        const handleMoveEnd = () => { const center = map.getCenter(); onMoveEnd(center.lat, center.lng) }
+        map.on('movestart', handleMoveStart); map.on('moveend', handleMoveEnd)
+        return () => { map.off('movestart', handleMoveStart); map.off('moveend', handleMoveEnd) }
     }, [map, onMoveStart, onMoveEnd])
-
     return null
 }
 
@@ -80,55 +65,62 @@ function ShopMarker() {
 
 export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPickerProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [status, setStatus] = useState<"idle" | "dragging" | "validating" | "valid" | "invalid">("idle")
-    const [result, setResult] = useState<any>(null)
+    const { toast } = useToast()
+
+    // Decoupled State
+    const [validationStatus, setValidationStatus] = useState<"idle" | "validating" | "valid" | "invalid">("idle")
+    const [validationResult, setValidationResult] = useState<any>(null)
+    const [addressLabel, setAddressLabel] = useState<string>("Locating...")
+
+    // UI Interaction State
+    const [isDragging, setIsDragging] = useState(false)
     const [mapCenter, setMapCenter] = useState<[number, number]>([SHOP_LOCATION.lat, SHOP_LOCATION.lng])
     const [confirmedLocation, setConfirmedLocation] = useState<DeliveryLocation | null>(null)
+    const [isGPSLoading, setIsGPSLoading] = useState(false)
 
-    const [address, setAddress] = useState<string>("Locating...")
-
-    // Reset when opening
+    // Reset loop
     useEffect(() => {
         if (isOpen && !confirmedLocation) {
-            validate(SHOP_LOCATION.lat, SHOP_LOCATION.lng)
+            handleMapSettled(SHOP_LOCATION.lat, SHOP_LOCATION.lng)
         }
     }, [isOpen])
 
-    const validate = async (lat: number, lng: number) => {
-        setStatus("validating")
-        setAddress("Locating...")
+    /**
+     * Core Logic: Decoupled Validation & Geocoding
+     * 1. Check distance immediately (Critical Path)
+     * 2. Fetch address in background (Decorative Path)
+     */
+    const handleMapSettled = async (lat: number, lng: number) => {
+        setValidationStatus("validating")
+        setAddressLabel("Locating...")
 
-        // 1. Math (Fast, Critical)
-        const checkPromise = validateDeliveryLocation(lat, lng)
-            .then(data => {
-                if (data.allowed) {
-                    setResult(data)
-                    setStatus("valid")
-                } else {
-                    setResult(data)
-                    setStatus("invalid")
-                }
-            })
-            .catch(() => setStatus("invalid"))
+        // 1. Critical Path: Distance Validation
+        // This determines provided confirmation eligibility
+        try {
+            const data = await validateDeliveryLocation(lat, lng)
+            setValidationResult(data)
+            setValidationStatus(data.allowed ? "valid" : "invalid")
+        } catch (err) {
+            setValidationStatus("invalid")
+            setValidationResult({ allowed: false, error: "Validation failed" })
+        }
 
-        // 2. Address (Slow, Aesthetic)
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-            .then(res => res.json())
-            .then(data => {
-                const addr = data.display_name?.split(",").slice(0, 3).join(",") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-                setAddress(addr)
-            })
-            .catch(() => setAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`))
+        // 2. Decorative Path: Address Resolution
+        // Fire and forget - does not block confirmation
+        reverseGeocode(lat, lng)
+            .then(res => setAddressLabel(res.label))
+            .catch(() => setAddressLabel(`${lat.toFixed(4)}, ${lng.toFixed(4)}`))
     }
 
     const handleConfirm = () => {
-        if (status === "valid" && result) {
+        // Confirmation relies ONLY on validationStatus
+        if (validationStatus === "valid" && validationResult) {
             const loc = {
                 lat: mapCenter[0],
                 lng: mapCenter[1],
-                distance: result.distance,
-                fee: result.fee,
-                address: address
+                distance: validationResult.distance,
+                fee: validationResult.fee,
+                address: addressLabel // Use whatever we have (loaded or fallback)
             }
             setConfirmedLocation(loc)
             onLocationSelect(loc)
@@ -136,22 +128,29 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         }
     }
 
-    const [isLocating, setIsLocating] = useState(false)
-
     const handleUseGPS = () => {
-        if (!navigator.geolocation) return alert("GPS not supported")
+        if (!navigator.geolocation) {
+            toast({ title: "GPS Error", description: "Geolocation not supported by this browser.", variant: "destructive" })
+            return
+        }
 
-        setIsLocating(true)
+        setIsGPSLoading(true)
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 const { latitude, longitude } = pos.coords
-                setMapCenter([latitude, longitude]) // Triggers FlyTo
-                validate(latitude, longitude)
-                setIsLocating(false)
+                setMapCenter([latitude, longitude])
+                handleMapSettled(latitude, longitude)
+                setIsGPSLoading(false)
             },
             (err) => {
-                alert("Could not access GPS. Please ensure location services are enabled.")
-                setIsLocating(false)
+                // Gentle Fallback
+                console.warn("GPS Access Denied:", err)
+                toast({
+                    title: "Could not auto-locate",
+                    description: "Please drag the map manually to your location.",
+                    variant: "default"
+                })
+                setIsGPSLoading(false)
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         )
@@ -194,17 +193,17 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
                     {/* 3. Map Area */}
                     <div className="flex-1 relative bg-gray-100 min-h-0">
-                        {/* GPS Button - Prominent Top Center */}
+                        {/* GPS Button */}
                         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
                             <Button
                                 variant="default"
                                 size="sm"
                                 className="shadow-xl bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold flex items-center gap-2 transition-all transform active:scale-95"
                                 onClick={handleUseGPS}
-                                disabled={isLocating}
+                                disabled={isGPSLoading}
                             >
-                                {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
-                                {isLocating ? "Locating..." : "Use My Exact Location"}
+                                {isGPSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                                {isGPSLoading ? "Locating..." : "Use My Exact Location"}
                             </Button>
                         </div>
 
@@ -223,10 +222,11 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                 <ShopMarker />
                                 <MapController
                                     center={mapCenter}
-                                    onMoveStart={() => setStatus("dragging")}
+                                    onMoveStart={() => setIsDragging(true)}
                                     onMoveEnd={(lat: number, lng: number) => {
                                         setMapCenter([lat, lng])
-                                        validate(lat, lng)
+                                        setIsDragging(false)
+                                        handleMapSettled(lat, lng)
                                     }}
                                 />
                             </MapContainer>
@@ -234,12 +234,10 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
                         {/* CENTER PIN OVERLAY */}
                         <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center pb-8">
-                            {/* Label above pin */}
-                            <div className={`mb-2 bg-black/75 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg transition-opacity duration-200 ${status === 'dragging' ? 'opacity-0' : 'opacity-100'}`}>
+                            <div className={`mb-2 bg-black/75 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg transition-opacity duration-200 ${isDragging ? 'opacity-0' : 'opacity-100'}`}>
                                 Drop pin at exact location
                             </div>
-                            {/* The Pin */}
-                            <div className={`relative transition-transform duration-200 ${status === 'dragging' ? '-translate-y-4 scale-110' : 'translate-y-0 scale-100'}`}>
+                            <div className={`relative transition-transform duration-200 ${isDragging ? '-translate-y-4 scale-110' : 'translate-y-0 scale-100'}`}>
                                 <MapPin className="h-10 w-10 text-blue-600 drop-shadow-2xl filter" fill="currentColor" stroke="white" strokeWidth={1} />
                                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/20 rounded-full blur-[2px]" />
                             </div>
@@ -250,57 +248,57 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
                     {/* 4. Validation Panel */}
                     <div className="p-4 bg-white border-t space-y-4 z-10">
-                        {/* Address Card */}
+                        {/* Address Card (Decorative) */}
                         <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border">
                             <MapPin className="h-5 w-5 text-slate-400 mt-0.5" />
                             <div className="space-y-0.5">
                                 <div className="text-xs font-bold text-slate-500 uppercase">Address</div>
                                 <div className="text-sm font-medium text-slate-900 leading-snug">
-                                    {address}
+                                    {addressLabel}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Status Message */}
-                        {status === "validating" && (
+                        {/* Status Message (Critical) */}
+                        {validationStatus === "validating" && (
                             <div className="flex items-center gap-2 text-blue-600 text-sm font-medium animate-pulse">
                                 <Loader2 className="h-4 w-4 animate-spin" /> Checking availability...
                             </div>
                         )}
 
-                        {status === "valid" && result && (
+                        {validationStatus === "valid" && validationResult && (
                             <Alert className="bg-emerald-50 border-emerald-200">
                                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                                 <AlertTitle className="text-emerald-800">Delivery Available</AlertTitle>
                                 <AlertDescription className="text-emerald-700 flex gap-4 mt-1 font-medium">
-                                    <span>Distance: {result.distance} km</span>
-                                    <span>Fee: {result.fee} KES</span>
+                                    <span>Distance: {validationResult.distance} km</span>
+                                    <span>Fee: {validationResult.fee} KES</span>
                                 </AlertDescription>
                             </Alert>
                         )}
 
-                        {status === "invalid" && result && (
+                        {validationStatus === "invalid" && validationResult && (
                             <Alert variant="destructive">
                                 <XCircle className="h-4 w-4" />
                                 <AlertTitle>Outside Delivery Area</AlertTitle>
                                 <AlertDescription>
-                                    {result.error || "We currently deliver within 15 km of Thika."}
+                                    {validationResult.error || "We currently deliver within 15 km of Thika."}
                                     <div className="mt-2 flex gap-2">
-                                        <Button variant="outline" size="sm" className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700" onClick={() => mapCenter && validate(mapCenter[0], mapCenter[1])}>
-                                            Retrying...
+                                        <Button variant="outline" size="sm" className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700" onClick={() => handleMapSettled(mapCenter[0], mapCenter[1])}>
+                                            Retry
                                         </Button>
                                     </div>
                                 </AlertDescription>
                             </Alert>
                         )}
 
-                        {/* 5. Action Button */}
+                        {/* 5. Action Button - Depends ONLY on validationStatus */}
                         <Button
                             className="w-full h-12 text-lg"
-                            disabled={status !== "valid"}
+                            disabled={validationStatus !== "valid"}
                             onClick={handleConfirm}
                         >
-                            {status === "valid" ? "Confirm Location" : "Select Valid Location"}
+                            {validationStatus === "valid" ? "Confirm Location" : "Select Valid Location"}
                         </Button>
                     </div>
                 </DialogContent>

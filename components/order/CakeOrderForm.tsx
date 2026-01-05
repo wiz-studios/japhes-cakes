@@ -25,6 +25,10 @@ import dynamic from "next/dynamic"
 // Dynamically import GPS Picker to avoid SSR issues with Leaflet
 const GPSLocationPicker = dynamic(() => import('@/components/GPSLocationPicker'), { ssr: false })
 
+/**
+ * Zod schema for validating cake order inputs.
+ * Includes validation for size, flavor, fulfillment method, and delivery details.
+ */
 const cakeSchema = z.object({
     cakeSize: z.string().min(1, "Please select a size"),
     cakeFlavor: z.string().min(1, "Please select a flavor"),
@@ -41,6 +45,7 @@ const cakeSchema = z.object({
     customerName: z.string().min(2, "Min 2 chars"),
     phone: z.string().min(10, "Valid phone req"),
 }).refine((data) => {
+    // Custom validation: Require location coords if delivery is selected
     if (data.fulfilment === "delivery" && (!data.deliveryLat || !data.deliveryLng)) return false
     return true
 }, { message: "Delivery location required", path: ["fulfilment"] })
@@ -49,7 +54,7 @@ interface DeliveryZone {
     id: string; name: string; delivery_fee: number; allows_cake: boolean;
 }
 
-// Pricing Constants
+// Pricing Constants used for real-time estimation
 const CAKE_PRICES: Record<string, number> = {
     "1kg": 2500,
     "1.5kg": 3700,
@@ -62,12 +67,23 @@ const FLAVOR_SURCHARGES: Record<string, number> = {
     "Chocolate": 500, "Red Velvet": 500, "Black Forest": 500, "Blueberry": 500
 }
 
+/**
+ * CakeOrderForm Component
+ * 
+ * Handles the multi-step process of ordering a cake.
+ * 
+ * Features:
+ * - Reactive pricing based on size and flavor.
+ * - Dynamic delivery fee calculation via GPSLocationPicker.
+ * - Validates input using Zod before redirecting to review.
+ */
 export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const theme = orderThemes.cake
     const [isSubmitting, setIsSubmitting] = useState(false)
 
+    // Retrieve existing order data from URL if editing an order
     const rawOrder = searchParams.get("order") ? JSON.parse(decodeURIComponent(searchParams.get("order")!)) : null
 
     // Map the nested order object (from Review page) back to flat form fields
@@ -101,7 +117,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
         },
     })
 
-    // Watch values for real-time pricing
+    // Watch values for real-time pricing display
     const watchSize = form.watch("cakeSize")
     const watchFlavor = form.watch("cakeFlavor")
 
@@ -109,6 +125,10 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const surcharge = FLAVOR_SURCHARGES[watchFlavor] || 0
     const estimatedTotal = basePrice + surcharge
 
+    /**
+     * Form Submission Handler
+     * Constructs the order data object and redirects to the review page.
+     */
     async function onSubmit(values: z.infer<typeof cakeSchema>) {
         setIsSubmitting(true)
         const orderData = {

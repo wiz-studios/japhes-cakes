@@ -15,6 +15,17 @@ interface OrderLayoutProps {
     children: React.ReactNode
 }
 
+/**
+ * OrderLayout Component
+ * 
+ * Wrapper component for order forms (Cake & Pizza).
+ * Provides consistent styling, navigation header, and a progress bar.
+ * 
+ * Props:
+ * - theme: Styling theme (colors, fonts) specific to the product type.
+ * - title/subtitle: Page headings.
+ * - step/totalSteps: For the progress bar.
+ */
 export function OrderLayout({
     theme,
     title,

@@ -22,6 +22,10 @@ import dynamic from "next/dynamic"
 // Dynamically import GPS Picker to avoid SSR issues with Leaflet
 const GPSLocationPicker = dynamic(() => import('@/components/GPSLocationPicker'), { ssr: false })
 
+/**
+ * Zod schema for validating pizza order inputs.
+ * Ensures quantity, size, and type selection, plus delivery details if applicable.
+ */
 const pizzaSchema = z.object({
     pizzaType: z.string().min(1, "Select pizza"),
     pizzaSize: z.string().min(1, "Select size"),
@@ -37,6 +41,7 @@ const pizzaSchema = z.object({
     phone: z.string().min(10, "Phone req"),
     notes: z.string().optional(),
 }).refine((data) => {
+    // Require precise location for delivery
     if (data.fulfilment === "delivery" && (!data.deliveryLat || !data.deliveryLng)) return false
     return true
 }, { message: "Delivery location required", path: ["fulfilment"] })
@@ -65,6 +70,16 @@ interface DeliveryZone {
     id: string; name: string; delivery_fee: number; allows_pizza: boolean;
 }
 
+/**
+ * PizzaOrderForm Component
+ * 
+ * Handles pizza selection, customization (notes), and delivery/pickup choice.
+ * 
+ * Features:
+ * - Real-time price calculation including surcharges.
+ * - Late-night warning (after 9 PM).
+ * - GPS Delivery support.
+ */
 export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -73,6 +88,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const [minError, setMinError] = useState<string | null>(null)
     const [lateNightWarning, setLateNightWarning] = useState(false)
 
+    // Load existing order from URL query if present (for editing from Review page)
     const initialOrder = searchParams.get("order") ? JSON.parse(decodeURIComponent(searchParams.get("order")!)) : null
 
     const form = useForm<z.infer<typeof pizzaSchema>>({
@@ -98,12 +114,17 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
 
     const estimatedPrice = calculatePrice()
 
+    // Check for late night orders
     useEffect(() => {
         const now = new Date()
         const cutoff = new Date(); cutoff.setHours(21, 0, 0, 0)
         setLateNightWarning(now > cutoff)
     }, [])
 
+    /**
+     * Handle form submission
+     * Packs data into standard order format and forwards to review page.
+     */
     async function onSubmit(values: z.infer<typeof pizzaSchema>) {
         setIsSubmitting(true); setMinError(null)
         try {
