@@ -140,7 +140,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 const { latitude, longitude } = pos.coords
-                console.log("GPS Coordinates obtained:", latitude, longitude)
+                console.log("✅ GPS Coordinates obtained:", latitude, longitude)
 
                 // Force map to fly to new location
                 const newCenter: [number, number] = [latitude, longitude]
@@ -158,16 +158,31 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                 })
             },
             (err) => {
-                // Gentle Fallback
-                console.error("GPS Error:", err)
+                // GPS Error Handling
+                console.error("❌ GPS Error:", err, "Code:", err.code)
+
+                let errorMessage = "Please drag the map manually to your location."
+
+                if (err.code === 1) {
+                    errorMessage = "Location permission denied. Please enable location services in your browser settings."
+                } else if (err.code === 2) {
+                    errorMessage = "Location unavailable. Please check your device's GPS settings."
+                } else if (err.code === 3) {
+                    errorMessage = "GPS timeout. Try moving to an open area with clear sky and retry, or drag the map manually."
+                }
+
                 toast({
                     title: "Could not auto-locate",
-                    description: err.code === 1 ? "Location permission denied. Please enable location services." : "Please drag the map manually to your location.",
+                    description: errorMessage,
                     variant: "destructive"
                 })
                 setIsGPSLoading(false)
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            {
+                enableHighAccuracy: true,
+                timeout: 30000, // Increased to 30 seconds
+                maximumAge: 0
+            }
         )
     }
 
