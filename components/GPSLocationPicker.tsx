@@ -140,17 +140,30 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 const { latitude, longitude } = pos.coords
-                setMapCenter([latitude, longitude])
+                console.log("GPS Coordinates obtained:", latitude, longitude)
+
+                // Force map to fly to new location
+                const newCenter: [number, number] = [latitude, longitude]
+                setMapCenter(newCenter)
+
+                // Trigger validation immediately
                 handleMapSettled(latitude, longitude)
+
                 setIsGPSLoading(false)
+
+                toast({
+                    title: "Location Found",
+                    description: `Pinned to ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+                    variant: "default"
+                })
             },
             (err) => {
                 // Gentle Fallback
-                console.warn("GPS Access Denied:", err)
+                console.error("GPS Error:", err)
                 toast({
                     title: "Could not auto-locate",
-                    description: "Please drag the map manually to your location.",
-                    variant: "default"
+                    description: err.code === 1 ? "Location permission denied. Please enable location services." : "Please drag the map manually to your location.",
+                    variant: "destructive"
                 })
                 setIsGPSLoading(false)
             },
