@@ -13,7 +13,9 @@ import { Label } from "@/components/ui/label"
  * This page would integrate with M-Pesa API in production
  * For now, it simulates the payment flow
  */
-export default function PaymentConfirmPage() {
+import { Suspense } from "react"
+
+function PaymentConfirmContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const orderId = searchParams.get("orderId")
@@ -30,22 +32,11 @@ export default function PaymentConfirmPage() {
         }
 
         setProcessing(true)
-
-        // In production, this would:
-        // 1. Call M-Pesa STK Push API
-        // 2. Wait for callback
-        // 3. Update order payment_status to "paid"
-        // 4. Store mpesa_transaction_id
-
-        // For now, simulate processing
         await new Promise(resolve => setTimeout(resolve, 2000))
-
-        // Redirect to submitted page
         router.push(`/order/submitted?id=${orderId}`)
     }
 
     const handlePayLater = () => {
-        // Skip payment for now, redirect to submitted
         router.push(`/order/submitted?id=${orderId}`)
     }
 
@@ -130,5 +121,13 @@ export default function PaymentConfirmPage() {
                 </div>
             </motion.div>
         </div>
+    )
+}
+
+export default function PaymentConfirmPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>}>
+            <PaymentConfirmContent />
+        </Suspense>
     )
 }
