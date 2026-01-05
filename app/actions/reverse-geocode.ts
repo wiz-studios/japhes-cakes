@@ -124,3 +124,51 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
         return { label: fallbackLabel }
     }
 }
+
+interface SearchResult {
+    place_id: number
+    display_name: string
+    lat: string
+    lon: string
+}
+
+/**
+ * Searches for a location by name using Nominatim.
+ * Strictly limited to Kenya.
+ * 
+ * @param query The search text (e.g., "Kenyatta University")
+ */
+export async function searchPlaces(query: string): Promise<SearchResult[]> {
+    if (!query || query.length < 3) return []
+
+    try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000)
+
+        const q = encodeURIComponent(query)
+        // limit=5: minimal results
+        // countrycodes=ke: Restrict to Kenya
+        // addressdetails=0: We just need label + coords
+        const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&countrycodes=ke&addressdetails=0`
+
+        const res = await fetch(url, {
+            headers: {
+                "User-Agent": "JaphesCakes/1.0 (japhescakes@gmail.com)"
+            },
+            signal: controller.signal,
+            // Cache search results for 1 hour to prevent spamming
+            next: { revalidate: 3600 }
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!res.ok) return []
+
+        const data = await res.json()
+        return data as SearchResult[]
+
+    } catch (error) {
+        // Fail silently
+        return []
+    }
+}

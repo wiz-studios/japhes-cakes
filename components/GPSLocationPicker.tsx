@@ -3,13 +3,13 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet"
 import { validateDeliveryLocation } from "@/app/actions/validate-delivery"
-import { reverseGeocode } from "@/app/actions/reverse-geocode" // Import new action
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, MapPin, CheckCircle2, XCircle, Navigation, X } from "lucide-react"
+import { Loader2, MapPin, CheckCircle2, XCircle, Navigation, X, Search } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { reverseGeocode, searchPlaces } from "@/app/actions/reverse-geocode"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"
 import { SHOP_LOCATION } from "@/lib/delivery-logic"
@@ -98,6 +98,10 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const [isGPSLoading, setIsGPSLoading] = useState(false) // "Use My Exact Location" button state
     const [manualLat, setManualLat] = useState("")
     const [manualLng, setManualLng] = useState("")
+    // Search State
+    const [searchQuery, setSearchQuery] = useState("")
+    const [searchResults, setSearchResults] = useState<any[]>([])
+    const [isSearching, setIsSearching] = useState(false)
 
     // Reset loop
     useEffect(() => {
@@ -327,34 +331,25 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     }
 
     /**
-     * Handle manual coordinate input
-     * Allows users to directly enter lat/lng if GPS is unreliable
+     * SEARCH FUNCTIONALITY
      */
-    const handleManualInput = () => {
-        const lat = parseFloat(manualLat)
-        const lng = parseFloat(manualLng)
+    const handleSearch = async () => {
+        if (!searchQuery || searchQuery.length < 3) return
 
-        // Validate coordinates
-        if (isNaN(lat) || isNaN(lng)) {
-            toast({
-                title: "Invalid Coordinates",
-                description: "Please enter valid numbers for latitude and longitude.",
-                variant: "destructive"
-            })
-            return
+        setIsSearching(true)
+        const results = await searchPlaces(searchQuery)
+        setSearchResults(results)
+        setIsSearching(false)
+    }
+
+    const handleSelectResult = (result: any) => {
+        const lat = parseFloat(result.lat)
+        const lng = parseFloat(result.lon)
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+            applyLocation(lat, lng, "Search Result")
+            setSearchResults([]) // Clear results on selection
         }
-
-        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            toast({
-                title: "Invalid Range",
-                description: "Latitude must be between -90 and 90, longitude between -180 and 180.",
-                variant: "destructive"
-            })
-            return
-        }
-
-        console.log("📝 Manual coordinates entered:", { lat, lng })
-        applyLocation(lat, lng, 'Manual Input')
     }
 
     return (
@@ -414,33 +409,49 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                 {isGPSLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
                                 {isGPSLoading ? "Locating..." : "Use My Exact Location"}
                             </Button>
-                            {/* Manual Coordinate Input */}
-                            <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 text-xs">
-                                <div className="font-semibold text-gray-700">Or enter coordinates:</div>
-                                <div className="flex gap-2">
+                            {/* Search Input (Uber-style) */}
+                            <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 w-72">
+                                <div className="font-semibold text-gray-700 text-xs text-center border-b pb-1">Search Place (e.g. Kenyatta University)</div>
+                                <div className="flex gap-2 relative">
                                     <input
                                         type="text"
-                                        placeholder="Latitude"
-                                        value={manualLat}
-                                        onChange={(e) => setManualLat(e.target.value)}
-                                        className="w-24 px-2 py-1 border rounded text-xs"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Longitude"
-                                        value={manualLng}
-                                        onChange={(e) => setManualLng(e.target.value)}
-                                        className="w-24 px-2 py-1 border rounded text-xs"
+                                        placeholder="Enter location..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                                        className="flex-1 px-3 py-1.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                     />
                                     <Button
                                         size="sm"
-                                        onClick={handleManualInput}
-                                        className="h-7 px-3 text-xs"
+                                        onClick={handleSearch}
+                                        disabled={isSearching}
+                                        className="h-full bg-blue-600 hover:bg-blue-700 aspect-square p-0"
                                     >
-                                        Go
+                                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                                     </Button>
+
+                                    {/* Search Results Dropdown */}
+                                    {searchResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border max-h-48 overflow-y-auto z-50">
+                                            {searchResults.map((result) => (
+                                                <div
+                                                    key={result.place_id}
+                                                    onClick={() => handleSelectResult(result)}
+                                                    className="p-2 hover:bg-blue-50 cursor-pointer text-xs border-b last:border-0 flex items-start gap-2"
+                                                >
+                                                    <MapPin className="h-3 w-3 mt-0.5 text-gray-400 shrink-0" />
+                                                    <span className="line-clamp-2 text-gray-700">{result.display_name}</span>
+                                                </div>
+                                            ))}
+                                            <div
+                                                className="p-1 text-center text-[10px] text-red-500 hover:bg-gray-50 cursor-pointer font-medium"
+                                                onClick={() => setSearchResults([])}
+                                            >
+                                                Close Results
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="text-gray-500 text-[10px]">Example: 1.144563, 37.060938</div>
                             </div>
                         </div>
 
