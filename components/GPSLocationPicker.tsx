@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, MapPin, CheckCircle2, XCircle, Navigation } from "lucide-react"
+import { Loader2, MapPin, CheckCircle2, XCircle, Navigation, X } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"
@@ -191,6 +191,14 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                     <DialogHeader className="p-4 border-b bg-white z-10 w-full relative">
                         <DialogTitle>Select Delivery Location</DialogTitle>
                         <p className="text-xs text-muted-foreground uppercase tracking-wider">Used to calculate delivery fee</p>
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+                            aria-label="Close"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
                     </DialogHeader>
 
                     {/* 3. Map Area */}
