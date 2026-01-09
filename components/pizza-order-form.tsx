@@ -293,7 +293,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="07XX XXX XXX" {...field} />
+                  <Input placeholder="07XX XXX XXX or 01XX XXX XXX" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
