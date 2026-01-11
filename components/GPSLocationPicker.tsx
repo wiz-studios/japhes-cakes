@@ -238,8 +238,8 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
             const loc: DeliveryLocation = {
                 lat: currentCenter.lat,
                 lng: currentCenter.lng,
-                distance: validation.distance,
-                fee: validation.fee,
+                distance: validation.distance || 0,
+                fee: validation.fee || 0,
                 address: address
             }
             setConfirmedLocation(loc)
