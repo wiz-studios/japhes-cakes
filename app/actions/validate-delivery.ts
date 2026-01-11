@@ -23,6 +23,9 @@ export async function validateDeliveryLocation(lat: number, lng: number) {
     return {
         allowed: true,
         distance: result.distance,
-        fee: result.fee
+        fee: result.fee,
+        warning: result.warning,
+        requiresMinOrder: result.requiresMinOrder,
+        requiresPrepaid: result.requiresPrepaid
     }
 }

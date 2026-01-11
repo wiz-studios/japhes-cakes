@@ -11,12 +11,17 @@ export const SHOP_LOCATION = {
 }
 
 export const DELIVERY_RULES = {
-    maxRadiusKm: 15,
+    maxRadiusKm: 50, // Absolute Hard Limit
+    longDistanceThresholdKm: 30, // Triggers min order warning
+    extremeDistanceThresholdKm: 40, // Triggers prepaid only warning
+
+    // Fee Tiers (Strict & Defensible)
     tiers: [
-        { maxKm: 2, fee: 0 },
-        { maxKm: 5, fee: 150 },
-        { maxKm: 10, fee: 300 },
-        { maxKm: 15, fee: 500 }, // Strict hike for far distances
+        { maxKm: 5, fee: 150 },    // Local Thika
+        { maxKm: 15, fee: 300 },   // Outskirts
+        { maxKm: 30, fee: 600 },   // Juja/Ruiru
+        { maxKm: 40, fee: 1000 },  // Long Distance (Nairobi North)
+        { maxKm: 50, fee: 1500 },  // Extreme Distance (Nairobi CBD)
     ]
 }
 
@@ -46,7 +51,7 @@ function deg2rad(deg: number): number {
  */
 export function calculateDeliveryFee(distanceKm: number): number {
     if (distanceKm > DELIVERY_RULES.maxRadiusKm) {
-        throw new Error(`Delivery not available. Distance ${distanceKm}km exceeds maximum radius of ${DELIVERY_RULES.maxRadiusKm}km.`)
+        throw new Error(`Outside delivery radius. Max is ${DELIVERY_RULES.maxRadiusKm}km.`)
     }
 
     for (const tier of DELIVERY_RULES.tiers) {
@@ -55,6 +60,8 @@ export function calculateDeliveryFee(distanceKm: number): number {
         }
     }
 
+    // Fallback for edge cases exactly at 50, or floating point weirdness
+    // though the loop should catch it.
     return DELIVERY_RULES.tiers[DELIVERY_RULES.tiers.length - 1].fee
 }
 
@@ -77,9 +84,26 @@ export function validateDeliveryRequest(lat: number, lng: number) {
 
     const fee = calculateDeliveryFee(distance)
 
+    // Determine warnings/constraints based on distance
+    let warning = undefined
+    let requiresMinOrder = false
+    let requiresPrepaid = false
+
+    if (distance > DELIVERY_RULES.extremeDistanceThresholdKm) {
+        warning = "Extreme Distance: Prepaid orders only. Allow 2-4 hours."
+        requiresPrepaid = true
+        requiresMinOrder = true // Implied usually, but backend handles strict amount check
+    } else if (distance > DELIVERY_RULES.longDistanceThresholdKm) {
+        warning = "Long Distance: Minimum order KES 4,000 applies."
+        requiresMinOrder = true
+    }
+
     return {
         allowed: true,
         distance,
-        fee
+        fee,
+        warning,
+        requiresMinOrder,
+        requiresPrepaid
     }
 }

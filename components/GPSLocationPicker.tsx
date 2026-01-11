@@ -30,6 +30,9 @@ interface DeliveryLocation {
     fee: number
     address?: string
     error?: string
+    warning?: string
+    requiresMinOrder?: boolean
+    requiresPrepaid?: boolean
 }
 
 interface GPSLocationPickerProps {
@@ -95,7 +98,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const [currentCenter, setCurrentCenter] = useState<{ lat: number, lng: number }>({ lat: SHOP_LOCATION.lat, lng: SHOP_LOCATION.lng })
 
     const [address, setAddress] = useState<string>("Locating...")
-    const [validation, setValidation] = useState<{ allowed: boolean, distance?: number, fee?: number, error?: string } | null>(null)
+    const [validation, setValidation] = useState<{ allowed: boolean, distance?: number, fee?: number, error?: string, warning?: string, requiresMinOrder?: boolean, requiresPrepaid?: boolean } | null>(null)
     const [isValidating, setIsValidating] = useState(false)
     const [isPinLifted, setIsPinLifted] = useState(false)
 
@@ -240,7 +243,10 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                 lng: currentCenter.lng,
                 distance: validation.distance || 0,
                 fee: validation.fee || 0,
-                address: address
+                address: address,
+                warning: validation.warning,
+                requiresMinOrder: validation.requiresMinOrder,
+                requiresPrepaid: validation.requiresPrepaid
             }
             setConfirmedLocation(loc)
             onLocationSelect(loc)
@@ -284,7 +290,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                     <div className="absolute inset-0 z-0">
                         <MapContainer
                             center={[SHOP_LOCATION.lat, SHOP_LOCATION.lng]}
-                            zoom={15}
+                            zoom={10} // Zoomed out to show Thika + Nairobi
                             zoomControl={false}
                             style={{ height: "100%", width: "100%" }}
                         >
@@ -395,8 +401,8 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
                                 {/* Validation Info */}
                                 {validation && (
-                                    <div className={`flex items-center gap-3 p-3 rounded-xl border ${validation.allowed ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"}`}>
-                                        <div className={`p-2 rounded-full ${validation.allowed ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                                    <div className={`flex items-start gap-3 p-3 rounded-xl border ${validation.allowed ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"}`}>
+                                        <div className={`p-2 rounded-full shrink-0 ${validation.allowed ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
                                             {validation.allowed ? <MapPin className="h-4 w-4" /> : <X className="h-4 w-4" />}
                                         </div>
                                         <div className="flex-1">
@@ -404,9 +410,18 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                                 {validation.allowed ? "Delivery Available" : "Out of Delivery Zone"}
                                             </div>
                                             {validation.allowed ? (
-                                                <div className="text-xs text-emerald-700 flex gap-3 mt-0.5">
-                                                    <span>Dist: {validation.distance}km</span>
-                                                    <span>Fee: {validation.fee} KES</span>
+                                                <div className="space-y-1 mt-1">
+                                                    <div className="text-xs text-emerald-700 flex gap-3 font-medium">
+                                                        <span>Dist: {validation.distance}km</span>
+                                                        <span>Fee: {validation.fee} KES</span>
+                                                    </div>
+                                                    {/* Warning Block */}
+                                                    {validation.warning && (
+                                                        <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800 mt-1 flex gap-2 items-start">
+                                                            <div className="shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                            <span>{validation.warning}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <div className="text-xs text-red-700 mt-0.5">{validation.error || "Too far from shop"}</div>
