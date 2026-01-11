@@ -95,7 +95,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const [currentCenter, setCurrentCenter] = useState<{ lat: number, lng: number }>({ lat: SHOP_LOCATION.lat, lng: SHOP_LOCATION.lng })
 
     const [address, setAddress] = useState<string>("Locating...")
-    const [validation, setValidation] = useState<{ allowed: boolean, distance: number, fee: number, error?: string } | null>(null)
+    const [validation, setValidation] = useState<{ allowed: boolean, distance?: number, fee?: number, error?: string } | null>(null)
     const [isValidating, setIsValidating] = useState(false)
     const [isPinLifted, setIsPinLifted] = useState(false)
 
