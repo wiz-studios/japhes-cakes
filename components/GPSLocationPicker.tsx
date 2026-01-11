@@ -180,14 +180,27 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const handleUseGPS = () => {
         if (!navigator.geolocation) return
 
-        // Show loading state implicitly via UI or toast
         toast({ title: "Locating you...", description: "Please wait while we get your position." })
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                const { latitude, longitude } = pos.coords
-                setMapCenter([latitude, longitude]) // Triggers flyTo
-                toast({ title: "Found you!", className: "bg-emerald-600 text-white border-none" })
+                const { latitude, longitude, accuracy } = pos.coords
+                setMapCenter([latitude, longitude])
+
+                // Accuracy Logic
+                if (accuracy > 100) {
+                    toast({
+                        title: "Location Approximate",
+                        description: `Signal weak (+/- ${Math.round(accuracy)}m). Please drag the map to your exact gate.`,
+                        variant: "destructive" // Orange/Red attention grabber
+                    })
+                } else {
+                    toast({
+                        title: "Precise Location Found",
+                        description: `Accuracy: +/- ${Math.round(accuracy)}m`,
+                        className: "bg-emerald-600 text-white border-none"
+                    })
+                }
             },
             (err) => {
                 toast({
@@ -196,7 +209,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                     variant: "destructive"
                 })
             },
-            { enableHighAccuracy: true, timeout: 10000 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // maxAge 0 forces fresh GPS fix
         )
     }
 
