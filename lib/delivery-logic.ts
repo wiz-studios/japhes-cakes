@@ -13,26 +13,21 @@ export const SHOP_LOCATION = {
 
 export const DELIVERY_RULES = {
     maxRadiusKm: 50, // Absolute Hard Limit
-    longDistanceThresholdKm: 30, // Triggers min order warning
+    longDistanceThresholdKm: 35, // Triggers min order warning
     extremeDistanceThresholdKm: 40, // Triggers prepaid only warning
 
-    // Base Fee Tiers (Distance Only)
+    // Fee Tiers (Mwananchi Friendly)
     tiers: [
-        { maxKm: 5, fee: 150 },    // Local Thika
-        { maxKm: 15, fee: 300 },   // Outskirts
-        { maxKm: 30, fee: 600 },   // Juja/Ruiru
-        { maxKm: 40, fee: 1000 },  // Long Distance
-        { maxKm: 50, fee: 1500 },  // Extreme Distance
+        { maxKm: 3, fee: 50 },     // Ultra Local (Walking/Boda)
+        { maxKm: 10, fee: 150 },   // Town Outskirts (Standard Boda)
+        { maxKm: 20, fee: 300 },   // Mid Range
+        { maxKm: 35, fee: 600 },   // Long Distance
+        { maxKm: 50, fee: 1000 },  // Extreme Distance (Cost Recovery)
     ],
 
-    // Time-Based Multipliers (Production-Ready)
-    timeMultipliers: [
-        { startHour: 6, endHour: 17, factor: 1.0, label: "Standard Delivery" },
-        { startHour: 17, endHour: 21, factor: 1.2, label: "Evening Peak" },
-        { startHour: 21, endHour: 23, factor: 1.3, label: "Late Hours" },
-        { startHour: 23, endHour: 24, factor: 1.4, label: "Night Delivery" }, // Midnight to midnight wrap handling needed? 
-        // Logic below handles 23-6 separately or via check
-    ]
+    // Time-Based Multipliers (Relaxed)
+    // 06:00 - 22:00 = 1.0x (No penalty for dinner)
+    // 22:00 - 06:00 = 1.3x (Safety Fee)
 }
 
 /**
@@ -48,23 +43,13 @@ function getNairobiHour(): number {
  * Get Time Multiplier based on Nairobi Time
  */
 export function getTimeMultiplier(hour: number = getNairobiHour()) {
-    // 1. Night Rules (23:00 - 06:00) -> 1.4x
-    // Covers 23, 0, 1, 2, 3, 4, 5
-    if (hour >= 23 || hour < 6) {
-        return { factor: 1.4, label: "Night Delivery" }
+    // Night Rules (22:00 - 06:00) -> 1.3x
+    // Covers 22, 23, 0, 1, 2, 3, 4, 5
+    if (hour >= 22 || hour < 6) {
+        return { factor: 1.3, label: "Late Night Fee" }
     }
 
-    // 2. Late Hours (21:00 - 23:00) -> 1.3x
-    if (hour >= 21) {
-        return { factor: 1.3, label: "Late Hours" }
-    }
-
-    // 3. Evening Peak (17:00 - 21:00) -> 1.2x
-    if (hour >= 17) {
-        return { factor: 1.2, label: "Evening Peak" }
-    }
-
-    // 4. Standard (06:00 - 17:00) -> 1.0x
+    // Standard (06:00 - 22:00) -> 1.0x
     return { factor: 1.0, label: "Standard Delivery" }
 }
 
@@ -138,7 +123,7 @@ export function validateDeliveryRequest(lat: number, lng: number) {
         requiresPrepaid = true
         requiresMinOrder = true
     } else if (distance > DELIVERY_RULES.longDistanceThresholdKm) {
-        warning = "Long Distance: Minimum order KES 4,000 applies."
+        warning = "Long Distance: Minimum order KES 3,000 applies."
         requiresMinOrder = true
     }
 
