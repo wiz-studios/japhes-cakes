@@ -306,7 +306,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
             {/* Full Screen Modal */}
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-none w-screen h-screen p-0 m-0 rounded-none border-none flex flex-col overflow-hidden bg-gray-100">
+                <DialogContent className="max-w-none w-screen h-[100dvh] p-0 m-0 rounded-none border-none flex flex-col overflow-hidden bg-gray-100 focus:outline-none">
 
                     {/* Layer 1: The Map */}
                     <div className="absolute inset-0 z-0">
@@ -352,11 +352,11 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                     </div>
 
                     {/* Layer 3: Floating Top Search */}
-                    <div className="absolute top-4 left-4 right-4 z-20 flex gap-2 max-w-xl mx-auto">
-                        <button onClick={() => setIsOpen(false)} className="bg-white p-3 rounded-full shadow-lg text-gray-700 hover:bg-gray-50 active:scale-95 transition-transform">
+                    <div className="absolute top-4 left-4 right-4 z-50 flex gap-2 max-w-xl mx-auto pointer-events-none">
+                        <button onClick={() => setIsOpen(false)} className="bg-white p-3 rounded-full shadow-lg text-gray-700 hover:bg-gray-50 active:scale-95 transition-transform pointer-events-auto">
                             <X className="h-5 w-5" />
                         </button>
-                        <div className="flex-1 relative">
+                        <div className="flex-1 relative pointer-events-auto">
                             <div className="bg-white rounded-full shadow-lg flex items-center px-4 h-11 border border-transparent focus-within:border-blue-500 transition-all">
                                 <Search className="h-4 w-4 text-gray-400 mr-2" />
                                 <input
@@ -371,7 +371,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
                             {/* Autocomplete Dropdown */}
                             {searchResults.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden py-1 border animate-in fade-in zoom-in-95 duration-200">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden py-1 border animate-in fade-in zoom-in-95 duration-200 max-h-[50vh] overflow-y-auto touch-pan-y z-30">
                                     {searchResults.map((result) => (
                                         <div
                                             key={result.place_id}
