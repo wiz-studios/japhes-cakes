@@ -96,8 +96,6 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const [mapCenter, setMapCenter] = useState<[number, number]>([SHOP_LOCATION.lat, SHOP_LOCATION.lng])
     const [confirmedLocation, setConfirmedLocation] = useState<DeliveryLocation | null>(null)
     const [isGPSLoading, setIsGPSLoading] = useState(false) // "Use My Exact Location" button state
-    const [manualLat, setManualLat] = useState("")
-    const [manualLng, setManualLng] = useState("")
     // Search State
     const [searchQuery, setSearchQuery] = useState("")
     const [searchResults, setSearchResults] = useState<any[]>([])
