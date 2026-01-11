@@ -331,22 +331,43 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                     </div>
 
                     {/* Layer 2: Fixed Center Pin */}
-                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center pb-8 md:pb-0">
-                        <div className="relative flex flex-col items-center justify-end" style={{ transform: isPinLifted ? 'translateY(-10px)' : 'translateY(0px)', transition: 'transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+                    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+                        {/* 
+                            ACCURACY UPDATE:
+                            The Pin's "Point" must be exactly at the screen center (50% 50%).
+                            We position the container's *bottom* at the center line using top-1/2 and -translate-y-full.
+                        */}
+                        <div
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center justify-end"
+                            style={{
+                                transform: isPinLifted
+                                    ? 'translate(-50%, calc(-100% - 10px))' // Lift up (keep x centered)
+                                    : 'translate(-50%, -100%)',             // On ground
+                                transition: 'transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                            }}
+                        >
                             {/* The Pin */}
                             <div className="relative z-20">
                                 <MapPin className="h-10 w-10 text-black fill-black drop-shadow-xl" />
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full" />
                             </div>
+
                             {/* The Pin Stem/Point */}
                             <div className="w-0.5 h-4 bg-black/50 z-10 -mt-1 mx-auto" />
-                            {/* The Shadow (stays on ground, fades on lift) */}
-                            <div className="w-10 h-2 bg-black/20 rounded-[100%] blur-[2px] transition-all duration-150"
-                                style={{ transform: isPinLifted ? 'scale(0.8) translateY(10px)' : 'scale(1) translateY(0)', opacity: isPinLifted ? 0.3 : 0.6 }}
+
+                            {/* The Shadow (Projected visually BELOW the center line) */}
+                            {/* This needs to be absolute so it doesn't affect the flow height which we use for alignment */}
+                            <div
+                                className="absolute top-full left-1/2 -translate-x-1/2 w-10 h-2 bg-black/20 rounded-[100%] blur-[2px] transition-all duration-150"
+                                style={{
+                                    opacity: isPinLifted ? 0.3 : 0.6,
+                                    transform: isPinLifted ? 'translate(-50%, 10px) scale(0.8)' : 'translate(-50%, 0) scale(1)'
+                                }}
                             />
                         </div>
-                        {/* Tooltip on launch */}
-                        <div className={`absolute mt-24 bg-black/75 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md transition-opacity duration-300 ${!isPinLifted && !address.includes("Locating") ? 'opacity-100 delay-1000' : 'opacity-0'}`}>
+
+                        {/* Tooltip */}
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 mt-4 bg-black/75 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md transition-opacity duration-300 ${!isPinLifted && !address.includes("Locating") ? 'opacity-100 delay-1000' : 'opacity-0'}`}>
                             Move map to adjust
                         </div>
                     </div>
