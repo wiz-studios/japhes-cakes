@@ -210,17 +210,12 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         return new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    let lat = position.coords.latitude
-                    let lng = position.coords.longitude
+                    const lat = position.coords.latitude
+                    const lng = position.coords.longitude
                     const accuracy = position.coords.accuracy
 
-                    // Fix potential coordinate order issues (some devices return lon, lat)
-                    if (Math.abs(lat) > Math.abs(lng)) {
-                        console.warn("🔄 Coordinates appear swapped (lat > lng in magnitude), correcting...")
-                        const temp = lat
-                        lat = lng
-                        lng = temp
-                    }
+                    // Note: The Geolocation API ALWAYS returns coordinates in [latitude, longitude] order
+                    // No swap logic needed - the API is standardized across all browsers/devices
 
                     // Detailed logging for debugging
                     console.log("🎯 GPS SUCCESS:", {
@@ -289,29 +284,23 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
         const lat = parseFloat(data.latitude)
         const lng = parseFloat(data.longitude)
 
-        // Fix potential coordinate order issues
-        let correctedLat = lat
-        let correctedLng = lng
-        if (Math.abs(correctedLat) > Math.abs(correctedLng)) {
-            console.warn("🔄 IP coordinates appear swapped, correcting...")
-            correctedLat = lng
-            correctedLng = lat
-        }
+        // Note: IP geolocation APIs return standard [latitude, longitude] order
+        // No swap logic needed
 
         console.log("🌐 IP Location:", {
-            latitude: correctedLat,
-            longitude: correctedLng,
+            latitude: lat,
+            longitude: lng,
             city: data.city,
             region: data.region,
             country: data.country_name,
             approximate: true
         })
 
-        if (isNaN(correctedLat) || isNaN(correctedLng)) {
+        if (isNaN(lat) || isNaN(lng)) {
             throw new Error("Invalid IP location data")
         }
 
-        return { lat: correctedLat, lng: correctedLng }
+        return { lat, lng }
     }
 
     /**
