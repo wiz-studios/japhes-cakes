@@ -100,6 +100,41 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const [searchQuery, setSearchQuery] = useState("")
     const [searchResults, setSearchResults] = useState<any[]>([])
     const [isSearching, setIsSearching] = useState(false)
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    // Debounced live search - triggers as user types (like Bolt)
+    useEffect(() => {
+        // Clear previous timeout
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current)
+        }
+
+        // Don't search if query is too short
+        if (!searchQuery || searchQuery.length < 3) {
+            setSearchResults([])
+            return
+        }
+
+        // Set new timeout for debounced search (300ms delay)
+        searchTimeoutRef.current = setTimeout(async () => {
+            setIsSearching(true)
+            try {
+                const results = await searchPlaces(searchQuery)
+                setSearchResults(results)
+            } catch (error) {
+                console.error("Search failed:", error)
+                setSearchResults([])
+            }
+            setIsSearching(false)
+        }, 300)
+
+        // Cleanup timeout on unmount or query change
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current)
+            }
+        }
+    }, [searchQuery])
 
     // Reset loop
     useEffect(() => {
@@ -352,6 +387,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
         if (!isNaN(lat) && !isNaN(lng)) {
             applyLocation(lat, lng, "Search Result")
+            setSearchQuery("") // Clear search input
             setSearchResults([]) // Clear results on selection
         }
     }
