@@ -33,6 +33,9 @@ interface DeliveryLocation {
     warning?: string
     requiresMinOrder?: boolean
     requiresPrepaid?: boolean
+    timeLabel?: string
+    timeMultiplier?: number
+    baseFee?: number
 }
 
 interface GPSLocationPickerProps {
@@ -98,7 +101,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     const [currentCenter, setCurrentCenter] = useState<{ lat: number, lng: number }>({ lat: SHOP_LOCATION.lat, lng: SHOP_LOCATION.lng })
 
     const [address, setAddress] = useState<string>("Locating...")
-    const [validation, setValidation] = useState<{ allowed: boolean, distance?: number, fee?: number, error?: string, warning?: string, requiresMinOrder?: boolean, requiresPrepaid?: boolean } | null>(null)
+    const [validation, setValidation] = useState<{ allowed: boolean, distance?: number, fee?: number, error?: string, warning?: string, requiresMinOrder?: boolean, requiresPrepaid?: boolean, timeLabel?: string, timeMultiplier?: number, baseFee?: number } | null>(null)
     const [isValidating, setIsValidating] = useState(false)
     const [isPinLifted, setIsPinLifted] = useState(false)
 
@@ -246,7 +249,10 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                 address: address,
                 warning: validation.warning,
                 requiresMinOrder: validation.requiresMinOrder,
-                requiresPrepaid: validation.requiresPrepaid
+                requiresPrepaid: validation.requiresPrepaid,
+                timeLabel: validation.timeLabel,
+                timeMultiplier: validation.timeMultiplier,
+                baseFee: validation.baseFee
             }
             setConfirmedLocation(loc)
             onLocationSelect(loc)
@@ -411,9 +417,14 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                             </div>
                                             {validation.allowed ? (
                                                 <div className="space-y-1 mt-1">
-                                                    <div className="text-xs text-emerald-700 flex gap-3 font-medium">
+                                                    <div className="text-xs text-emerald-700 flex flex-wrap gap-x-3 gap-y-1 font-medium items-center">
                                                         <span>Dist: {validation.distance}km</span>
                                                         <span>Fee: {validation.fee} KES</span>
+                                                        {validation.timeMultiplier && validation.timeMultiplier > 1 && (
+                                                            <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[10px] border border-purple-200">
+                                                                {validation.timeLabel} ({validation.timeMultiplier}x)
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     {/* Warning Block */}
                                                     {validation.warning && (
