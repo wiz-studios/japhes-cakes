@@ -128,25 +128,41 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
     // --- Logic: Search ---
 
+    const [showNoResults, setShowNoResults] = useState(false)
+
     useEffect(() => {
         if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
 
         if (!searchQuery || searchQuery.length < 3) {
             setSearchResults([])
+            setShowNoResults(false)
             return
         }
 
         searchTimeoutRef.current = setTimeout(async () => {
             setIsSearching(true)
+            setShowNoResults(false)
             try {
                 const results = await searchPlaces(searchQuery)
                 setSearchResults(results)
+                if (results.length === 0) setShowNoResults(true)
             } catch (e) { console.error(e) }
             setIsSearching(false)
         }, 300)
 
         return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) }
     }, [searchQuery])
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            e.preventDefault()
+            if (searchResults.length > 0) {
+                handleSelectResult(searchResults[0])
+            } else if (showNoResults) {
+                toast({ title: "Location not found", description: "Try a different name or drag the map manually.", variant: "destructive" })
+            }
+        }
+    }
 
     const handleSelectResult = (result: any) => {
         const lat = parseFloat(result.lat)
@@ -348,6 +364,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                     placeholder="Search location (e.g. Kenyatta Uni)"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleKeyDown}
                                 />
                                 {isSearching && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
                             </div>
@@ -370,6 +387,21 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {/* No Results State */}
+                            {showNoResults && searchQuery.length >= 3 && !isSearching && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl py-3 px-4 border animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="flex items-center gap-3 text-gray-500">
+                                        <div className="bg-gray-100 p-2 rounded-full">
+                                            <Search className="h-4 w-4" />
+                                        </div>
+                                        <div className="text-sm">We couldn't find "<strong>{searchQuery}</strong>"</div>
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-2 pl-11">
+                                        Try a nearby landmark, school, or drag the map pin.
+                                    </div>
                                 </div>
                             )}
                         </div>
