@@ -31,9 +31,9 @@ graph TD
 
 - **Function**: `initiateMpesaSTK(orderId, phone)`
 - **Security**: 
-    - Fetches `order.total` directly from the database (never trusts the client).
+    - Fetches `order.total_amount` directly from the database (never trusts the client).
     - Generates and stores a unique `lipana_checkout_request_id` for tracking.
-- **API**: Sends a POST request to `LIPANA_BASE_URL/v1/transactions/push-stk`.
+- **API**: Uses `@lipana/sdk` (`transactions.initiateStkPush`) with environment set by `PAYMENTS_ENV`.
 
 ### 3. Strict Webhook Handler
 **File:** `app/api/webhooks/lipana/route.ts`

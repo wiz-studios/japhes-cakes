@@ -37,7 +37,11 @@ export async function POST(request: Request) {
         const data = payload.Data || payload.data
 
         // 2. Validate Data
-        const checkoutRequestId = data?.checkout_request_id || data?.CheckoutRequestID
+        const checkoutRequestId =
+            data?.checkout_request_id ||
+            data?.checkoutRequestId ||
+            data?.CheckoutRequestID ||
+            data?.checkoutRequestID
 
         if (!checkoutRequestId) {
             console.error("[LIPANA-WEBHOOK] Missing checkout_request_id")

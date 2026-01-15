@@ -33,7 +33,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     // 2. Fetch Order Details (Secure Source of Truth for Amount)
     const { data: order, error: orderError } = await supabase
         .from("orders")
-        .select("total, lipana_transaction_id")
+        .select("total_amount")
         .eq("id", orderId)
         .single()
 
@@ -52,7 +52,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
 
     console.log(`[STK-INIT] Initiating STK via SDK (${PAYMENT_CONFIG.env}):`, {
         phone,
-        amount: order.total,
+        amount: order.total_amount,
         orderId: orderId.slice(0, 8)
     })
 
@@ -60,7 +60,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
         // 4. Call SDK Method
         const result = await lipana.transactions.initiateStkPush({
             phone: phone,
-            amount: order.total,
+            amount: order.total_amount,
             accountReference: `Order ${orderId.slice(0, 8)}`,
             transactionDesc: "Payment for order",
         })
@@ -68,7 +68,11 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
         console.log("[STK-INIT] SDK Response:", result)
 
         // 5. Extract Checkout Request ID (note: SDK uses checkoutRequestID with capital ID)
-        const checkoutRequestId = result.checkoutRequestID
+        const checkoutRequestId =
+            (result as any).checkoutRequestID ||
+            (result as any).checkoutRequestId ||
+            (result as any).checkout_request_id ||
+            (result as any).CheckoutRequestID
 
         if (!checkoutRequestId) {
             console.error("[STK-INIT] No checkoutRequestID in SDK response:", result)
