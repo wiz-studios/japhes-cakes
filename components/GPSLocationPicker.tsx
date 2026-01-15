@@ -117,6 +117,20 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
     // Refs for debouncing/cancellation
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
+    const gpsWatchIdRef = useRef<number | null>(null)
+    const gpsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const bestAccuracyRef = useRef<number | null>(null)
+
+    const clearGpsWatch = useCallback(() => {
+        if (typeof navigator !== "undefined" && navigator.geolocation && gpsWatchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(gpsWatchIdRef.current)
+        }
+        gpsWatchIdRef.current = null
+        if (gpsTimeoutRef.current) {
+            clearTimeout(gpsTimeoutRef.current)
+            gpsTimeoutRef.current = null
+        }
+    }, [])
 
     // Open/Close - Initialize Map
     useEffect(() => {
@@ -125,6 +139,13 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
             handleMapSettled(SHOP_LOCATION.lat, SHOP_LOCATION.lng)
         }
     }, [isOpen])
+
+    useEffect(() => {
+        if (!isOpen) {
+            clearGpsWatch()
+        }
+        return () => { clearGpsWatch() }
+    }, [isOpen, clearGpsWatch])
 
     // --- Logic: Search ---
 
@@ -177,40 +198,78 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
 
     // --- Logic: GPS ---
 
+    const GPS_TARGET_ACCURACY_METERS = 25
+    const GPS_MAX_WAIT_MS = 20000
+
     const handleUseGPS = () => {
         if (!navigator.geolocation) return
 
-        toast({ title: "Locating you...", description: "Please wait while we get your position." })
+        clearGpsWatch()
+        bestAccuracyRef.current = null
 
-        navigator.geolocation.getCurrentPosition(
+        toast({ title: "Locating you...", description: "Waiting for a precise GPS fix." })
+
+        gpsWatchIdRef.current = navigator.geolocation.watchPosition(
             (pos) => {
                 const { latitude, longitude, accuracy } = pos.coords
-                setMapCenter([latitude, longitude])
+                const bestAccuracy = bestAccuracyRef.current
 
-                // Accuracy Logic
-                if (accuracy > 100) {
-                    toast({
-                        title: "Location Approximate",
-                        description: `Signal weak (+/- ${Math.round(accuracy)}m). Please drag the map to your exact gate.`,
-                        variant: "destructive" // Orange/Red attention grabber
-                    })
-                } else {
+                if (bestAccuracy === null || accuracy < bestAccuracy) {
+                    bestAccuracyRef.current = accuracy
+                    setMapCenter([latitude, longitude])
+                }
+
+                const settledAccuracy = bestAccuracyRef.current
+                if (settledAccuracy !== null && settledAccuracy <= GPS_TARGET_ACCURACY_METERS) {
+                    clearGpsWatch()
                     toast({
                         title: "Precise Location Found",
-                        description: `Accuracy: +/- ${Math.round(accuracy)}m`,
+                        description: `Accuracy: +/- ${Math.round(settledAccuracy)}m`,
                         className: "bg-emerald-600 text-white border-none"
                     })
                 }
             },
-            (err) => {
+            () => {
+                clearGpsWatch()
                 toast({
                     title: "Location failed",
                     description: "Could not fetch GPS location. Please drag the map manually.",
                     variant: "destructive"
                 })
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // maxAge 0 forces fresh GPS fix
+            { enableHighAccuracy: true, timeout: GPS_MAX_WAIT_MS, maximumAge: 0 } // maxAge 0 forces fresh GPS fix
         )
+
+        gpsTimeoutRef.current = setTimeout(() => {
+            if (gpsWatchIdRef.current === null) return
+
+            const bestAccuracy = bestAccuracyRef.current
+            clearGpsWatch()
+
+            if (bestAccuracy === null) {
+                toast({
+                    title: "Location failed",
+                    description: "Could not fetch GPS location. Please drag the map manually.",
+                    variant: "destructive"
+                })
+                return
+            }
+
+            if (bestAccuracy > GPS_TARGET_ACCURACY_METERS) {
+                toast({
+                    title: "Location Approximate",
+                    description: `Signal weak (+/- ${Math.round(bestAccuracy)}m). Please drag the map to your exact gate.`,
+                    variant: "destructive"
+                })
+                return
+            }
+
+            toast({
+                title: "Precise Location Found",
+                description: `Accuracy: +/- ${Math.round(bestAccuracy)}m`,
+                className: "bg-emerald-600 text-white border-none"
+            })
+        }, GPS_MAX_WAIT_MS)
     }
 
     // --- Logic: Map Moves ---

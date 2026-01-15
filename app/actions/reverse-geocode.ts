@@ -16,6 +16,7 @@
 // Using Map's insertion order property (keys iterated in insertion order)
 const CACHE = new Map<string, string>()
 const MAX_CACHE_SIZE = 1000
+const COORD_PRECISION = 5
 
 // Generic terms to filter out from address parts
 const BLOCKED_TERMS = new Set(["yes", "no", "true", "false", "building", "structure"])
@@ -33,10 +34,10 @@ interface ReverseGeocodeResult {
  * @returns Object containing the formatted label
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<ReverseGeocodeResult> {
-    // 1. Canonical inputs (Snap to 4 decimal places ~11m precision)
-    // This maximizes cache hits for users dropping pins near each other.
-    const latFixed = lat.toFixed(4)
-    const lngFixed = lng.toFixed(4)
+    // 1. Canonical inputs (Snap to 5 decimal places ~1.1m precision)
+    // This improves address accuracy while keeping cache reuse reasonable.
+    const latFixed = lat.toFixed(COORD_PRECISION)
+    const lngFixed = lng.toFixed(COORD_PRECISION)
     const key = `${latFixed},${lngFixed}`
 
     // Default fallback (deterministic)
@@ -56,7 +57,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
         const timeoutId = setTimeout(() => controller.abort(), 2000) // 2s strict timeout
 
         // Reuse snapped coords for URL to align with cache key logic
-        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latFixed}&lon=${lngFixed}`
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latFixed}&lon=${lngFixed}&zoom=18&addressdetails=1`
 
         const res = await fetch(url, {
             headers: {
