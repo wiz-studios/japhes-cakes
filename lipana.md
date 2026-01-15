@@ -25,6 +25,7 @@ graph TD
 
 - **Purpose**: Prevents "magic strings" and accidental production usage.
 - **Logic**: Exports `PAYMENT_CONFIG` which automatically selects keys and URLs based on `process.env.PAYMENTS_ENV`.
+- **Base URL**: Optionally set `LIPANA_BASE_URL` (no trailing `/v1` needed); the SDK will use the default base if unset.
 
 ### 2. Secure Backend Initiation
 **File:** `lib/mpesa.ts`

@@ -45,15 +45,22 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     // 3. Initialize Lipana SDK Client
     const environment = (PAYMENT_CONFIG.env === "production" ? "production" : "sandbox") as "sandbox" | "production"
 
+    const baseUrl = PAYMENT_CONFIG.lipana.baseUrl
+    const normalizedBaseUrl = baseUrl
+        ? (baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl.replace(/\/+$/, "")}/v1`)
+        : undefined
+
     const lipana = new Lipana({
         apiKey: PAYMENT_CONFIG.lipana.secretKey!,
-        environment: environment
+        environment: environment,
+        ...(normalizedBaseUrl ? { baseUrl: normalizedBaseUrl } : {})
     })
 
     console.log(`[STK-INIT] Initiating STK via SDK (${PAYMENT_CONFIG.env}):`, {
         phone,
         amount: order.total_amount,
-        orderId: orderId.slice(0, 8)
+        orderId: orderId.slice(0, 8),
+        baseUrl: normalizedBaseUrl || "SDK default"
     })
 
     try {

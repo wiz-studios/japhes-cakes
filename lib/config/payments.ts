@@ -6,7 +6,7 @@ export const PAYMENT_CONFIG = {
     },
 
     lipana: {
-        baseUrl: process.env.LIPANA_BASE_URL || "https://sandbox.lipana.dev",
+        baseUrl: process.env.LIPANA_BASE_URL,
         secretKey: process.env.LIPANA_SECRET_KEY,
         webhookSecret: process.env.LIPANA_WEBHOOK_SECRET,
     },
