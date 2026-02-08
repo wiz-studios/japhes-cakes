@@ -13,7 +13,8 @@ export type Order = {
     delivery_zone_id?: string
 }
 
-export function formatFriendlyId(order: { id: string, created_at: string, order_type: string }) {
+export function formatFriendlyId(order: { id: string, created_at: string | Date, order_type: string, friendly_id?: string | null }) {
+    if (order.friendly_id) return order.friendly_id
     if (!order.created_at || !order.id) return "PENDING"
 
     try {

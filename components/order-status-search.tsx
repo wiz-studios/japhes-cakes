@@ -17,9 +17,15 @@ export function OrderStatusSearch({
   const router = useRouter()
 
   const handleSearch = () => {
-    if (id && phone) {
-      router.push(`/status?id=${id}&phone=${phone}`)
-    }
+    const trimmedId = id.trim()
+    const trimmedPhone = phone.trim()
+
+    if (!trimmedId && !trimmedPhone) return
+
+    const query = new URLSearchParams()
+    if (trimmedId) query.set("id", trimmedId)
+    if (trimmedPhone) query.set("phone", trimmedPhone)
+    router.push(`/status?${query.toString()}`)
   }
 
   return (
@@ -32,8 +38,13 @@ export function OrderStatusSearch({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="order-id">Order ID</Label>
-        <Input id="order-id" placeholder="Paste your UUID here" value={id} onChange={(e) => setId(e.target.value)} />
+        <Label htmlFor="order-id">Order Number</Label>
+        <Input
+          id="order-id"
+          placeholder="e.g. C9CZA42"
+          value={id}
+          onChange={(e) => setId(e.target.value)}
+        />
       </div>
 
       <div className="space-y-2">
@@ -41,7 +52,7 @@ export function OrderStatusSearch({
         <Input id="phone" placeholder="07XX XXX XXX" value={phone} onChange={(e) => setPhone(e.target.value)} />
       </div>
 
-      <Button className="w-full h-12 rounded-xl mt-2" onClick={handleSearch}>
+      <Button className="w-full h-12 rounded-xl mt-2" onClick={handleSearch} disabled={!id.trim() && !phone.trim()}>
         <Search className="mr-2" size={18} /> Find My Order
       </Button>
     </div>

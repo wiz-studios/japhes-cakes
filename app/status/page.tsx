@@ -17,31 +17,50 @@ export default async function OrderStatusPage({
   let order = null
   let error = null
 
-  if (id && phone) {
-    // Attempt 1: Try Direct UUID Match (legacy/backup)
-    const { data: directData, error: directError } = await supabase
-      .from("orders")
-      .select("*, order_items(*), delivery_zones(name)")
-      .eq("id", id)
-      .eq("phone", phone)
-      .single()
+  const trimmedId = id?.trim()
+  const trimmedPhone = phone?.trim()
 
-    if (!directError && directData) {
-      order = directData
-    } else {
-      // Attempt 2: Friendly ID Lookup via Phone
-      // If direct match failed, it might be a Friendly ID.
-      // We'll fetch the last 5 orders for this phone and check if any generate this Friendly ID.
+  if (trimmedId || trimmedPhone) {
+    if (trimmedId) {
+      let query = supabase
+        .from("orders")
+        .select("*, order_items(*), delivery_zones(name)")
+        .or(`id.eq.${trimmedId},friendly_id.eq.${trimmedId}`)
+
+      if (trimmedPhone) {
+        query = query.eq("phone", trimmedPhone)
+      }
+
+      const { data: directData } = await query.maybeSingle()
+
+      if (directData) {
+        order = directData
+      }
+    }
+
+    if (!order && trimmedPhone && !trimmedId) {
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
         .select("*, order_items(*), delivery_zones(name)")
-        .eq("phone", phone)
+        .eq("phone", trimmedPhone)
+        .order("created_at", { ascending: false })
+        .limit(1)
+
+      if (!phoneError && phoneOrders && phoneOrders.length > 0) {
+        order = phoneOrders[0]
+      }
+    }
+
+    if (!order && trimmedPhone && trimmedId) {
+      const { data: phoneOrders, error: phoneError } = await supabase
+        .from("orders")
+        .select("*, order_items(*), delivery_zones(name)")
+        .eq("phone", trimmedPhone)
         .order("created_at", { ascending: false })
         .limit(5)
 
       if (!phoneError && phoneOrders) {
-        // Find the matching order by generating Friendly ID for each candidate
-        const matchedOrder = phoneOrders.find(o => formatFriendlyId(o) === id)
+        const matchedOrder = phoneOrders.find(o => formatFriendlyId(o) === trimmedId)
         if (matchedOrder) {
           order = matchedOrder
         }
@@ -49,7 +68,11 @@ export default async function OrderStatusPage({
     }
 
     if (!order) {
-      error = "Order not found. Please check your ID and phone number."
+      error = trimmedId && trimmedPhone
+        ? "Order not found. Please check your order number and phone number."
+        : trimmedId
+          ? "Order not found. Please check your order number."
+          : "Order not found. Please check your phone number."
     }
   }
 

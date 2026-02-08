@@ -1,7 +1,7 @@
 "use server"
 
 import { createServerSupabaseClient } from "@/lib/supabase-server"
-import { addHours, isAfter, setHours, setMinutes, format } from "date-fns"
+import { addHours, isAfter, setHours, setMinutes } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
 import type { PaymentMethod } from "@/lib/types/payment"
@@ -13,6 +13,12 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   out_for_delivery: ["delivered", "cancelled"],
   delivered: [], // Terminal state
   cancelled: [], // Terminal state
+}
+
+function generateOrderNumber(prefix: "C" | "P") {
+  const timePart = Date.now().toString(36).slice(-4).toUpperCase()
+  const randomPart = Math.random().toString(36).slice(2, 4).toUpperCase()
+  return `${prefix}${timePart}${randomPart}`
 }
 
 export async function updateOrderStatus(orderId: string, newStatus: string) {
@@ -167,41 +173,53 @@ export async function submitCakeOrder(values: any) {
     const basePrice = CAKE_PRICES[values.cakeSize.toLowerCase()] || CAKE_PRICES["1kg"]
     const flavorSurcharge = FLAVOR_SURCHARGES[values.cakeFlavor] || 0
     const itemTotal = basePrice + flavorSurcharge
-    const total = itemTotal + deliveryFee
+  const total = itemTotal + deliveryFee
 
-    // 2. Insert order
-    const friendlyId = `C${format(new Date(), "yyyyMMdd-HHmm")}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+    // 2. Insert order (retry on friendly_id collision)
+    let order = null
+    let orderError = null
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const friendlyId = generateOrderNumber("C")
+      const { data, error } = await supabase
+        .from("orders")
+        .insert({
+          friendly_id: friendlyId,
+          order_type: "cake",
+          fulfilment: values.fulfilment,
+          customer_name: values.customerName,
+          phone: values.phone,
+          delivery_zone_id: values.deliveryZoneId || null,
+          delivery_window: deliveryWindow,
+          delivery_fee: deliveryFee,
+          delivery_lat: values.deliveryLat || null,
+          delivery_lng: values.deliveryLng || null,
+          delivery_address: values.deliveryAddress || null,
+          delivery_distance_km: values.deliveryLat ? validateDeliveryRequest(values.deliveryLat, values.deliveryLng).distance : null,
+          total_amount: total,
+          preferred_date: values.preferredDate,
+          expires_at: addHours(new Date(), 2).toISOString(),
+          status: "order_received",
+          payment_method: values.paymentMethod || "cash",
+          payment_status: getInitialPaymentStatus(
+            values.paymentMethod || "cash",
+            values.fulfilment
+          ),
+          mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
+        })
+        .select()
+        .single()
 
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        friendly_id: friendlyId,
-        order_type: "cake",
-        fulfilment: values.fulfilment,
-        customer_name: values.customerName,
-        phone: values.phone,
-        delivery_zone_id: values.deliveryZoneId || null,
-        delivery_window: deliveryWindow,
-        delivery_fee: deliveryFee,
-        delivery_lat: values.deliveryLat || null,
-        delivery_lng: values.deliveryLng || null,
-        delivery_address: values.deliveryAddress || null,
-        delivery_distance_km: values.deliveryLat ? validateDeliveryRequest(values.deliveryLat, values.deliveryLng).distance : null,
-        total_amount: total,
-        preferred_date: values.preferredDate,
-        expires_at: addHours(new Date(), 2).toISOString(),
-        status: "order_received",
-        payment_method: values.paymentMethod || "cash",
-        payment_status: getInitialPaymentStatus(
-          values.paymentMethod || "cash",
-          values.fulfilment
-        ),
-        mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
-      })
-      .select()
-      .single()
+      if (!error) {
+        order = data
+        orderError = null
+        break
+      }
 
-    if (orderError) throw orderError
+      orderError = error
+      if (error.code !== "23505") break
+    }
+
+    if (orderError || !order) throw orderError || new Error("Failed to create order")
 
     // 3. Insert order item
     const { error: itemError } = await supabase.from("order_items").insert({
@@ -296,33 +314,45 @@ export async function submitPizzaOrder(values: any) {
     const itemTotal = (basePrice + typeSurcharge) * (values.quantity || 1)
     const total = itemTotal + deliveryFee
 
-    const friendlyId = `P${format(new Date(), "yyyyMMdd-HHmm")}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+    let order = null
+    let orderError = null
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const friendlyId = generateOrderNumber("P")
+      const { data, error } = await supabase
+        .from("orders")
+        .insert({
+          friendly_id: friendlyId,
+          order_type: "pizza",
+          fulfilment: values.fulfilment,
+          customer_name: values.customerName,
+          phone: values.phone,
+          delivery_zone_id: values.deliveryZoneId || null,
+          delivery_window: deliveryWindow,
+          delivery_fee: deliveryFee,
+          total_amount: total,
+          preferred_date: preferredDate, // use calculated date
+          status: "order_received",
+          payment_method: values.paymentMethod || "cash",
+          payment_status: getInitialPaymentStatus(
+            values.paymentMethod || "cash",
+            values.fulfilment
+          ),
+          mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
+        })
+        .select()
+        .single()
 
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        friendly_id: friendlyId,
-        order_type: "pizza",
-        fulfilment: values.fulfilment,
-        customer_name: values.customerName,
-        phone: values.phone,
-        delivery_zone_id: values.deliveryZoneId || null,
-        delivery_window: deliveryWindow,
-        delivery_fee: deliveryFee,
-        total_amount: total,
-        preferred_date: preferredDate, // use calculated date
-        status: "order_received",
-        payment_method: values.paymentMethod || "cash",
-        payment_status: getInitialPaymentStatus(
-          values.paymentMethod || "cash",
-          values.fulfilment
-        ),
-        mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
-      })
-      .select()
-      .single()
+      if (!error) {
+        order = data
+        orderError = null
+        break
+      }
 
-    if (orderError) throw orderError
+      orderError = error
+      if (error.code !== "23505") break
+    }
+
+    if (orderError || !order) throw orderError || new Error("Failed to create order")
 
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
