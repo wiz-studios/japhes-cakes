@@ -1,165 +1,183 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { ArrowUpRight, MapPin, Sparkles, Timer } from "lucide-react"
+import { Fraunces, Space_Grotesk } from "next/font/google"
 import { clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-// Utility for cleaner class merging
+const display = Fraunces({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap" })
+const body = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
+
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs))
 }
 
+const featureItems = [
+  {
+    title: "Same-Day Pickup",
+    description: "Fresh bakes ready in 45–90 minutes.",
+    icon: Timer,
+  },
+  {
+    title: "Nairobi Scheduled",
+    description: "Plan ahead with timed delivery windows.",
+    icon: MapPin,
+  },
+  {
+    title: "M-Pesa Friendly",
+    description: "Pay on pickup or securely via M-Pesa.",
+    icon: Sparkles,
+  },
+]
+
 export default function HomeHero() {
-  const [hoveredSide, setHoveredSide] = useState<"cake" | "pizza" | null>(null)
-  const [isDesktop, setIsDesktop] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    // Check initial size and listen for resize
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024)
-    checkDesktop()
-
-    window.addEventListener('resize', checkDesktop)
-    return () => window.removeEventListener('resize', checkDesktop)
-  }, [])
-
-  const handleHover = (side: "cake" | "pizza" | null) => {
-    if (isDesktop) setHoveredSide(side)
-  }
-
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black flex flex-col lg:flex-row">
-      {/* 
-        LEFT SIDE: CAKES 
-        - Desktop: Expands to 70% on hover
-        - Mobile: Takes top 50% height (or auto stack)
-      */}
-      <motion.div
-        className="relative flex-1 h-1/2 lg:h-full lg:flex-none overflow-hidden cursor-pointer group"
-        initial={{ width: "100%", opacity: 0, x: -50 }}
-        animate={{
-          width: isDesktop
-            ? (hoveredSide === "cake" ? "70%" : hoveredSide === "pizza" ? "30%" : "50%")
-            : "100%",
-          opacity: 1,
-          x: 0,
-        }}
-        transition={{ type: "spring", stiffness: 200, damping: 25 }}
-        onMouseEnter={() => handleHover("cake")}
-        onMouseLeave={() => handleHover(null)}
-        onClick={() => router.push("/order/cake")}
-        role="button"
-        aria-label="Order Cakes"
-        tabIndex={0}
-      >
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/premium-cake.jpg"
-            alt="Decadent multi-tier wedding cake with warm golden lighting"
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            priority
-            quality={90}
-          />
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-black/60 lg:via-transparent lg:to-transparent" />
-        </div>
-
-        <div className="relative z-10 flex flex-col justify-end lg:justify-center h-full p-8 lg:p-16">
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="font-serif text-4xl lg:text-7xl font-bold text-amber-50 drop-shadow-lg leading-tight mb-2">
-              The Bakery
-            </h2>
-            <p className="text-amber-100/90 text-lg lg:text-xl font-medium max-w-md font-serif italic">
-              Indulge in handcrafted elegance. Crafted for your sweetest moments.
-            </p>
-            <motion.div
-              className="mt-6 inline-flex items-center gap-2 text-amber-200 uppercase tracking-widest text-sm font-bold border-b border-amber-200/50 pb-1"
-              animate={{ x: hoveredSide === "cake" ? 10 : 0, opacity: hoveredSide === "cake" ? 1 : 0.8 }}
-            >
-              Order Cakes <span aria-hidden="true">&rarr;</span>
-            </motion.div>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* CENTER DIVIDER (Desktop Only) */}
-      <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
-        <motion.div
-          animate={{
-            scale: hoveredSide ? 0.8 : 1,
-            opacity: hoveredSide ? 0.5 : 1,
-          }}
-          className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full w-16 h-16 flex items-center justify-center shadow-xl"
-        >
-          <span className="font-serif italic text-white font-bold text-lg">VS</span>
-        </motion.div>
+    <div className={cn("relative min-h-screen overflow-hidden bg-[#f6efe7] text-slate-950", body.className)}>
+      <div className="absolute inset-0">
+        <div className="absolute -left-24 top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-[#f7b6b2] blur-[140px] opacity-60" />
+        <div className="absolute right-[-10rem] top-[12rem] h-[30rem] w-[30rem] rounded-full bg-[#ffdd99] blur-[160px] opacity-60" />
+        <div className="absolute bottom-[-14rem] left-[20%] h-[28rem] w-[28rem] rounded-full bg-[#c9e4ff] blur-[180px] opacity-50" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.9),transparent_50%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.7),transparent_45%)]" />
       </div>
 
-      {/* 
-        RIGHT SIDE: PIZZA 
-        - Desktop: Expands to 70% on hover
-        - Mobile: Takes bottom 50% height
-      */}
-      <motion.div
-        className="relative flex-1 h-1/2 lg:h-full lg:flex-none overflow-hidden cursor-pointer group"
-        initial={{ width: "100%", opacity: 0, x: 50 }}
-        animate={{
-          width: isDesktop
-            ? (hoveredSide === "pizza" ? "70%" : hoveredSide === "cake" ? "30%" : "50%")
-            : "100%",
-          opacity: 1,
-          x: 0,
-        }}
-        transition={{ type: "spring", stiffness: 200, damping: 25 }}
-        onMouseEnter={() => handleHover("pizza")}
-        onMouseLeave={() => handleHover(null)}
-        onClick={() => router.push("/order/pizza")}
-        role="button"
-        aria-label="Order Pizza"
-        tabIndex={0}
-      >
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/premium-pizza.jpg"
-            alt="Artisan pizza with melting cheese and steam rising"
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            priority
-            quality={90}
-          />
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent lg:bg-gradient-to-l lg:from-black/60 lg:via-transparent lg:to-transparent" />
-        </div>
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-16 lg:pt-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
+        >
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-700">
+              Thika • Nairobi • Delivery
+            </div>
 
-        <div className="relative z-10 flex flex-col justify-end lg:justify-center h-full p-8 lg:p-16 lg:items-end lg:text-right">
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h2 className="font-sans text-4xl lg:text-7xl font-extrabold text-white drop-shadow-lg leading-tight mb-2 tracking-tight">
-              The Pizzeria
-            </h2>
-            <p className="text-gray-200 text-lg lg:text-xl font-medium max-w-md ml-auto">
-              Fire-baked perfection. Hot, spicy, and irresistibly cheesy.
+            <h1 className={cn("text-4xl font-semibold leading-tight text-slate-950 md:text-6xl", display.className)}>
+              Japhes Cakes & Pizza, crafted for the days you want to remember.
+            </h1>
+
+            <p className="max-w-xl text-lg text-slate-700">
+              Celebrate with indulgent cakes or settle in with stone-fired pizzas. Every order is
+              baked, finished, and delivered by a real kitchen that cares.
             </p>
-            <motion.div
-              className="mt-6 inline-flex items-center gap-2 text-rose-400 uppercase tracking-widest text-sm font-bold border-b border-rose-400/50 pb-1"
-              animate={{ x: hoveredSide === "pizza" ? -10 : 0, opacity: hoveredSide === "pizza" ? 1 : 0.8 }}
-            >
-              <span aria-hidden="true">&larr;</span> Order Pizza
-            </motion.div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => router.push("/order/cake")}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-900"
+              >
+                Order Cakes <ArrowUpRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => router.push("/order/pizza")}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400"
+              >
+                Order Pizza <ArrowUpRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => router.push("/status")}
+                className="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-3 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
+              >
+                Track Order
+              </button>
+            </div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="grid gap-4 sm:grid-cols-2"
+          >
+            <div className="relative overflow-hidden rounded-3xl border border-white/80 bg-white/90 shadow-xl shadow-slate-900/10">
+              <div className="absolute inset-0">
+                <Image
+                  src="/images/premium-cake.jpg"
+                  alt="Signature cake in warm light"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              </div>
+              <div className="relative flex h-56 flex-col justify-end p-6 text-white">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Signature Cakes</p>
+                <p className={cn("text-2xl font-semibold", display.className)}>Velvet & Citrus</p>
+                <p className="text-sm text-white/80">Hand-finished, ready for celebrations.</p>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-3xl border border-white/80 bg-white/90 shadow-xl shadow-slate-900/10">
+              <div className="absolute inset-0">
+                <Image
+                  src="/images/premium-pizza.jpg"
+                  alt="Stone-fired pizza with melty cheese"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              </div>
+              <div className="relative flex h-56 flex-col justify-end p-6 text-white">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Stone-Fired</p>
+                <p className={cn("text-2xl font-semibold", display.className)}>Fire & Cheese</p>
+                <p className="text-sm text-white/80">Hot, bold flavors with crispy edges.</p>
+              </div>
+            </div>
           </motion.div>
-        </div>
-      </motion.div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="grid gap-4 md:grid-cols-3"
+        >
+          {featureItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <div
+                key={item.title}
+                className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg shadow-slate-900/5"
+              >
+                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-white">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className={cn("text-lg font-semibold text-slate-900", display.className)}>{item.title}</h3>
+                <p className="mt-2 text-sm text-slate-600">{item.description}</p>
+              </div>
+            )
+          })}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="flex flex-col gap-6 rounded-[32px] border border-black/10 bg-slate-950 px-8 py-10 text-white shadow-2xl shadow-slate-900/30 md:flex-row md:items-center md:justify-between"
+        >
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.35em] text-white/60">Orders Open Daily</p>
+            <h2 className={cn("text-2xl font-semibold md:text-3xl", display.className)}>
+              Ready for an order you’ll actually remember?
+            </h2>
+            <p className="text-sm text-white/70">
+              Custom cakes for celebrations, pizzas for the people you love. Tap once and we’ll take it from there.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/order/cake")}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5"
+          >
+            Start an Order <ArrowUpRight className="h-4 w-4" />
+          </button>
+        </motion.div>
+      </div>
     </div>
   )
 }
