@@ -17,12 +17,24 @@ export function formatFriendlyId(order: { id: string, created_at: string, order_
     if (!order.created_at || !order.id) return "PENDING"
 
     try {
-        const date = parseISO(order.created_at)
+        const date = typeof order.created_at === "string" ? parseISO(order.created_at) : new Date(order.created_at)
         if (!isValid(date)) return order.id.slice(0, 8).toUpperCase()
 
+        const parts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Africa/Nairobi",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        }).formatToParts(date)
+
+        const getPart = (type: string) => parts.find((part) => part.type === type)?.value || "00"
+
         const prefix = order.order_type === "cake" ? "C" : "P"
-        const datePart = format(date, "yyyyMMdd")
-        const timePart = format(date, "HHmm")
+        const datePart = `${getPart("year")}${getPart("month")}${getPart("day")}`
+        const timePart = `${getPart("hour")}${getPart("minute")}`
         const uuidPart = order.id.slice(-4).toUpperCase()
 
         return `${prefix}${datePart}-${timePart}-${uuidPart}`
