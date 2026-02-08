@@ -19,13 +19,20 @@ export default async function OrderStatusPage({
 
   const trimmedId = id?.trim()
   const trimmedPhone = phone?.trim()
+  const normalizedId = trimmedId ? trimmedId.toUpperCase() : undefined
+  const isUuid = !!trimmedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmedId)
 
   if (trimmedId || trimmedPhone) {
     if (trimmedId) {
       let query = supabase
         .from("orders")
         .select("*, order_items(*), delivery_zones(name)")
-        .or(`id.eq.${trimmedId},friendly_id.eq.${trimmedId}`)
+
+      if (isUuid) {
+        query = query.or(`id.eq.${trimmedId},friendly_id.eq.${normalizedId}`)
+      } else {
+        query = query.eq("friendly_id", normalizedId)
+      }
 
       if (trimmedPhone) {
         query = query.eq("phone", trimmedPhone)
@@ -60,7 +67,7 @@ export default async function OrderStatusPage({
         .limit(5)
 
       if (!phoneError && phoneOrders) {
-        const matchedOrder = phoneOrders.find(o => formatFriendlyId(o) === trimmedId)
+        const matchedOrder = phoneOrders.find(o => formatFriendlyId(o) === normalizedId)
         if (matchedOrder) {
           order = matchedOrder
         }
