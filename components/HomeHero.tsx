@@ -92,41 +92,63 @@ export default function HomeHero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="grid gap-4 sm:grid-cols-2"
+            className="grid gap-6"
           >
-            <div className="relative overflow-hidden rounded-3xl border border-white/80 bg-white/90 shadow-xl shadow-slate-900/10">
-              <div className="absolute inset-0">
-                <Image
-                  src="/images/premium-cake.jpg"
-                  alt="Signature cake in warm light"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-              </div>
-              <div className="relative flex h-56 flex-col justify-end p-6 text-white">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Signature Cakes</p>
-                <p className={cn("text-2xl font-semibold", display.className)}>Velvet & Citrus</p>
-                <p className="text-sm text-white/80">Hand-finished, ready for celebrations.</p>
+            <div className="relative overflow-hidden rounded-[34px] border border-white/80 bg-white/90 p-[2px] shadow-[0_32px_80px_-40px_rgba(15,23,42,0.5)]">
+              <div className="relative overflow-hidden rounded-[30px]">
+                <div className="absolute inset-0">
+                  <Image
+                    src="/images/premium-cake.jpg"
+                    alt="Signature cake in warm light"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent" />
+                </div>
+                <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-7 text-white md:min-h-[18rem]">
+                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/70">
+                    Signature Cakes
+                    <span className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80">
+                      Order Now
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    <p className={cn("text-3xl font-semibold", display.className)}>Velvet & Citrus</p>
+                    <p className="text-sm text-white/80">
+                      Hand-finished layers with custom details, made for celebrations and gifting.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl border border-white/80 bg-white/90 shadow-xl shadow-slate-900/10">
-              <div className="absolute inset-0">
-                <Image
-                  src="/images/premium-pizza.jpg"
-                  alt="Stone-fired pizza with melty cheese"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-              </div>
-              <div className="relative flex h-56 flex-col justify-end p-6 text-white">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/70">Stone-Fired</p>
-                <p className={cn("text-2xl font-semibold", display.className)}>Fire & Cheese</p>
-                <p className="text-sm text-white/80">Hot, bold flavors with crispy edges.</p>
+            <div className="relative overflow-hidden rounded-[34px] border border-white/80 bg-white/90 p-[2px] shadow-[0_32px_80px_-40px_rgba(15,23,42,0.5)]">
+              <div className="relative overflow-hidden rounded-[30px]">
+                <div className="absolute inset-0">
+                  <Image
+                    src="/images/premium-pizza.jpg"
+                    alt="Stone-fired pizza with melty cheese"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent" />
+                </div>
+                <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-7 text-white md:min-h-[18rem]">
+                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/70">
+                    Stone-Fired Pizza
+                    <span className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80">
+                      Order Hot
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    <p className={cn("text-3xl font-semibold", display.className)}>Fire & Cheese</p>
+                    <p className="text-sm text-white/80">
+                      Crisp edges, molten cheese, and bold toppings baked to order every time.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
