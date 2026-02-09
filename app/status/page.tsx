@@ -102,7 +102,7 @@ export default async function OrderStatusPage({
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
-      <div className="space-y-10 w-full max-w-screen-2xl mx-auto px-6 md:px-10 xl:px-12 2xl:px-16 py-12">
+      <div className="space-y-10 w-full max-w-6xl xl:max-w-7xl mx-auto px-6 md:px-10 py-12">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Tracking</p>
           <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Customer Status Console</h2>
@@ -116,14 +116,14 @@ export default async function OrderStatusPage({
         {order && (
           <div className="space-y-6">
             <div className={`${cardClass} p-6 md:p-7`}>
-              <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="min-w-0">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div>
                   <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Number</p>
                   <p className="text-2xl md:text-3xl font-mono font-semibold text-slate-900 mt-2 break-words">
                     {formatFriendlyId(order)}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">Status</p>
                     <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusTone}`}>
@@ -139,36 +139,42 @@ export default async function OrderStatusPage({
                   </div>
                 </div>
               </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Fulfilment</p>
+                  <p className="mt-2 text-base font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">{locationLabel}</p>
+                  <p className="mt-2 text-base font-semibold text-slate-900">{locationValue}</p>
+                  {order.delivery_window && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {isDelivery ? "Window: " : "Time: "}
+                      {order.delivery_window}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Total</p>
+                  <p className="mt-2 text-base font-semibold text-slate-900">
+                    {(order.total_amount || 0).toLocaleString()} KES
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+              <div className="space-y-6">
                 <div className={`${cardClass} p-6`}>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Overview</h3>
-                    <span className="text-xs text-slate-400">{new Date(order.created_at).toLocaleString()}</span>
+                    <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Order Timeline</h3>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Clock className="h-4 w-4" /> Updated live
+                    </div>
                   </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Fulfilment</p>
-                      <p className="mt-2 text-base font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">{locationLabel}</p>
-                      <p className="mt-2 text-base font-semibold text-slate-900">{locationValue}</p>
-                      {order.delivery_window && (
-                        <p className="text-xs text-slate-500 mt-1">
-                          {isDelivery ? "Window: " : "Time: "}
-                          {order.delivery_window}
-                        </p>
-                      )}
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Total</p>
-                      <p className="mt-2 text-base font-semibold text-slate-900">
-                        {(order.total_amount || 0).toLocaleString()} KES
-                      </p>
-                    </div>
+                  <div className="mt-4">
+                    <OrderStatusTimeline status={order.status} orderType={order.order_type} fulfilment={order.fulfilment} />
                   </div>
                 </div>
 
@@ -190,19 +196,18 @@ export default async function OrderStatusPage({
                 </div>
               </div>
 
-              <div className="col-span-12 lg:col-span-4 space-y-6">
+              <div className="space-y-6">
                 <div className={`${cardClass} p-6`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Progress</p>
-                      <h3 className="text-lg font-semibold text-slate-900">Order Timeline</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-3">Order Meta</h3>
+                  <div className="space-y-3 text-sm text-slate-600">
+                    <div className="flex items-center justify-between">
+                      <span>Placed</span>
+                      <span className="font-semibold text-slate-900">{new Date(order.created_at).toLocaleString()}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Clock className="h-4 w-4" /> Updated live
+                    <div className="flex items-center justify-between">
+                      <span>Items</span>
+                      <span className="font-semibold text-slate-900">{order.order_items?.length || 0}</span>
                     </div>
-                  </div>
-                  <div className="mt-4">
-                    <OrderStatusTimeline status={order.status} orderType={order.order_type} fulfilment={order.fulfilment} />
                   </div>
                 </div>
 

@@ -40,13 +40,13 @@ export default function OrderStatusTimeline({ status, orderType, fulfilment }: O
 
     return (
         <div className="w-full">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-6">
                 {STEPS.map((step, idx) => {
                     const isCompleted = idx < activeIdx
                     const isActive = idx === activeIdx
                     const Icon = step.icon
                     return (
-                        <div key={step.key} className="flex flex-col items-center text-center gap-2 min-w-0">
+                        <div key={step.key} className="flex flex-col items-center text-center gap-2 min-w-[90px]">
                             <div
                                 className={cn(
                                     "h-10 w-10 rounded-full border-2 flex items-center justify-center",
@@ -57,7 +57,7 @@ export default function OrderStatusTimeline({ status, orderType, fulfilment }: O
                             >
                                 <Icon className="h-4 w-4" />
                             </div>
-                            <span className={cn("text-[11px] font-semibold uppercase tracking-[0.2em] leading-tight", isActive ? "text-slate-900" : "text-slate-400")}>
+                            <span className={cn("text-xs font-semibold uppercase tracking-[0.12em] leading-tight", isActive ? "text-slate-900" : "text-slate-400")}>
                                 {step.label}
                             </span>
                         </div>
