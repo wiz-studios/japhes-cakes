@@ -6,9 +6,9 @@ import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rule
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  order_received: ["in_kitchen", "cancelled"],
+  order_received: ["ready_for_pickup", "cancelled"],
+  ready_for_pickup: ["delivered", "collected", "cancelled"],
   in_kitchen: ["ready_for_pickup", "out_for_delivery", "cancelled"],
-  ready_for_pickup: ["out_for_delivery", "delivered", "collected", "cancelled"],
   out_for_delivery: ["delivered", "cancelled"],
   delivered: [], // Terminal state
   cancelled: [], // Terminal state

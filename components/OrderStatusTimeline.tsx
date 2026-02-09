@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, Circle, ChefHat, Bike, PackageCheck } from "lucide-react"
+import { Check, Circle, PackageCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type OrderStatusTimelineProps = {
@@ -12,15 +12,12 @@ type OrderStatusTimelineProps = {
 
 const DELIVERY_STEPS = [
     { key: "order_received", label: "Confirmed", icon: Check },
-    { key: "in_kitchen", label: "Preparing", icon: ChefHat },
     { key: "ready_for_pickup", label: "Ready", icon: PackageCheck },
-    { key: "out_for_delivery", label: "On the way", icon: Bike },
     { key: "delivered", label: "Delivered", icon: Circle },
 ]
 
 const PICKUP_STEPS = [
     { key: "order_received", label: "Confirmed", icon: Check },
-    { key: "in_kitchen", label: "Preparing", icon: ChefHat },
     { key: "ready_for_pickup", label: "Ready", icon: PackageCheck },
     { key: "collected", label: "Collected", icon: Circle },
 ]

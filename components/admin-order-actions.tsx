@@ -66,9 +66,13 @@ export function AdminOrderActions({
     setLoading(false)
   }
 
-  const pickupStates = ["order_received", "in_kitchen", "ready_for_pickup", "delivered"]
-  const deliveryStates = ["order_received", "in_kitchen", "out_for_delivery", "delivered"]
-  const availableStates = fulfilment === "pickup" ? pickupStates : deliveryStates
+  const pickupStates = ["order_received", "ready_for_pickup", "collected"]
+  const deliveryStates = ["order_received", "ready_for_pickup", "delivered"]
+  const baseStates = fulfilment === "pickup" ? pickupStates : deliveryStates
+  const availableStates =
+    currentStatus && !baseStates.includes(currentStatus) && currentStatus !== "cancelled"
+      ? [currentStatus, ...baseStates]
+      : baseStates
 
   return (
     <div className="space-y-6">

@@ -4,11 +4,12 @@ import { CheckCircle2, Clock, Truck, PackageCheck, UtensilsCrossed } from "lucid
 import { format } from "date-fns"
 
 const statusConfig: Record<string, { label: string; icon: any; progress: number; color: string }> = {
-  order_received: { label: "Order Received", icon: Clock, progress: 20, color: "text-blue-500" },
+  order_received: { label: "Order Received", icon: Clock, progress: 30, color: "text-blue-500" },
   in_kitchen: { label: "In Kitchen", icon: UtensilsCrossed, progress: 50, color: "text-orange-500" },
-  ready_for_pickup: { label: "Ready for Pickup", icon: PackageCheck, progress: 90, color: "text-green-500" },
-  out_for_delivery: { label: "Out for Delivery", icon: Truck, progress: 80, color: "text-purple-500" },
+  ready_for_pickup: { label: "Ready for Pickup", icon: PackageCheck, progress: 75, color: "text-green-500" },
+  out_for_delivery: { label: "Out for Delivery", icon: Truck, progress: 85, color: "text-purple-500" },
   delivered: { label: "Delivered", icon: CheckCircle2, progress: 100, color: "text-green-600" },
+  collected: { label: "Collected", icon: CheckCircle2, progress: 100, color: "text-green-600" },
   cancelled: { label: "Cancelled", icon: Clock, progress: 0, color: "text-red-500" },
 }
 
