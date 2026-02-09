@@ -318,7 +318,7 @@ function OrderReviewContent() {
       </motion.div>
 
       {/* Main Section */}
-      <main className="flex-1 flex flex-col items-center justify-center px-2">
+      <main className="flex-1 flex flex-col items-center justify-center px-2 pb-16 md:pb-24">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
