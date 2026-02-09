@@ -131,55 +131,47 @@ export default async function OrderStatusPage({
                 </span>
               </div>
 
-              <div className="mt-7 grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Fulfilment</p>
-                    <p className="mt-2 text-lg font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">
-                      {isDelivery ? "Estimated Delivery" : "Estimated Pickup"}
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-rose-600">{getDeliveryEstimate(order)}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4 sm:col-span-2">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">{locationLabel}</p>
-                    <p className="mt-2 text-lg font-semibold text-slate-900">{locationValue}</p>
-                    {order.delivery_window && (
-                      <p className="text-xs text-slate-500 mt-1">
-                        {isDelivery ? "Window: " : "Time: "}
-                        {order.delivery_window}
-                      </p>
-                    )}
-                  </div>
+              <div className="mt-7 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Fulfilment</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
                 </div>
+                <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">
+                    {isDelivery ? "Estimated Delivery" : "Estimated Pickup"}
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-rose-600 leading-snug">{getDeliveryEstimate(order)}</p>
+                </div>
+                <div className="rounded-2xl border border-white/70 bg-white/70 p-4 md:col-span-2">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">{locationLabel}</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-900">{locationValue}</p>
+                  {order.delivery_window && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {isDelivery ? "Window: " : "Time: "}
+                      {order.delivery_window}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                <div className="rounded-2xl border border-white/70 bg-white/70 p-5 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
-                      <Package className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Order Snapshot</p>
-                      <p className="text-base font-semibold text-slate-900">
-                        {order.order_type === "cake" ? "Cake Order" : "Pizza Order"}
-                      </p>
-                    </div>
+              <div className="mt-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Order Snapshot</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Placed</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">
+                      {new Date(order.created_at).toLocaleString()}
+                    </p>
                   </div>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>Placed</span>
-                      <span className="font-semibold text-slate-900">{new Date(order.created_at).toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>Total</span>
-                      <span className="font-semibold text-slate-900">{(order.total_amount || 0).toLocaleString()} KES</span>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>Items</span>
-                      <span className="font-semibold text-slate-900">{order.order_items?.length || 0}</span>
-                    </div>
+                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Total</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">
+                      {(order.total_amount || 0).toLocaleString()} KES
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Items</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">{order.order_items?.length || 0}</p>
                   </div>
                 </div>
               </div>

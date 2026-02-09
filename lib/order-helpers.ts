@@ -58,7 +58,7 @@ export function getDeliveryEstimate(order: { delivery_window?: string, preferred
     }
 
     // Fallback to delivery window or generic estimate
-    return order.delivery_window || "45–60 mins"
+    return order.delivery_window || "45-60 mins"
 }
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
