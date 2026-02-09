@@ -10,7 +10,42 @@ export default async function RecentScheduledPizzaOrders() {
   const supabase = await createServerSupabaseClient()
   // Call the custom RPC to get recent scheduled pizza orders
   // Africa/Nairobi timezone offset is +3
-  const { data: orders } = await supabase.rpc('get_recent_scheduled_pizza_orders')
+  const { data: rpcOrders, error: rpcError } = await supabase.rpc("get_recent_scheduled_pizza_orders")
+
+  let orders = rpcOrders
+
+  if (rpcError) {
+    const { data: fallbackOrders } = await supabase
+      .from("orders")
+      .select("id, customer_name, created_at, preferred_date, status, payment_status, order_type")
+      .eq("order_type", "pizza")
+      .order("created_at", { ascending: false })
+      .limit(200)
+
+    const getNairobiHour = (date: Date) => {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Africa/Nairobi",
+        hour: "2-digit",
+        hour12: false,
+      }).formatToParts(date)
+      const hour = parts.find((part) => part.type === "hour")?.value
+      return hour ? Number(hour) : date.getHours()
+    }
+
+    orders = (fallbackOrders || [])
+      .filter((order) => {
+        if (!order.created_at) return false
+        return getNairobiHour(new Date(order.created_at)) >= 21
+      })
+      .map((order) => ({
+        order_id: order.id,
+        customer_name: order.customer_name,
+        placed_at: order.created_at,
+        scheduled_date: order.preferred_date,
+        status: order.status,
+        payment_status: order.payment_status,
+      }))
+  }
 
   // Render the admin table
   return (
@@ -19,7 +54,9 @@ export default async function RecentScheduledPizzaOrders() {
       {/* Title */}
       <h2 className="text-2xl font-bold mb-6">Recent Scheduled Pizza Orders (After 9 PM)</h2>
       {/* Refresh button to reload the page */}
-      <Button onClick={() => location.reload()} variant="outline" className="mb-4">Refresh</Button>
+      <form action="/admin/recent-scheduled-pizza">
+        <Button type="submit" variant="outline" className="mb-4">Refresh</Button>
+      </form>
       {/* Table container */}
       <div className="overflow-x-auto">
         <table className="min-w-full border text-sm">
@@ -37,16 +74,18 @@ export default async function RecentScheduledPizzaOrders() {
             {/* Map through orders and render each row */}
             {orders?.map((order: any) => {
               const placed = new Date(order.placed_at)
-              const scheduled = new Date(order.scheduled_date)
+              const scheduled = order.scheduled_date ? new Date(order.scheduled_date) : null
               // Highlight if scheduled date is different from placed date
-              const shifted = placed.getDate() !== scheduled.getDate() || placed.getMonth() !== scheduled.getMonth() || placed.getFullYear() !== scheduled.getFullYear()
+              const shifted = scheduled
+                ? placed.getDate() !== scheduled.getDate() || placed.getMonth() !== scheduled.getMonth() || placed.getFullYear() !== scheduled.getFullYear()
+                : false
               return (
                 <tr key={order.order_id} className={shifted ? "bg-red-100" : ""}>
                   <td className="px-4 py-2 font-mono">{order.order_id}</td>
                   <td className="px-4 py-2">{order.customer_name}</td>
                   <td className="px-4 py-2">{placed.toLocaleString("en-KE")}</td>
                   <td className="px-4 py-2">
-                    {scheduled.toLocaleDateString("en-KE")}
+                    {scheduled ? scheduled.toLocaleDateString("en-KE") : "N/A"}
                     {shifted && (
                       // Show a note if the order was shifted to the next day
                       <span className="ml-2 text-xs text-red-600" title="Order placed after 9 PM, scheduled for next day">(Shifted)</span>
