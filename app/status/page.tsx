@@ -118,20 +118,21 @@ export default async function OrderStatusPage({
 
         {order && (
           <div className="space-y-8">
-            <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-              <div className="lux-card p-7 md:p-8">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Order Number</p>
-                    <p className="text-2xl md:text-3xl font-mono font-semibold text-slate-900 mt-2">
-                      {formatFriendlyId(order)}
-                    </p>
-                  </div>
-                  <span className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide ${statusTone}`}>
-                    {statusLabel}
-                  </span>
+            <div className="lux-card p-7 md:p-9">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Order Number</p>
+                  <p className="text-2xl md:text-3xl font-mono font-semibold text-slate-900 mt-2 break-all">
+                    {formatFriendlyId(order)}
+                  </p>
                 </div>
-                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <span className={`w-fit rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide ${statusTone}`}>
+                  {statusLabel}
+                </span>
+              </div>
+
+              <div className="mt-7 grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Fulfilment</p>
                     <p className="mt-2 text-lg font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
@@ -142,7 +143,7 @@ export default async function OrderStatusPage({
                     </p>
                     <p className="mt-2 text-lg font-semibold text-rose-600">{getDeliveryEstimate(order)}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4">
+                  <div className="rounded-2xl border border-white/70 bg-white/70 p-4 sm:col-span-2">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">{locationLabel}</p>
                     <p className="mt-2 text-lg font-semibold text-slate-900">{locationValue}</p>
                     {order.delivery_window && (
@@ -153,32 +154,32 @@ export default async function OrderStatusPage({
                     )}
                   </div>
                 </div>
-              </div>
 
-              <div className="lux-card p-7 md:p-8 space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
-                    <Package className="h-5 w-5" />
+                <div className="rounded-2xl border border-white/70 bg-white/70 p-5 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Order Snapshot</p>
+                      <p className="text-base font-semibold text-slate-900">
+                        {order.order_type === "cake" ? "Cake Order" : "Pizza Order"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Order Snapshot</p>
-                    <p className="text-lg font-semibold text-slate-900">
-                      {order.order_type === "cake" ? "Cake Order" : "Pizza Order"}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>Placed</span>
-                    <span className="font-semibold text-slate-900">{new Date(order.created_at).toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>Total</span>
-                    <span className="font-semibold text-slate-900">{(order.total_amount || 0).toLocaleString()} KES</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>Items</span>
-                    <span className="font-semibold text-slate-900">{order.order_items?.length || 0}</span>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span>Placed</span>
+                      <span className="font-semibold text-slate-900">{new Date(order.created_at).toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span>Total</span>
+                      <span className="font-semibold text-slate-900">{(order.total_amount || 0).toLocaleString()} KES</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span>Items</span>
+                      <span className="font-semibold text-slate-900">{order.order_items?.length || 0}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -197,7 +198,7 @@ export default async function OrderStatusPage({
               <OrderStatusTimeline status={order.status} orderType={order.order_type} fulfilment={order.fulfilment} />
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="lux-card p-7 md:p-8">
                 <h3 className="flex items-center gap-2 font-semibold text-lg mb-4 text-slate-800 font-serif">
                   <Package className="w-5 h-5 text-slate-500" /> Order Details
