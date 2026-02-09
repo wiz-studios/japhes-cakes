@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { Check, Circle, PackageCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -35,82 +34,30 @@ export default function OrderStatusTimeline({ status, orderType, fulfilment }: O
     const activeIdx = currentStepIdx === -1 ? 0 : currentStepIdx
 
     const isCake = orderType === "cake"
-    const activeColor = isCake ? "text-rose-600" : "text-orange-600"
-    const inactiveColor = "text-gray-400"
+    const activeColor = isCake ? "bg-rose-600" : "bg-orange-600"
+    const activeBorder = isCake ? "border-rose-600" : "border-orange-600"
+    const inactiveBorder = "border-slate-200"
 
     return (
-        <div className="w-full max-w-4xl mx-auto py-8">
-            {/* Mobile: Vertical */}
-            <div className="md:hidden flex flex-col gap-6">
+        <div className="w-full">
+            <div className="grid grid-cols-3 gap-4">
                 {STEPS.map((step, idx) => {
                     const isCompleted = idx < activeIdx
                     const isActive = idx === activeIdx
                     const Icon = step.icon
                     return (
-                        <div key={step.key} className="flex items-start gap-4 relative">
-                            {/* Connector */}
-                            {idx !== STEPS.length - 1 && (
-                                <div
-                                    className={cn(
-                                        "absolute left-4 top-8 h-full w-[2px] transition-colors",
-                                        isCompleted ? (isCake ? "bg-rose-200" : "bg-orange-200") : "bg-gray-100"
-                                    )}
-                                />
-                            )}
-                            {/* Icon */}
-                            <motion.div
-                                initial={false}
-                                animate={{ scale: isActive ? 1.2 : 1 }}
+                        <div key={step.key} className="flex flex-col items-center text-center gap-2 min-w-0">
+                            <div
                                 className={cn(
-                                    "relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2",
+                                    "h-10 w-10 rounded-full border-2 flex items-center justify-center",
                                     isActive || isCompleted
-                                        ? (isCake ? "bg-rose-600 border-rose-600 text-white" : "bg-orange-600 border-orange-600 text-white")
-                                        : "bg-gray-100 border-gray-200 text-gray-400"
+                                        ? `${activeColor} ${activeBorder} text-white`
+                                        : `bg-white ${inactiveBorder} text-slate-300`
                                 )}
                             >
-                                <Icon className="w-4 h-4" />
-                            </motion.div>
-                            {/* Text */}
-                            <div className="flex flex-col">
-                                <span className={cn("font-medium text-sm", isActive ? "text-gray-900" : "text-gray-500")}>
-                                    {step.label}
-                                </span>
+                                <Icon className="h-4 w-4" />
                             </div>
-                        </div>
-                    )
-                })}
-            </div>
-
-            {/* Desktop: Horizontal */}
-            <div className="hidden md:flex justify-between relative items-start px-4">
-                <div className="absolute top-5 left-0 right-0 h-[2px] bg-gray-100 z-0" />
-                <motion.div
-                    className={cn(
-                        "absolute top-5 left-0 h-[2px] z-0 origin-left",
-                        isCake ? "bg-rose-600" : "bg-orange-600"
-                    )}
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: activeIdx / (STEPS.length - 1) }}
-                    transition={{ duration: 0.8 }}
-                />
-                {STEPS.map((step, idx) => {
-                    const isCompleted = idx < activeIdx
-                    const isActive = idx === activeIdx
-                    const Icon = step.icon
-                    return (
-                        <div key={step.key} className="flex flex-col items-center flex-1 relative z-10">
-                            <motion.div
-                                animate={{ scale: isActive ? 1.2 : 1 }}
-                                className={cn(
-                                    "w-10 h-10 rounded-full border-2 flex items-center justify-center shadow-sm mb-2",
-                                    isActive || isCompleted
-                                        ? (isCake ? "bg-rose-600 border-rose-600 text-white" : "bg-orange-600 border-orange-600 text-white")
-                                        : "bg-white border-gray-200 text-gray-300"
-                                )}
-                            >
-                                <Icon className="w-5 h-5" />
-                            </motion.div>
-                            <span className={cn("text-sm font-medium text-center", isActive ? "text-gray-900" : "text-gray-400")}>
+                            <span className={cn("text-[11px] font-semibold uppercase tracking-[0.2em] leading-tight", isActive ? "text-slate-900" : "text-slate-400")}>
                                 {step.label}
                             </span>
                         </div>

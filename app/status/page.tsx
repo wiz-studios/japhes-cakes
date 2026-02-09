@@ -102,7 +102,7 @@ export default async function OrderStatusPage({
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
-      <div className="space-y-10 w-full max-w-none mx-auto px-6 md:px-10 xl:px-16 2xl:px-24 py-12">
+      <div className="space-y-10 w-full max-w-screen-2xl mx-auto px-6 md:px-10 xl:px-12 2xl:px-16 py-12">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Tracking</p>
           <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Customer Status Console</h2>
@@ -116,21 +116,21 @@ export default async function OrderStatusPage({
         {order && (
           <div className="space-y-6">
             <div className={`${cardClass} p-6 md:p-7`}>
-              <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
-                <div>
+              <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Number</p>
-                  <p className="text-2xl md:text-3xl font-mono font-semibold text-slate-900 mt-2 break-all">
+                  <p className="text-2xl md:text-3xl font-mono font-semibold text-slate-900 mt-2 break-words">
                     {formatFriendlyId(order)}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">Status</p>
                     <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusTone}`}>
                       {statusLabel}
                     </span>
                   </div>
-                  <div className="h-10 w-px bg-slate-200 hidden sm:block" />
+                  <div className="h-8 w-px bg-slate-200 hidden sm:block" />
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">
                       {isDelivery ? "ETA" : "Pickup ETA"}
@@ -141,8 +141,8 @@ export default async function OrderStatusPage({
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="space-y-6">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:col-span-8 space-y-6">
                 <div className={`${cardClass} p-6`}>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Overview</h3>
@@ -190,7 +190,7 @@ export default async function OrderStatusPage({
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="col-span-12 lg:col-span-4 space-y-6">
                 <div className={`${cardClass} p-6`}>
                   <div className="flex items-center justify-between">
                     <div>
