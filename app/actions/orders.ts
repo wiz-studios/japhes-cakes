@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { addHours, isAfter, setHours, setMinutes } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
+import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
+import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   order_received: ["ready_for_pickup", "cancelled"],
@@ -279,25 +281,6 @@ export async function submitCakeOrder(values: any) {
   }
 }
 
-// Pizza pricing constants
-const PIZZA_BASE_PRICES: Record<string, number> = {
-  "Small": 700,
-  "Medium": 1000,
-  "Large": 1500
-}
-
-const PIZZA_TYPE_SURCHARGES: Record<string, number> = {
-  "Margherita": 0,
-  "Vegetarian": 0,
-  "BBQ Chicken": 200,
-  "Chicken Periperi": 200,
-  "Beef & Onion": 200,
-  "Everything Meat": 300,
-  "Hawaiian": 150,
-  "Boerewors": 250,
-  "Chicken Mushroom": 200,
-}
-
 export async function submitPizzaOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
@@ -337,9 +320,9 @@ export async function submitPizzaOrder(values: any) {
 
         if (zone) {
           const isNairobi = zone.name.toLowerCase().includes("nairobi")
-          const basePrice = PIZZA_BASE_PRICES[values.pizzaSize] || PIZZA_BASE_PRICES["Medium"]
-          const typeSurcharge = PIZZA_TYPE_SURCHARGES[values.pizzaType] || 0
-          const totalItemsValue = (basePrice + typeSurcharge) * (values.quantity || 1)
+          const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, 0)
+          // Minimum value check uses pre-offer subtotal to avoid blocking valid offer orders
+          const totalItemsValue = unitPrice * (values.quantity || 1)
 
           if (isNairobi && totalItemsValue < 2000) {
             return { success: false, error: "Nairobi pizza orders require a minimum value of KES 2,000" }
@@ -353,10 +336,16 @@ export async function submitPizzaOrder(values: any) {
       }
     }
 
-    // Calculate pizza total
-    const basePrice = PIZZA_BASE_PRICES[values.pizzaSize] || PIZZA_BASE_PRICES["Medium"]
-    const typeSurcharge = PIZZA_TYPE_SURCHARGES[values.pizzaType] || 0
-    const itemTotal = (basePrice + typeSurcharge) * (values.quantity || 1)
+    // Calculate pizza total with offer logic
+    const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, 0)
+    const quantity = values.quantity || 1
+    const rawSubtotal = unitPrice * quantity
+    const offer = getPizzaOfferDetails({
+      size: values.pizzaSize,
+      quantity,
+      unitPrice,
+    })
+    const itemTotal = rawSubtotal - offer.discount
     const total = itemTotal + deliveryFee
     const paymentPlan = (values.paymentPlan || "full") as "full" | "deposit"
     const depositAmount = Math.ceil(total * 0.5)
@@ -406,11 +395,16 @@ export async function submitPizzaOrder(values: any) {
 
     if (orderError || !order) throw orderError || new Error("Failed to create order")
 
+    const offerNote = offer.discount > 0
+      ? `Offer: 2-for-1 applied (${offer.freeQuantity} free)`
+      : ""
+    const combinedNotes = [values.notes, offerNote].filter(Boolean).join(" | ")
+
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
       item_name: `${values.pizzaSize} ${values.pizzaType} Pizza`,
       quantity: values.quantity,
-      notes: values.notes || "",
+      notes: combinedNotes,
     })
 
     if (itemError) throw itemError

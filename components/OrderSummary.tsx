@@ -21,11 +21,12 @@ interface OrderSummaryProps {
   order: Order;
   paymentPlan?: "full" | "deposit";
   depositAmount?: number;
+  discountAmount?: number;
 }
 
 // OrderSummary: shows order details, price, and late-night warning
 // Fixed TypeScript errors by adding explicit types for props and map parameter
-export default function OrderSummary({ order, paymentPlan = "full", depositAmount }: OrderSummaryProps) {
+export default function OrderSummary({ order, paymentPlan = "full", depositAmount, discountAmount }: OrderSummaryProps) {
   const isLateNight = order.placedHour >= 21;
   const depositDue = depositAmount ?? Math.ceil(order.total * 0.5)
   return (
@@ -44,6 +45,12 @@ export default function OrderSummary({ order, paymentPlan = "full", depositAmoun
           <span className="font-semibold">Delivery Fee:</span>
           <span>{order.deliveryFee} KES</span>
         </div>
+        {typeof discountAmount === "number" && discountAmount > 0 && (
+          <div className="flex justify-between">
+            <span className="font-semibold">Offer Savings:</span>
+            <span className="font-bold text-emerald-700">- {discountAmount} KES</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="font-semibold">Total:</span>
           <span className="font-bold text-amber-600">{order.total} KES</span>

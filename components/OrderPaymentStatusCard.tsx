@@ -32,44 +32,44 @@ export function OrderPaymentStatusCard({
             case "paid":
                 return {
                     icon: CheckCircle2,
-                    bgColor: "bg-emerald-50",
-                    borderColor: "border-emerald-200",
+                    badgeBg: "bg-emerald-50",
+                    badgeBorder: "border-emerald-200",
+                    badgeText: "text-emerald-700",
                     iconColor: "text-emerald-600",
-                    textColor: "text-emerald-800"
                 }
             case "deposit_paid":
                 return {
                     icon: CheckCircle2,
-                    bgColor: "bg-amber-50",
-                    borderColor: "border-amber-200",
+                    badgeBg: "bg-amber-50",
+                    badgeBorder: "border-amber-200",
+                    badgeText: "text-amber-700",
                     iconColor: "text-amber-600",
-                    textColor: "text-amber-800"
                 }
             case "pending":
             case "initiated":
                 return {
                     icon: Clock,
-                    bgColor: "bg-amber-50",
-                    borderColor: "border-amber-200",
+                    badgeBg: "bg-amber-50",
+                    badgeBorder: "border-amber-200",
+                    badgeText: "text-amber-700",
                     iconColor: "text-amber-600",
-                    textColor: "text-amber-800"
                 }
             case "pay_on_delivery":
             case "pay_on_pickup":
                 return {
                     icon: Banknote,
-                    bgColor: "bg-blue-50",
-                    borderColor: "border-blue-200",
-                    iconColor: "text-blue-600",
-                    textColor: "text-blue-800"
+                    badgeBg: "bg-sky-50",
+                    badgeBorder: "border-sky-200",
+                    badgeText: "text-sky-700",
+                    iconColor: "text-sky-600",
                 }
             case "failed":
                 return {
                     icon: XCircle,
-                    bgColor: "bg-red-50",
-                    borderColor: "border-red-200",
-                    iconColor: "text-red-600",
-                    textColor: "text-red-800"
+                    badgeBg: "bg-rose-50",
+                    badgeBorder: "border-rose-200",
+                    badgeText: "text-rose-700",
+                    iconColor: "text-rose-600",
                 }
         }
     }
@@ -78,54 +78,51 @@ export function OrderPaymentStatusCard({
     const Icon = config.icon
 
     return (
-        <div className={`
-      ${config.bgColor} ${config.borderColor}
-      border rounded-3xl p-6 space-y-4 shadow-[0_18px_50px_-40px_rgba(15,20,40,0.35)]
-    `}>
-            <div className="flex items-start gap-4">
-                <div className={`${config.bgColor} p-3 rounded-full`}>
-                    <Icon className={`h-6 w-6 ${config.iconColor}`} />
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)]">
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                    <div className={`h-10 w-10 rounded-xl border ${config.badgeBorder} ${config.badgeBg} flex items-center justify-center`}>
+                        <Icon className={`h-5 w-5 ${config.iconColor}`} />
+                    </div>
+                    <div>
+                        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400 font-semibold">Payment Status</p>
+                        <h3 className="text-lg font-semibold text-slate-900 mt-1">{statusMessage}</h3>
+                        {instruction && (
+                            <p className="text-sm text-slate-600 mt-1">
+                                {instruction}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <h3 className={`font-bold text-lg ${config.textColor}`}>
-                        {statusMessage}
-                    </h3>
-                    {instruction && (
-                        <p className="text-sm text-gray-600 mt-1">
-                            {instruction}
-                        </p>
-                    )}
-                </div>
+                <span className={`h-fit rounded-full border px-3 py-1 text-xs font-semibold ${config.badgeBg} ${config.badgeBorder} ${config.badgeText}`}>
+                    {paymentMethod === "mpesa" ? "M-Pesa" : "Cash"}
+                </span>
             </div>
 
             {/* Transaction Details */}
-            <div className="space-y-2 pt-2 border-t border-white/60">
+            <div className="mt-4 divide-y divide-slate-100 text-sm">
                 {mpesaTransactionId && (
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Transaction ID:</span>
-                        <span className="font-mono font-semibold">{mpesaTransactionId}</span>
+                    <div className="flex justify-between py-2 text-slate-600">
+                        <span>Transaction ID</span>
+                        <span className="font-mono font-semibold text-slate-900">{mpesaTransactionId}</span>
                     </div>
                 )}
-                <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Amount:</span>
-                    <span className="font-bold text-gray-900">{totalAmount.toLocaleString()} KES</span>
+                <div className="flex justify-between py-2 text-slate-600">
+                    <span>Amount</span>
+                    <span className="font-semibold text-slate-900">{totalAmount.toLocaleString()} KES</span>
                 </div>
                 {typeof amountPaid === "number" && amountPaid > 0 && (
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Paid:</span>
+                    <div className="flex justify-between py-2 text-slate-600">
+                        <span>Paid</span>
                         <span className="font-semibold text-emerald-700">{amountPaid.toLocaleString()} KES</span>
                     </div>
                 )}
                 {typeof amountDue === "number" && amountDue > 0 && (
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Balance Due:</span>
-                        <span className="font-semibold text-slate-700">{amountDue.toLocaleString()} KES</span>
+                    <div className="flex justify-between py-2 text-slate-600">
+                        <span>Balance Due</span>
+                        <span className="font-semibold text-slate-900">{amountDue.toLocaleString()} KES</span>
                     </div>
                 )}
-                <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Method:</span>
-                    <span className="font-semibold capitalize">{paymentMethod === "mpesa" ? "M-Pesa" : "Cash"}</span>
-                </div>
             </div>
         </div>
     )

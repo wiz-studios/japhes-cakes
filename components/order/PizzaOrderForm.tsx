@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -16,6 +16,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
 import { OrderLayout } from "./OrderLayout"
 import { orderThemes } from "./themes"
+import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
+import { getPizzaOfferDetails, isPizzaOfferDay } from "@/lib/pizza-offer"
 
 import dynamic from "next/dynamic"
 
@@ -45,26 +47,6 @@ const pizzaSchema = z.object({
     if (data.fulfilment === "delivery" && (!data.deliveryLat || !data.deliveryLng)) return false
     return true
 }, { message: "Delivery location required", path: ["fulfilment"] })
-
-// Pizza pricing matrix
-const PIZZA_BASE_PRICES: Record<string, number> = {
-    "Small": 700,
-    "Medium": 1000,
-    "Large": 1500
-}
-
-// Premium pizza types have surcharge
-const PIZZA_TYPE_SURCHARGES: Record<string, number> = {
-    "Margherita": 0,
-    "Vegetarian": 0,
-    "BBQ Chicken": 200,
-    "Chicken Periperi": 200,
-    "Beef & Onion": 200,
-    "Everything Meat": 300,
-    "Hawaiian": 150,
-    "Boerewors": 250,
-    "Chicken Mushroom": 200,
-}
 
 interface DeliveryZone {
     id: string; name: string; delivery_fee: number; allows_pizza: boolean;
@@ -104,15 +86,16 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const pizzaSize = form.watch("pizzaSize")
     const quantity = form.watch("quantity")
 
-    // Calculate real-time price
-    const calculatePrice = () => {
-        if (!pizzaSize || !pizzaType) return 0
-        const basePrice = PIZZA_BASE_PRICES[pizzaSize] || 1000
-        const typeSurcharge = PIZZA_TYPE_SURCHARGES[pizzaType] || 0
-        return (basePrice + typeSurcharge) * (quantity || 1)
-    }
-
-    const estimatedPrice = calculatePrice()
+    const baseUnitPrice = pizzaSize && pizzaType ? getPizzaUnitPrice(pizzaSize, pizzaType, 0) : 0
+    const totalQty = Number.isFinite(quantity) ? quantity : 1
+    const rawSubtotal = baseUnitPrice * (totalQty || 1)
+    const offerActive = isPizzaOfferDay()
+    const offerDetails = getPizzaOfferDetails({
+        size: pizzaSize,
+        quantity: totalQty || 1,
+        unitPrice: baseUnitPrice,
+    })
+    const estimatedPrice = rawSubtotal - offerDetails.discount
 
     // Check for late night orders
     useEffect(() => {
@@ -167,17 +150,47 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                         </div>
                     )}
 
+                    <div className="lux-card px-4 py-3 flex items-center justify-between gap-3 text-sm">
+                        <div className="flex items-center gap-2 text-slate-700">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                                <Sparkles className="h-4 w-4" />
+                            </span>
+                            <div>
+                                <p className="font-semibold">Pizza Offer Days</p>
+                                <p className="text-xs text-slate-500">2-for-1 on Medium & Large pizzas every Tue & Thu.</p>
+                            </div>
+                        </div>
+                        <span className={cn(
+                            "rounded-full px-3 py-1 text-xs font-semibold",
+                            offerActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                        )}>
+                            {offerActive ? "Offer Active Today" : "Next Tue/Thu"}
+                        </span>
+                    </div>
+
                     {/* Price Display */}
                     {estimatedPrice > 0 && (
-                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-orange-500 p-4 mb-4 flex justify-between items-center">
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-orange-500 p-4 mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
                                 <p className="font-bold text-orange-800">Estimated Total</p>
                                 <p className="text-sm text-orange-600">
-                                    {pizzaSize} {pizzaType} × {quantity}
+                                    {pizzaSize} {pizzaType} x {quantity}
                                 </p>
+                                {offerDetails.discount > 0 && (
+                                    <p className="text-xs text-emerald-700 mt-1">
+                                        Offer applied: {offerDetails.freeQuantity} free pizza{offerDetails.freeQuantity > 1 ? "s" : ""} (-{offerDetails.discount.toLocaleString()} KES)
+                                    </p>
+                                )}
                             </div>
-                            <div className="text-3xl font-bold text-orange-700">
-                                {estimatedPrice.toLocaleString()} KES
+                            <div className="text-right">
+                                {offerDetails.discount > 0 && (
+                                    <div className="text-sm text-slate-500 line-through">
+                                        {rawSubtotal.toLocaleString()} KES
+                                    </div>
+                                )}
+                                <div className="text-3xl font-bold text-orange-700">
+                                    {estimatedPrice.toLocaleString()} KES
+                                </div>
                             </div>
                         </div>
                     )}

@@ -29,10 +29,10 @@ export function OrderStatusSearch({
   }
 
   return (
-    <div className="lux-card p-6 md:p-8 space-y-6">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)] space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Order Lookup</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Order Lookup</p>
           <h3 className="text-lg font-semibold text-slate-900">Find your order</h3>
         </div>
         <div className="text-xs text-slate-500">Use order number or phone.</div>
@@ -53,7 +53,7 @@ export function OrderStatusSearch({
             placeholder="e.g. C9CZA42"
             value={id}
             onChange={(e) => setId(e.target.value)}
-            className="lux-input"
+            className="bg-slate-50 border-slate-200"
           />
         </div>
 
@@ -64,7 +64,7 @@ export function OrderStatusSearch({
             placeholder="07XX XXX XXX"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="lux-input"
+            className="bg-slate-50 border-slate-200"
           />
         </div>
       </div>
@@ -74,7 +74,7 @@ export function OrderStatusSearch({
           If you enter both, we will match the exact order linked to that phone number.
         </p>
         <Button
-          className="w-full md:w-auto h-12 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-indigo-500 text-white shadow-[0_18px_40px_-24px_rgba(88,56,170,0.7)] hover:opacity-90"
+          className="w-full md:w-auto h-11 px-7 rounded-full bg-slate-900 text-white hover:bg-slate-800"
           onClick={handleSearch}
           disabled={!id.trim() && !phone.trim()}
         >

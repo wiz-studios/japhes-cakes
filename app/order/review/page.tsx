@@ -25,6 +25,8 @@ import { submitPizzaOrder, submitCakeOrder } from "@/app/actions/orders"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector"
 import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
+import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
+import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 
 // Main review page component
 // Types for order and item
@@ -73,6 +75,7 @@ function OrderReviewContent() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [error, setError] = useState("")
   const [progress, setProgress] = useState(80) // 80%: review step
+  const [discountTotal, setDiscountTotal] = useState(0)
 
   // Payment state
   const paymentMethod: PaymentMethod = "mpesa"
@@ -86,8 +89,9 @@ function OrderReviewContent() {
   // Live price calculation
   useEffect(() => {
     if (!order) return
+    let discount = 0
     let total = order.items.reduce((sum: number, item: PizzaOrderItem | CakeOrderItem) => {
-      let base = 0
+      let lineTotal = 0
 
       if (order.type === "cake") {
         const cakeItem = item as CakeOrderItem
@@ -95,18 +99,24 @@ function OrderReviewContent() {
         // Fallback to "1kg" price if size not found to prevent NaN, though size should be valid
         const sizePrice = CAKE_PRICES[cakeItem.size.toLowerCase()] || CAKE_PRICES["1kg"]
         const flavorSurcharge = FLAVOR_SURCHARGES[cakeItem.flavor || "Vanilla"] || 0
-        base = sizePrice + flavorSurcharge
+        lineTotal = (sizePrice + flavorSurcharge) * cakeItem.quantity
       } else {
-        // Pizza Logic (Legacy but preserved)
-        base = 1000
-        if (item.size === "Large") base = 1500
-        if (item.size === "Small") base = 700
-        if ((item as PizzaOrderItem).toppings) base += ((item as PizzaOrderItem).toppings?.length || 0) * 100
+        const pizzaItem = item as PizzaOrderItem
+        const toppingsCount = pizzaItem.toppings?.length || 0
+        const unitPrice = getPizzaUnitPrice(pizzaItem.size, pizzaItem.name, toppingsCount)
+        const offer = getPizzaOfferDetails({
+          size: pizzaItem.size,
+          quantity: pizzaItem.quantity,
+          unitPrice,
+        })
+        lineTotal = unitPrice * pizzaItem.quantity - offer.discount
+        discount += offer.discount
       }
-      return sum + base * item.quantity
+      return sum + lineTotal
     }, 0)
     total += order.deliveryFee
     setOrder((o: Order) => ({ ...o, total }))
+    setDiscountTotal(discount)
   }, [order?.items, order?.deliveryFee, order?.type])
 
   // Inline edit handlers
@@ -447,6 +457,7 @@ function OrderReviewContent() {
             order={order}
             paymentPlan={paymentPlan}
             depositAmount={Math.ceil(order.total * 0.5)}
+            discountAmount={discountTotal}
           />
 
           {/* Error/Warning */}
