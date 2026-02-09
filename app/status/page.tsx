@@ -103,7 +103,7 @@ export default async function OrderStatusPage({
       <div className="absolute inset-0 hero-grain pointer-events-none" />
       <div className="absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(216,47,125,0.2),transparent_65%)] blur-3xl" />
       <div className="absolute -bottom-40 -left-10 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(58,78,216,0.22),transparent_65%)] blur-3xl" />
-      <div className="relative space-y-10 max-w-6xl xl:max-w-7xl mx-auto px-4 py-12">
+      <div className="relative space-y-10 max-w-[1400px] xl:max-w-[1500px] mx-auto px-4 py-12">
         <div className="space-y-3 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-500">
             Live Status
