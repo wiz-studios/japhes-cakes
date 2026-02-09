@@ -57,6 +57,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [dateOpen, setDateOpen] = useState(false)
 
 
   // Support pre-filling form from router state (for back navigation)
@@ -259,7 +260,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Preferred Date</FormLabel>
-                <Popover>
+                <Popover open={dateOpen} onOpenChange={setDateOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -275,7 +276,10 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                     <Calendar
                       mode="single"
                       selected={field.value}
-                      onSelect={field.onChange}
+                      onSelect={(date) => {
+                        field.onChange(date)
+                        if (date) setDateOpen(false)
+                      }}
                       disabled={(date) => isBefore(date, startOfToday()) || isBefore(date, minDate)}
                       initialFocus
                     />

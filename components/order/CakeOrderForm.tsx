@@ -82,6 +82,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const searchParams = useSearchParams()
     const theme = orderThemes.cake
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [dateOpen, setDateOpen] = useState(false)
 
     // Retrieve existing order data from URL if editing an order
     const rawOrder = searchParams.get("order") ? JSON.parse(decodeURIComponent(searchParams.get("order")!)) : null
@@ -233,7 +234,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                         <FormField control={form.control} name="preferredDate" render={({ field }) => (
                             <FormItem className="flex flex-col">
                                 <FormLabel>Preferred Date</FormLabel>
-                                <Popover>
+                                <Popover open={dateOpen} onOpenChange={setDateOpen}>
                                     <PopoverTrigger asChild>
                                         <FormControl>
                                             <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground", theme.colors.ring)}>
@@ -243,7 +244,16 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                         </FormControl>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))} initialFocus />
+                                        <Calendar
+                                            mode="single"
+                                            selected={field.value}
+                                            onSelect={(date) => {
+                                                field.onChange(date)
+                                                if (date) setDateOpen(false)
+                                            }}
+                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                            initialFocus
+                                        />
                                     </PopoverContent>
                                 </Popover>
                                 <FormMessage />
