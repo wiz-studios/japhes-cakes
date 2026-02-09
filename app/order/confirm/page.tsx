@@ -41,17 +41,17 @@ function PaymentConfirmContent() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)] flex items-center justify-center p-4">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full"
+                className="lux-card p-8 max-w-md w-full"
             >
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Smartphone className="w-8 h-8 text-emerald-600" />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-2xl font-semibold text-gray-900 mb-2 font-serif">
                         Complete Payment
                     </h1>
                     <p className="text-gray-600">
@@ -59,7 +59,7 @@ function PaymentConfirmContent() {
                     </p>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="bg-white/80 rounded-2xl p-4 mb-6 border border-white/60">
                     <div className="flex justify-between items-center">
                         <span className="text-gray-600">Amount Due</span>
                         <span className="text-2xl font-bold text-gray-900">
@@ -114,7 +114,7 @@ function PaymentConfirmContent() {
                     </Button>
                 </div>
 
-                <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+                <div className="mt-6 p-4 bg-white/80 rounded-2xl border border-white/60">
                     <p className="text-xs text-blue-800">
                         <strong>Note:</strong> This is a demo payment page. In production, this would integrate with M-Pesa API for real transactions.
                     </p>

@@ -27,9 +27,10 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
     }
 
     const handleCompleteDelivery = async () => {
-        const isCash = order.payment_method === "cash"
-        const confirmMsg = isCash
-            ? `CONFIRM CASH COLLECTION:\n\nHave you received KES ${order.total_amount?.toLocaleString()}?`
+        const needsCollection = order.payment_method === "cash" || order.payment_status === "deposit_paid"
+        const remaining = order.payment_amount_due ?? order.total_amount
+        const confirmMsg = needsCollection
+            ? `CONFIRM CASH COLLECTION:\n\nHave you received KES ${remaining?.toLocaleString()}?`
             : "Confirm that order has been delivered?"
 
         if (!confirm(confirmMsg)) return
@@ -37,7 +38,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
         setLoading(true)
         try {
             // New action for atomic delivery + payment
-            const res = await completeDelivery(order.id, isCash)
+            const res = await completeDelivery(order.id, needsCollection)
             if (!res.success) alert(res.error)
         } catch (e) { console.error(e); alert("Failed to complete delivery") }
         finally { setLoading(false) }
@@ -48,7 +49,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
     const isOut = order.status === "out_for_delivery"
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border-l-4 border-l-blue-600 border-y border-r border-gray-200 overflow-hidden">
+        <div className="bg-white/90 rounded-2xl shadow-[0_18px_50px_-40px_rgba(15,20,40,0.5)] border-l-4 border-l-blue-600 border-y border-r border-white/60 overflow-hidden backdrop-blur">
             <div className="p-5 space-y-4">
 
                 {/* header */}
@@ -97,24 +98,24 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                 </div>
 
                 {/* Payment Block (Crucial) */}
-                <div className={`p-4 rounded-lg border-2 ${order.payment_method === 'cash' && order.payment_status !== 'paid'
+                <div className={`p-4 rounded-lg border-2 ${(order.payment_method === 'cash' || order.payment_status === 'deposit_paid') && order.payment_status !== 'paid'
                     ? "bg-amber-50 border-amber-200"
                     : "bg-emerald-50 border-emerald-200"
                     }`}>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                            {order.payment_method === 'cash' ? (
+                            {(order.payment_method === 'cash' || order.payment_status === 'deposit_paid') ? (
                                 <Banknote className="h-5 w-5 text-amber-700" />
                             ) : (
                                 <CheckCircle2 className="h-5 w-5 text-emerald-700" />
                             )}
-                            <span className={`font-bold uppercase ${order.payment_method === 'cash' ? "text-amber-900" : "text-emerald-900"
+                            <span className={`font-bold uppercase ${(order.payment_method === 'cash' || order.payment_status === 'deposit_paid') ? "text-amber-900" : "text-emerald-900"
                                 }`}>
-                                {order.payment_method === 'cash' ? "Collect Cash" : "Paid (M-Pesa)"}
+                                {(order.payment_method === 'cash' || order.payment_status === 'deposit_paid') ? "Collect Balance" : "Paid (M-Pesa)"}
                             </span>
                         </div>
                         <div className="text-xl font-black text-gray-900">
-                            {order.total_amount?.toLocaleString()} KES
+                            {(order.payment_status === 'deposit_paid' ? order.payment_amount_due : order.total_amount)?.toLocaleString()} KES
                         </div>
                     </div>
                 </div>
@@ -138,14 +139,14 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                             <Button
                                 onClick={handleCompleteDelivery}
                                 disabled={loading}
-                                className={`w-full h-14 text-lg font-black shadow-md ${order.payment_method === 'cash'
+                                className={`w-full h-14 text-lg font-black shadow-md ${(order.payment_method === 'cash' || order.payment_status === 'deposit_paid')
                                     ? "bg-amber-500 hover:bg-amber-600 text-black"
                                     : "bg-emerald-600 hover:bg-emerald-700"
                                     }`}
                             >
                                 {loading ? "Updating..." : (
                                     <>
-                                        {order.payment_method === 'cash' ? (
+                                        {(order.payment_method === 'cash' || order.payment_status === 'deposit_paid') ? (
                                             <><Banknote className="mr-2 h-6 w-6" /> COLLECT & DELIVER</>
                                         ) : (
                                             <><PackageCheck className="mr-2 h-6 w-6" /> CONFIRM DELIVERY</>

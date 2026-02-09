@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         // 1. Find Order by Checkout ID
         const { data: order, error: findError } = await supabase
             .from("orders")
-            .select("id, mpesa_checkout_request_id, payment_status")
+            .select("id, mpesa_checkout_request_id, payment_status, payment_plan, total_amount, payment_amount_paid, payment_deposit_amount, payment_last_request_amount")
             .eq("mpesa_checkout_request_id", checkoutRequestId)
             .single()
 
@@ -57,10 +57,28 @@ export async function POST(request: Request) {
         // 3. Process Status
         if (resultCode === 0) {
             // SUCCESS
+            const totalAmount = Number(order.total_amount || 0)
+            const paidAmount = Number(order.payment_amount_paid || 0)
+            const depositAmount = Number(order.payment_deposit_amount || Math.ceil(totalAmount * 0.5))
+            const requestAmount = Number(order.payment_last_request_amount || 0)
+
+            // Idempotency: ignore duplicate deposit callbacks
+            if (order.payment_status === "deposit_paid" && requestAmount <= depositAmount) {
+                return NextResponse.json({ received: true })
+            }
+
+            const increment = requestAmount || (order.payment_plan === "deposit" && paidAmount < totalAmount ? depositAmount : totalAmount)
+            const nextPaid = Math.min(totalAmount, paidAmount + increment)
+            const nextDue = Math.max(totalAmount - nextPaid, 0)
+            const nextStatus: "paid" | "deposit_paid" = nextPaid >= totalAmount ? "paid" : "deposit_paid"
+
             const { error: updateError } = await supabase
                 .from("orders")
                 .update({
-                    payment_status: "paid",
+                    payment_status: nextStatus,
+                    payment_amount_paid: nextPaid,
+                    payment_amount_due: nextDue,
+                    payment_last_request_amount: null,
                     mpesa_transaction_id: payload.mpesaReceiptNumber || "MOCK_TRX_" + Date.now()
                 })
                 .eq("id", order.id)
@@ -69,7 +87,7 @@ export async function POST(request: Request) {
                 console.error(`[STK-CALLBACK] DB Update Failed: ${updateError.message}`)
                 return NextResponse.json({ error: "Internal Error" }, { status: 500 })
             }
-            console.log(`[STK-CALLBACK] Order ${order.id} marked PAID.`)
+            console.log(`[STK-CALLBACK] Order ${order.id} marked ${nextStatus}.`)
 
         } else {
             // FAILURE

@@ -30,8 +30,8 @@ export default function DeliveryDashboard() {
             const validOrders = data.filter(order => {
                 // 1. If Cash -> Allowed
                 if (order.payment_method === "cash") return true
-                // 2. If M-Pesa -> Must be PAID
-                if (order.payment_method === "mpesa" && order.payment_status === "paid") return true
+                // 2. If M-Pesa -> Must be PAID or DEPOSIT PAID
+                if (order.payment_method === "mpesa" && ["paid", "deposit_paid"].includes(order.payment_status)) return true
 
                 // Unpaid M-Pesa? INVISIBLE.
                 return false
@@ -56,8 +56,8 @@ export default function DeliveryDashboard() {
     if (loading) return <div className="p-8 text-2xl font-bold text-gray-500 animate-pulse">Loading Delivery Manifest...</div>
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 md:p-6">
-            <header className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#e9edf7_100%)] p-4 md:p-6">
+            <header className="flex justify-between items-center mb-6 bg-white/90 p-4 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 backdrop-blur">
                 <div className="flex items-center gap-3">
                     <div className="bg-blue-600 text-white p-2 rounded-lg">
                         <Bike className="h-6 w-6" />
@@ -91,7 +91,7 @@ export default function DeliveryDashboard() {
                     </div>
                     <div className="space-y-4">
                         {outOrders.length === 0 && (
-                            <div className="bg-blue-50 rounded-xl p-8 text-center text-blue-300 font-bold border-2 border-dashed border-blue-100">
+                            <div className="bg-white/80 rounded-2xl p-8 text-center text-blue-400 font-bold border border-white/60 shadow-[0_16px_50px_-40px_rgba(15,20,40,0.35)]">
                                 NO ACTIVE DELIVERIES
                             </div>
                         )}
@@ -109,7 +109,7 @@ export default function DeliveryDashboard() {
                     </div>
                     <div className="space-y-4">
                         {readyOrders.length === 0 && (
-                            <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-400 font-bold border-2 border-dashed border-gray-200">
+                            <div className="bg-white/80 rounded-2xl p-8 text-center text-gray-400 font-bold border border-white/60 shadow-[0_16px_50px_-40px_rgba(15,20,40,0.35)]">
                                 NO ORDERS WAITING
                             </div>
                         )}

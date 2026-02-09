@@ -4,21 +4,11 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { ArrowUpRight, MapPin, Sparkles, Timer } from "lucide-react"
-import { Fraunces, Space_Grotesk } from "next/font/google"
-import { clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-const display = Fraunces({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap" })
-const body = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" })
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs))
-}
 
 const featureItems = [
   {
     title: "Same-Day Pickup",
-    description: "Fresh bakes ready in 45–90 minutes.",
+    description: "Fresh bakes ready in 45-90 minutes.",
     icon: Timer,
   },
   {
@@ -28,7 +18,7 @@ const featureItems = [
   },
   {
     title: "M-Pesa Friendly",
-    description: "Pay on pickup or securely via M-Pesa.",
+    description: "Pay 50% deposit via M-Pesa and clear the balance on pickup or delivery.",
     icon: Sparkles,
   },
 ]
@@ -37,31 +27,34 @@ export default function HomeHero() {
   const router = useRouter()
 
   return (
-    <div className={cn("relative min-h-screen overflow-hidden bg-[#f6efe7] text-slate-950", body.className)}>
-      <div className="absolute inset-0">
-        <div className="absolute -left-24 top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-[#f7b6b2] blur-[140px] opacity-60" />
-        <div className="absolute right-[-10rem] top-[12rem] h-[30rem] w-[30rem] rounded-full bg-[#ffdd99] blur-[160px] opacity-60" />
-        <div className="absolute bottom-[-14rem] left-[20%] h-[28rem] w-[28rem] rounded-full bg-[#c9e4ff] blur-[180px] opacity-50" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.9),transparent_50%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.7),transparent_45%)]" />
+    <div className="relative min-h-screen overflow-hidden bg-[var(--brand-cream)] text-slate-950 font-sans">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,#2f4dc8_0%,#3448c0_28%,#5d55c3_46%,#9a57b1_60%,#cd4d97_74%,#f6b8d7_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.35),transparent_42%),radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.2),transparent_48%),radial-gradient(circle_at_55%_85%,rgba(0,0,0,0.2),transparent_60%)]" />
+        <div className="absolute -left-44 top-[-12rem] h-[36rem] w-[36rem] rounded-full bg-[#4d66e8]/35 blur-[190px]" />
+        <div className="absolute right-[-14rem] top-[-12rem] h-[38rem] w-[38rem] rounded-full bg-[#f3a6cc]/40 blur-[200px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(0,0,0,0.22)_100%)]" />
+        <div className="absolute right-10 top-24 h-24 w-24 opacity-45 bg-[radial-gradient(circle,rgba(255,255,255,0.85)_2px,transparent_2px)] [background-size:14px_14px]" />
+        <div className="absolute inset-0 hero-grain" />
       </div>
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-16 lg:pt-24">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-16 lg:pt-24">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
         >
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-700">
-              Thika • Nairobi • Delivery
+          <div className="space-y-6 rounded-[32px] p-8 text-white lux-glass">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white/85">
+              Thika - Nairobi - Delivery
             </div>
 
-            <h1 className={cn("text-4xl font-semibold leading-tight text-slate-950 md:text-6xl", display.className)}>
+            <h1 className="text-4xl font-semibold leading-tight text-white md:text-6xl font-serif">
               Japhes Cakes & Pizza, crafted for the days you want to remember.
             </h1>
 
-            <p className="max-w-xl text-lg text-slate-700">
+            <p className="max-w-xl text-lg text-white/80">
               Celebrate with indulgent cakes or settle in with stone-fired pizzas. Every order is
               baked, finished, and delivered by a real kitchen that cares.
             </p>
@@ -69,19 +62,19 @@ export default function HomeHero() {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => router.push("/order/cake")}
-                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-900"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-magenta-deep)] shadow-lg shadow-black/25 transition hover:-translate-y-0.5 hover:bg-white/90"
               >
                 Order Cakes <ArrowUpRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => router.push("/order/pizza")}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400"
+                className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/20"
               >
                 Order Pizza <ArrowUpRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => router.push("/status")}
-                className="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-3 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
+                className="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-3 text-sm font-semibold text-white/75 transition hover:text-white"
               >
                 Track Order
               </button>
@@ -89,13 +82,14 @@ export default function HomeHero() {
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
             className="grid gap-6"
           >
-            <div className="relative overflow-hidden rounded-[34px] border border-white/80 bg-white/90 p-[2px] shadow-[0_32px_80px_-40px_rgba(15,23,42,0.5)]">
+            <div className="relative overflow-hidden rounded-[34px] border border-white/60 bg-white/15 p-[2px] shadow-[0_32px_80px_-40px_rgba(15,23,42,0.6)] backdrop-blur-sm">
               <div className="relative overflow-hidden rounded-[30px]">
+                <div className="absolute left-8 top-0 h-[2px] w-24 bg-[linear-gradient(90deg,var(--brand-sun),transparent)]" />
                 <div className="absolute inset-0">
                   <Image
                     src="/images/premium-cake.jpg"
@@ -114,7 +108,7 @@ export default function HomeHero() {
                     </span>
                   </div>
                   <div className="space-y-3">
-                    <p className={cn("text-3xl font-semibold", display.className)}>Velvet & Citrus</p>
+                    <p className="text-3xl font-semibold font-serif">Velvet & Citrus</p>
                     <p className="text-sm text-white/80">
                       Hand-finished layers with custom details, made for celebrations and gifting.
                     </p>
@@ -123,8 +117,9 @@ export default function HomeHero() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[34px] border border-white/80 bg-white/90 p-[2px] shadow-[0_32px_80px_-40px_rgba(15,23,42,0.5)]">
+            <div className="relative overflow-hidden rounded-[34px] border border-white/60 bg-white/15 p-[2px] shadow-[0_32px_80px_-40px_rgba(15,23,42,0.6)] backdrop-blur-sm">
               <div className="relative overflow-hidden rounded-[30px]">
+                <div className="absolute left-8 top-0 h-[2px] w-24 bg-[linear-gradient(90deg,var(--brand-sun),transparent)]" />
                 <div className="absolute inset-0">
                   <Image
                     src="/images/premium-pizza.jpg"
@@ -143,7 +138,7 @@ export default function HomeHero() {
                     </span>
                   </div>
                   <div className="space-y-3">
-                    <p className={cn("text-3xl font-semibold", display.className)}>Fire & Cheese</p>
+                    <p className="text-3xl font-semibold font-serif">Fire & Cheese</p>
                     <p className="text-sm text-white/80">
                       Crisp edges, molten cheese, and bold toppings baked to order every time.
                     </p>
@@ -155,7 +150,7 @@ export default function HomeHero() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
+          initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
           className="grid gap-4 md:grid-cols-3"
@@ -165,12 +160,12 @@ export default function HomeHero() {
             return (
               <div
                 key={item.title}
-                className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg shadow-slate-900/5"
+                className="lux-card p-6"
               >
-                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-white">
+                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--brand-magenta),var(--brand-blue))] text-white">
                   <Icon className="h-5 w-5" />
                 </div>
-                <h3 className={cn("text-lg font-semibold text-slate-900", display.className)}>{item.title}</h3>
+                <h3 className="text-lg font-semibold text-slate-900 font-serif">{item.title}</h3>
                 <p className="mt-2 text-sm text-slate-600">{item.description}</p>
               </div>
             )
@@ -178,23 +173,23 @@ export default function HomeHero() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="flex flex-col gap-6 rounded-[32px] border border-black/10 bg-slate-950 px-8 py-10 text-white shadow-2xl shadow-slate-900/30 md:flex-row md:items-center md:justify-between"
+          className="flex flex-col gap-6 rounded-[32px] border border-white/30 bg-[linear-gradient(120deg,var(--brand-magenta),var(--brand-blue))] px-8 py-10 text-white shadow-2xl shadow-black/25 md:flex-row md:items-center md:justify-between"
         >
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">Orders Open Daily</p>
-            <h2 className={cn("text-2xl font-semibold md:text-3xl", display.className)}>
-              Ready for an order you’ll actually remember?
+            <h2 className="text-2xl font-semibold md:text-3xl font-serif">
+              Ready for an order you'll actually remember?
             </h2>
             <p className="text-sm text-white/70">
-              Custom cakes for celebrations, pizzas for the people you love. Tap once and we’ll take it from there.
+              Custom cakes for celebrations, pizzas for the people you love. Tap once and we'll take it from there.
             </p>
           </div>
           <button
             onClick={() => router.push("/order/cake")}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-blue-deep)] transition hover:-translate-y-0.5"
           >
             Start an Order <ArrowUpRight className="h-4 w-4" />
           </button>

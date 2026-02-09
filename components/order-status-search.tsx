@@ -29,7 +29,7 @@ export function OrderStatusSearch({
   }
 
   return (
-    <div className="space-y-4 bg-card p-6 rounded-2xl border shadow-sm">
+    <div className="space-y-4 lux-card p-6">
       {error && (
         <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
           <AlertCircle size={16} />

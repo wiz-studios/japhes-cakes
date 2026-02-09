@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         // 4. Find Order (Idempotency)
         const { data: order, error: findError } = await supabase
             .from("orders")
-            .select("id, lipana_checkout_request_id, payment_status")
+            .select("id, lipana_checkout_request_id, payment_status, payment_plan, total_amount, payment_amount_paid, payment_deposit_amount, payment_last_request_amount")
             .eq("lipana_checkout_request_id", checkoutRequestId)
             .single()
 
@@ -71,7 +71,9 @@ export async function POST(request: Request) {
         const isSuccess = eventType === "payment.success" || eventType === "Success" || data?.ResultCode === 0
         const isFailed = eventType === "payment.failed" || eventType === "payment.cancelled" || (data?.ResultCode && data?.ResultCode !== 0)
 
-        const targetStatus = isSuccess ? "paid" : isFailed ? "failed" : null
+        const targetStatus = isSuccess
+            ? (order.payment_plan === "deposit" && order.payment_status !== "deposit_paid" ? "deposit_paid" : "paid")
+            : isFailed ? "failed" : null
 
         if (!targetStatus) {
             console.warn(`[LIPANA-WEBHOOK] Unhandled event type/status: ${eventType}`)
@@ -87,15 +89,37 @@ export async function POST(request: Request) {
         // 7. Process Update
         if (targetStatus === "paid") {
             const transactionId = data?.transaction_reference || data?.MpesaReceiptNumber || "LIPANA_TRX_" + Date.now()
+            const totalAmount = Number(order.total_amount || 0)
+            const paidAmount = Number(order.payment_amount_paid || 0)
+            const depositAmount = Number(order.payment_deposit_amount || Math.ceil(totalAmount * 0.5))
+            const requestAmount = Number(order.payment_last_request_amount || 0)
+
+            // Idempotency: ignore duplicate deposit callbacks
+            if (order.payment_status === "deposit_paid" && requestAmount <= depositAmount) {
+                return NextResponse.json({ received: true })
+            }
+
+            const increment = requestAmount || (order.payment_plan === "deposit" && paidAmount < totalAmount ? depositAmount : totalAmount)
+            const nextPaid = Math.min(totalAmount, paidAmount + increment)
+            const nextDue = Math.max(totalAmount - nextPaid, 0)
+            const nextStatus: "paid" | "deposit_paid" = nextPaid >= totalAmount ? "paid" : "deposit_paid"
+
+            const updatePayload: any = {
+                payment_status: nextStatus,
+                lipana_transaction_id: transactionId,
+                mpesa_transaction_id: transactionId,
+                payment_amount_paid: nextPaid,
+                payment_amount_due: nextDue,
+                payment_last_request_amount: null,
+            }
+
+            if (nextStatus === "paid") {
+                updatePayload.paid_at = new Date().toISOString()
+            }
 
             const { error: updateError } = await supabase
                 .from("orders")
-                .update({
-                    payment_status: "paid",
-                    lipana_transaction_id: transactionId,
-                    mpesa_transaction_id: transactionId,
-                    paid_at: new Date().toISOString()
-                })
+                .update(updatePayload)
                 .eq("id", order.id)
 
             if (updateError) throw updateError

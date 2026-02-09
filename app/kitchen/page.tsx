@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase"
 import { useEffect, useState } from "react"
 import { KitchenOrderCard } from "@/components/KitchenOrderCard"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, RefreshCw } from "lucide-react"
 
 export default function KitchenPage() {
     const [orders, setOrders] = useState<any[]>([])
@@ -41,8 +40,8 @@ export default function KitchenPage() {
     if (loading) return <div className="p-8 text-2xl font-bold text-gray-500 animate-pulse">Loading Kitchen Display...</div>
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-            <header className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#f0edf6_55%,#e9edf7_100%)] p-4 md:p-6">
+            <header className="flex justify-between items-center mb-8 bg-white/90 p-4 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 backdrop-blur">
                 <div className="flex items-center gap-3">
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">KITCHEN DISPLAY</h1>
                     <Badge variant="outline" className="text-xs font-mono">
@@ -63,10 +62,10 @@ export default function KitchenPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                 {/* COLUMN 1: NEW ORDERS */}
-                <section className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-6 min-h-[600px]">
+                <section className="bg-white/90 rounded-3xl border border-white/60 p-6 min-h-[600px] shadow-[0_20px_60px_-55px_rgba(15,20,40,0.5)]">
                     <div className="flex items-center justify-between mb-6 pb-4 border-b">
                         <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2">
-                            ⚠️ New Orders
+                            New Orders
                             <Badge className="bg-gray-800 text-white ml-2 text-lg h-7 px-3">{newOrders.length}</Badge>
                         </h2>
                     </div>
@@ -82,10 +81,10 @@ export default function KitchenPage() {
                 </section>
 
                 {/* COLUMN 2: IN PROGRESS */}
-                <section className="bg-blue-50/50 rounded-2xl border-2 border-blue-100 p-6 min-h-[600px]">
+                <section className="bg-white/90 rounded-3xl border border-white/60 p-6 min-h-[600px] shadow-[0_20px_60px_-55px_rgba(15,20,40,0.5)]">
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-blue-200">
                         <h2 className="text-xl font-bold text-blue-900 flex items-center gap-2">
-                            🔥 Cooking / Preparing
+                            Cooking / Preparing
                             <Badge className="bg-blue-600 text-white ml-2 text-lg h-7 px-3">{inKitchenOrders.length}</Badge>
                         </h2>
                     </div>

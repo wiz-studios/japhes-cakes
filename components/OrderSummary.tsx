@@ -13,25 +13,28 @@ interface Order {
   deliveryFee: number;
   total: number;
   placedHour: number;
+  fulfilment?: string;
   // Add other properties as needed
 }
 
 interface OrderSummaryProps {
   order: Order;
-  onConfirm: () => void;
+  paymentPlan?: "full" | "deposit";
+  depositAmount?: number;
 }
 
 // OrderSummary: shows order details, price, and late-night warning
 // Fixed TypeScript errors by adding explicit types for props and map parameter
-export default function OrderSummary({ order }: { order: Order }) {
+export default function OrderSummary({ order, paymentPlan = "full", depositAmount }: OrderSummaryProps) {
   const isLateNight = order.placedHour >= 21;
+  const depositDue = depositAmount ?? Math.ceil(order.total * 0.5)
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-lg mx-auto bg-white rounded-3xl shadow-xl p-8 mt-8"
+      className="max-w-lg mx-auto lux-card p-8 mt-8"
     >
-      <h2 className="text-2xl font-bold mb-6 text-rose-600">Order Summary</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-[var(--brand-magenta-deep)] font-serif">Order Summary</h2>
       <div className="mb-4">
         <div className="flex justify-between">
           <span className="font-semibold">Items:</span>
@@ -45,6 +48,18 @@ export default function OrderSummary({ order }: { order: Order }) {
           <span className="font-semibold">Total:</span>
           <span className="font-bold text-amber-600">{order.total} KES</span>
         </div>
+        {paymentPlan === "deposit" && (
+          <>
+            <div className="flex justify-between">
+              <span className="font-semibold">Deposit Due Now:</span>
+              <span className="font-bold text-emerald-700">{depositDue} KES</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-semibold">Balance on {order.fulfilment === "delivery" ? "Delivery" : "Pickup"}:</span>
+              <span className="font-bold text-slate-700">{(order.total - depositDue)} KES</span>
+            </div>
+          </>
+        )}
         {isLateNight && (
           <div className="mt-2 text-amber-600 font-medium">
             Orders placed after 9 PM will be scheduled for the next day.

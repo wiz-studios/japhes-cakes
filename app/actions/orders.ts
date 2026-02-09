@@ -4,7 +4,6 @@ import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { addHours, isAfter, setHours, setMinutes } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
-import type { PaymentMethod } from "@/lib/types/payment"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   order_received: ["in_kitchen", "cancelled"],
@@ -65,8 +64,16 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
 export async function markOrderAsPaid(orderId: string, transactionId?: string) {
   const supabase = await createServerSupabaseClient()
 
+  const { data: order } = await supabase
+    .from("orders")
+    .select("total_amount")
+    .eq("id", orderId)
+    .single()
+
   const updateData: any = {
-    payment_status: "paid"
+    payment_status: "paid",
+    payment_amount_paid: order?.total_amount ?? null,
+    payment_amount_due: 0,
   }
 
   if (transactionId) {
@@ -119,9 +126,18 @@ export async function completeDelivery(orderId: string, collectedCash: boolean =
       return { success: false, error: "You must confirm cash collection to complete this delivery" }
     }
     updates.payment_status = "paid"
+    updates.payment_amount_paid = order.total_amount
+    updates.payment_amount_due = 0
     // Log "collected_at" if we had a field, for now just payment_status update implies it.
   } else if (order.payment_method === "mpesa") {
-    if (order.payment_status !== "paid") {
+    if (order.payment_status === "deposit_paid") {
+      if (!collectedCash) {
+        return { success: false, error: "Confirm cash collection for the remaining balance to complete delivery" }
+      }
+      updates.payment_status = "paid"
+      updates.payment_amount_due = 0
+      updates.payment_amount_paid = order.total_amount
+    } else if (order.payment_status !== "paid") {
       return { success: false, error: "CRITICAL: Cannot deliver unpaid M-Pesa order. Return to shop." }
     }
   }
@@ -141,6 +157,9 @@ export async function submitCakeOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
   try {
+    if (values.paymentMethod !== "mpesa") {
+      return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
+    }
     // 1. Get zone info for fee calculation
     let deliveryFee = 0
     let deliveryWindow = "N/A"
@@ -173,7 +192,9 @@ export async function submitCakeOrder(values: any) {
     const basePrice = CAKE_PRICES[values.cakeSize.toLowerCase()] || CAKE_PRICES["1kg"]
     const flavorSurcharge = FLAVOR_SURCHARGES[values.cakeFlavor] || 0
     const itemTotal = basePrice + flavorSurcharge
-  const total = itemTotal + deliveryFee
+    const total = itemTotal + deliveryFee
+    const paymentPlan = (values.paymentPlan || "full") as "full" | "deposit"
+    const depositAmount = Math.ceil(total * 0.5)
 
     // 2. Insert order (retry on friendly_id collision)
     let order = null
@@ -199,11 +220,16 @@ export async function submitCakeOrder(values: any) {
           preferred_date: values.preferredDate,
           expires_at: addHours(new Date(), 2).toISOString(),
           status: "order_received",
-          payment_method: values.paymentMethod || "cash",
+          payment_method: values.paymentMethod || "mpesa",
           payment_status: getInitialPaymentStatus(
-            values.paymentMethod || "cash",
-            values.fulfilment
+            values.paymentMethod || "mpesa",
+            values.fulfilment,
+            paymentPlan
           ),
+          payment_plan: paymentPlan,
+          payment_amount_paid: 0,
+          payment_amount_due: total,
+          payment_deposit_amount: depositAmount,
           mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
         })
         .select()
@@ -260,6 +286,9 @@ export async function submitPizzaOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
   try {
+    if (values.paymentMethod !== "mpesa") {
+      return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
+    }
     const now = new Date()
     const cutoff = setMinutes(setHours(new Date(), 21), 0)
     let preferredDate = values.preferredDate || now
@@ -313,6 +342,8 @@ export async function submitPizzaOrder(values: any) {
     const typeSurcharge = PIZZA_TYPE_SURCHARGES[values.pizzaType] || 0
     const itemTotal = (basePrice + typeSurcharge) * (values.quantity || 1)
     const total = itemTotal + deliveryFee
+    const paymentPlan = (values.paymentPlan || "full") as "full" | "deposit"
+    const depositAmount = Math.ceil(total * 0.5)
 
     let order = null
     let orderError = null
@@ -332,11 +363,16 @@ export async function submitPizzaOrder(values: any) {
           total_amount: total,
           preferred_date: preferredDate, // use calculated date
           status: "order_received",
-          payment_method: values.paymentMethod || "cash",
+          payment_method: values.paymentMethod || "mpesa",
           payment_status: getInitialPaymentStatus(
-            values.paymentMethod || "cash",
-            values.fulfilment
+            values.paymentMethod || "mpesa",
+            values.fulfilment,
+            paymentPlan
           ),
+          payment_plan: paymentPlan,
+          payment_amount_paid: 0,
+          payment_amount_due: total,
+          payment_deposit_amount: depositAmount,
           mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
         })
         .select()

@@ -19,7 +19,7 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
     const isUnpaidMpesaDelivery =
         order.fulfilment === "delivery" &&
         order.payment_method === "mpesa" &&
-        order.payment_status !== "paid"
+        !["paid", "deposit_paid"].includes(order.payment_status)
 
     const handleStatusUpdate = async (newStatus: string) => {
         if (loading) return
@@ -46,8 +46,8 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
 
     return (
         <div className={`
-      relative overflow-hidden rounded-xl border-2 shadow-sm transition-all
-      ${isUnpaidMpesaDelivery ? "border-red-200 bg-red-50" : "border-gray-200 bg-white"}
+      relative overflow-hidden rounded-2xl border shadow-[0_18px_50px_-40px_rgba(15,20,40,0.5)] transition-all
+      ${isUnpaidMpesaDelivery ? "border-red-200 bg-red-50/70" : "border-white/60 bg-white/90"}
     `}>
             {/* Strict Lock Overlay / Banner */}
             {isUnpaidMpesaDelivery && (
@@ -107,7 +107,7 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
                 </div>
 
                 {/* Actions Footer */}
-                <div className="pt-4 border-t border-gray-100 grid grid-cols-1 gap-2">
+                <div className="pt-4 border-t border-white/60 grid grid-cols-1 gap-2">
                     {order.status === "order_received" && (
                         <Button
                             onClick={() => handleStatusUpdate("in_kitchen")}

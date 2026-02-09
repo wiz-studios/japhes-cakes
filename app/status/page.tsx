@@ -90,9 +90,10 @@ export default async function OrderStatusPage({
     : "Thika Branch"
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)]">
+      <div className="space-y-8 max-w-4xl mx-auto px-4 py-10">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl font-serif font-bold text-gray-900">Track Your Order</h2>
+        <h2 className="text-3xl font-serif font-semibold text-gray-900">Track Your Order</h2>
         <p className="text-muted-foreground">Enter your details to see real-time updates.</p>
       </div>
 
@@ -101,8 +102,8 @@ export default async function OrderStatusPage({
       {order && (
         <div className="space-y-8">
           {/* Status Header */}
-          <div className="bg-white border rounded-3xl shadow-sm p-6 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 border-b pb-6">
+          <div className="lux-card p-6 md:p-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 border-b border-white/60 pb-6">
               <div className="text-center md:text-left">
                 <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Order Number</p>
                 <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{formatFriendlyId(order)}</p>
@@ -127,14 +128,16 @@ export default async function OrderStatusPage({
               fulfilment={order.fulfilment}
               mpesaTransactionId={order.mpesa_transaction_id}
               totalAmount={order.total_amount || 0}
+              amountPaid={order.payment_amount_paid || 0}
+              amountDue={order.payment_amount_due || 0}
             />
           </div>
 
           {/* Order Details Card */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Items */}
-            <div className="bg-white border rounded-3xl shadow-sm p-6">
-              <h3 className="flex items-center gap-2 font-bold text-lg mb-4 text-gray-800">
+            <div className="lux-card p-6">
+              <h3 className="flex items-center gap-2 font-semibold text-lg mb-4 text-gray-800 font-serif">
                 <Package className="w-5 h-5 text-gray-500" /> Order Details
               </h3>
               <div className="space-y-4">
@@ -148,7 +151,7 @@ export default async function OrderStatusPage({
                   </div>
                 ))}
               </div>
-              <div className="mt-6 pt-4 border-t flex justify-between items-center">
+              <div className="mt-6 pt-4 border-t border-white/60 flex justify-between items-center">
                 <span className="font-bold text-gray-600">Total Paid</span>
                 <span className="font-bold text-xl text-gray-900">
                   {(order.total_amount || 0).toLocaleString()} KES
@@ -157,15 +160,15 @@ export default async function OrderStatusPage({
             </div>
 
             {/* Info */}
-            <div className="bg-white border rounded-3xl shadow-sm p-6 space-y-6">
+            <div className="lux-card p-6 space-y-6">
               <div>
-                <h3 className="flex items-center gap-2 font-bold text-lg mb-2 text-gray-800">
+                <h3 className="flex items-center gap-2 font-semibold text-lg mb-2 text-gray-800 font-serif">
                   <Clock className="w-5 h-5 text-gray-500" /> Order Time
                 </h3>
                 <p className="text-gray-600">{new Date(order.created_at).toLocaleString()}</p>
               </div>
               <div>
-                <h3 className="flex items-center gap-2 font-bold text-lg mb-2 text-gray-800">
+                <h3 className="flex items-center gap-2 font-semibold text-lg mb-2 text-gray-800 font-serif">
                   <MapPin className="w-5 h-5 text-gray-500" /> {locationLabel}
                 </h3>
                 <p className="text-gray-900 font-medium">{locationValue}</p>
@@ -179,6 +182,7 @@ export default async function OrderStatusPage({
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

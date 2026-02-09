@@ -33,7 +33,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     // 2. Fetch Order Details (Secure Source of Truth for Amount)
     const { data: order, error: orderError } = await supabase
         .from("orders")
-        .select("total_amount")
+        .select("total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount")
         .eq("id", orderId)
         .single()
 
@@ -56,9 +56,29 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
         ...(normalizedBaseUrl ? { baseUrl: normalizedBaseUrl } : {})
     })
 
+    const alreadyPaid = order.payment_status === "paid"
+    const paidAmount = Number(order.payment_amount_paid || 0)
+    const totalAmount = Number(order.total_amount || 0)
+    const depositAmount = Number(order.payment_deposit_amount || Math.ceil(totalAmount * 0.5))
+
+    if (alreadyPaid) {
+        return { success: false, error: "Order already paid" }
+    }
+
+    let amountToCharge = totalAmount
+    if (order.payment_plan === "deposit") {
+        amountToCharge = order.payment_status === "deposit_paid"
+            ? Math.max(totalAmount - paidAmount, 0)
+            : depositAmount
+    }
+
+    if (amountToCharge <= 0) {
+        return { success: false, error: "No balance due" }
+    }
+
     console.log(`[STK-INIT] Initiating STK via SDK (${PAYMENT_CONFIG.env}):`, {
         phone,
-        amount: order.total_amount,
+        amount: amountToCharge,
         orderId: orderId.slice(0, 8),
         baseUrl: normalizedBaseUrl || "SDK default"
     })
@@ -67,7 +87,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
         // 4. Call SDK Method
         const result = await lipana.transactions.initiateStkPush({
             phone: phone,
-            amount: order.total_amount,
+            amount: amountToCharge,
             accountReference: `Order ${orderId.slice(0, 8)}`,
             transactionDesc: "Payment for order",
         })
@@ -93,6 +113,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
                 payment_status: "initiated",
                 mpesa_phone: phone,
                 lipana_checkout_request_id: checkoutRequestId,
+                payment_last_request_amount: amountToCharge,
             })
             .eq("id", orderId)
 

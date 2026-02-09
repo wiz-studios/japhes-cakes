@@ -24,7 +24,7 @@ const PIZZA_TOPPINGS: string[] = [
 import { submitPizzaOrder, submitCakeOrder } from "@/app/actions/orders"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector"
-import type { PaymentMethod } from "@/lib/types/payment"
+import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
 
 // Main review page component
 // Types for order and item
@@ -75,7 +75,8 @@ function OrderReviewContent() {
   const [progress, setProgress] = useState(80) // 80%: review step
 
   // Payment state
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
+  const paymentMethod: PaymentMethod = "mpesa"
+  const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("deposit")
   const [mpesaPhone, setMpesaPhone] = useState("")
 
   // Pricing Constants (should match Order Forms)
@@ -163,6 +164,7 @@ function OrderReviewContent() {
 
     console.log("=== SUBMIT CLICKED ===")
     console.log("Payment method:", paymentMethod)
+    console.log("Payment plan:", paymentPlan)
     console.log("M-Pesa phone:", mpesaPhone)
     console.log("Order data:", order)
 
@@ -173,7 +175,7 @@ function OrderReviewContent() {
     // ... existing submission logic ...
 
     // Re-validate M-Pesa phone if selected
-    if (paymentMethod === "mpesa" && !mpesaPhone) {
+    if (!mpesaPhone) {
       console.log("Validation failed: M-Pesa phone required")
       setError("Please enter your M-Pesa phone number")
       setSubmitting(false)
@@ -201,6 +203,7 @@ function OrderReviewContent() {
           phone: order.phone,
           notes: order.items[0].notes,
           paymentMethod,
+          paymentPlan,
           mpesaPhone,
         }
         result = await submitPizzaOrder(pizzaData)
@@ -221,13 +224,14 @@ function OrderReviewContent() {
           customerName: order.customerName || order.items[0].customerName || "",
           phone: order.phone,
           paymentMethod,
+          paymentPlan,
           mpesaPhone,
         }
         result = await submitCakeOrder(cakeData)
       }
       if (result && result.success) {
         // NON-BLOCKING STK PUSH (v0 Prompt)
-        if (paymentMethod === "mpesa" && mpesaPhone) {
+        if (mpesaPhone) {
           console.log("Triggering Fire-and-Forget STK Push for:", result.orderId)
           // We do NOT await this result for the UI block. 
           // Ideally we await just to ensure the request was sent successfully to OUR backend?
@@ -286,7 +290,7 @@ function OrderReviewContent() {
 
     // Pizza + No Date (ASAP) logic
     if (order.fulfilment === "delivery") {
-      return { label: "Estimated Delivery", value: "45–60 minutes" }
+      return { label: "Estimated Delivery", value: "45-60 minutes" }
     } else {
       return { label: "Ready for Pickup", value: "~30 minutes" }
     }
@@ -295,7 +299,7 @@ function OrderReviewContent() {
   const { label: dateLabel, value: dateValue } = getDateDisplay()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-rose-50 flex flex-col">
+    <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)] flex flex-col">
       {showConfetti && <Confetti />}
       {/* Hero Section */}
       <motion.div
@@ -305,11 +309,11 @@ function OrderReviewContent() {
         className="py-8 text-center"
       >
         <h1 className="text-3xl md:text-4xl font-extrabold text-rose-600 mb-2 animate-pulse">
-          Review Your Order <span aria-label="cake and pizza" role="img">🍰🍕</span>
+          Review Your Order
         </h1>
-        <p className="text-muted-foreground text-lg">Almost there! Just confirm your delicious order 🍕🍰</p>
+        <p className="text-muted-foreground text-lg">Almost there! Just confirm your delicious order.</p>
         <div className="max-w-xs mx-auto mt-4">
-          <Progress value={progress} className="h-2 bg-amber-200" />
+          <Progress value={progress} className="h-2 bg-white/60" />
         </div>
       </motion.div>
 
@@ -323,7 +327,7 @@ function OrderReviewContent() {
         >
           {/* Editable Order Items */}
           {order.items.map((item, idx) => (
-            <div key={idx} className="bg-white rounded-2xl shadow-lg p-6 mb-4">
+            <div key={idx} className="lux-card p-6 mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-lg">{item.name}</span>
                 <div className="flex items-center gap-2">
@@ -407,7 +411,7 @@ function OrderReviewContent() {
           ))}
 
           {/* Delivery/Pickup Info */}
-          <div className="bg-white rounded-2xl shadow p-5 mb-4 flex flex-col gap-2">
+          <div className="lux-card p-5 mb-4 flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="font-semibold">{order.fulfilment === "delivery" ? "Delivery" : "Pickup"}:</span>
               <span className="text-rose-600 font-bold">
@@ -427,18 +431,23 @@ function OrderReviewContent() {
           </div>
 
           {/* Payment Method Selection */}
-          <div className="bg-white rounded-2xl shadow p-5 mb-4">
+          <div className="lux-card p-5 mb-4">
             <PaymentMethodSelector
               fulfilment={order.fulfilment as "delivery" | "pickup"}
-              value={paymentMethod}
-              onChange={setPaymentMethod}
+              value={paymentPlan}
+              onChange={setPaymentPlan}
+              totalAmount={order.total}
               mpesaPhone={mpesaPhone}
               onMpesaPhoneChange={setMpesaPhone}
             />
           </div>
 
           {/* Order Summary */}
-          <OrderSummary order={order} />
+          <OrderSummary
+            order={order}
+            paymentPlan={paymentPlan}
+            depositAmount={Math.ceil(order.total * 0.5)}
+          />
 
           {/* Error/Warning */}
           <AnimatePresence>

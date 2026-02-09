@@ -153,9 +153,11 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
       >
         {liveOrder.payment_status === "paid"
           ? "Payment Confirmed"
-          : liveOrder.payment_method === "cash"
-            ? "Order Received!"
-            : "Complete Payment"}
+          : liveOrder.payment_status === "deposit_paid"
+            ? "Deposit Confirmed"
+            : liveOrder.payment_method === "cash"
+              ? "Order Received!"
+              : "Complete Payment"}
       </motion.h1>
 
       <motion.p
@@ -175,7 +177,7 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl border p-6 w-full shadow-sm mb-8 print:border-2 print:shadow-none"
+        className="lux-card p-6 w-full mb-8 print:border-2 print:shadow-none"
       >
         <div className="text-sm text-muted-foreground uppercase tracking-wider font-semibold mb-1">
           Order Number
@@ -198,6 +200,8 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
           fulfilment={liveOrder.fulfilment}
           mpesaTransactionId={liveOrder.mpesa_transaction_id}
           totalAmount={liveOrder.total_amount || 0}
+          amountPaid={liveOrder.payment_amount_paid || 0}
+          amountDue={liveOrder.payment_amount_due || 0}
         />
 
         {/* Retry Logic Display - Show for FAILED or PENDING (if initial push missed) */}
@@ -216,9 +220,24 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
           </div>
         )}
 
+        {liveOrder.payment_status === "deposit_paid" && liveOrder.payment_method === "mpesa" && liveOrder.payment_amount_due > 0 && (
+          <div className="mt-4">
+            <Button
+              onClick={handleRetryPayment}
+              disabled={isRetrying || retryCooldown > 0}
+              className="w-full bg-slate-900 text-white hover:bg-slate-800"
+            >
+              {isRetrying ? "Sending Request..." : retryCooldown > 0 ? `Wait ${retryCooldown}s` : "Pay Remaining Balance"}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              Pay the remaining balance now to complete your order.
+            </p>
+          </div>
+        )}
+
         {/* Initiated Waiting Message (Hardened Copy) */}
         {liveOrder.payment_status === "initiated" && (
-          <div className="mt-4 bg-amber-50 p-3 rounded-lg border border-amber-100">
+          <div className="mt-4 bg-white/80 p-3 rounded-2xl border border-white/60">
             <p className="text-sm text-amber-800 font-medium">
               Waiting for M-Pesa confirmation...
             </p>

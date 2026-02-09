@@ -10,6 +10,8 @@ interface OrderPaymentStatusCardProps {
     fulfilment: Fulfilment
     mpesaTransactionId?: string
     totalAmount: number
+    amountPaid?: number | null
+    amountDue?: number | null
 }
 
 export function OrderPaymentStatusCard({
@@ -17,7 +19,9 @@ export function OrderPaymentStatusCard({
     paymentMethod,
     fulfilment,
     mpesaTransactionId,
-    totalAmount
+    totalAmount,
+    amountPaid,
+    amountDue
 }: OrderPaymentStatusCardProps) {
     const statusMessage = getPaymentStatusMessage(paymentStatus, fulfilment)
     const instruction = getPaymentInstruction(paymentMethod, fulfilment, paymentStatus)
@@ -32,6 +36,14 @@ export function OrderPaymentStatusCard({
                     borderColor: "border-emerald-200",
                     iconColor: "text-emerald-600",
                     textColor: "text-emerald-800"
+                }
+            case "deposit_paid":
+                return {
+                    icon: CheckCircle2,
+                    bgColor: "bg-amber-50",
+                    borderColor: "border-amber-200",
+                    iconColor: "text-amber-600",
+                    textColor: "text-amber-800"
                 }
             case "pending":
             case "initiated":
@@ -67,8 +79,8 @@ export function OrderPaymentStatusCard({
 
     return (
         <div className={`
-      ${config.bgColor} ${config.borderColor} 
-      border-2 rounded-2xl p-6 space-y-4
+      ${config.bgColor} ${config.borderColor}
+      border rounded-3xl p-6 space-y-4 shadow-[0_18px_50px_-40px_rgba(15,20,40,0.35)]
     `}>
             <div className="flex items-start gap-4">
                 <div className={`${config.bgColor} p-3 rounded-full`}>
@@ -87,7 +99,7 @@ export function OrderPaymentStatusCard({
             </div>
 
             {/* Transaction Details */}
-            <div className="space-y-2 pt-2 border-t border-gray-200">
+            <div className="space-y-2 pt-2 border-t border-white/60">
                 {mpesaTransactionId && (
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Transaction ID:</span>
@@ -98,6 +110,18 @@ export function OrderPaymentStatusCard({
                     <span className="text-gray-600">Amount:</span>
                     <span className="font-bold text-gray-900">{totalAmount.toLocaleString()} KES</span>
                 </div>
+                {typeof amountPaid === "number" && amountPaid > 0 && (
+                    <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Paid:</span>
+                        <span className="font-semibold text-emerald-700">{amountPaid.toLocaleString()} KES</span>
+                    </div>
+                )}
+                {typeof amountDue === "number" && amountDue > 0 && (
+                    <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Balance Due:</span>
+                        <span className="font-semibold text-slate-700">{amountDue.toLocaleString()} KES</span>
+                    </div>
+                )}
                 <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Method:</span>
                     <span className="font-semibold capitalize">{paymentMethod === "mpesa" ? "M-Pesa" : "Cash"}</span>

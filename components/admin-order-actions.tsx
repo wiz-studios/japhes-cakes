@@ -16,12 +16,16 @@ export function AdminOrderActions({
   currentPayment,
   orderType,
   fulfilment,
+  totalAmount,
+  depositAmount,
 }: {
   orderId: string
   currentStatus: string
   currentPayment: string
   orderType: string
   fulfilment: string
+  totalAmount: number
+  depositAmount?: number | null
 }) {
   const [status, setStatus] = useState(currentStatus)
   const [payment, setPayment] = useState(currentPayment)
@@ -45,7 +49,16 @@ export function AdminOrderActions({
     // Payment status update (direct allowed)
     if (payment !== currentPayment) {
       const supabase = createClient()
-      await supabase.from("orders").update({ payment_status: payment }).eq("id", orderId)
+      const paymentUpdate: any = { payment_status: payment }
+      if (payment === "paid") {
+        paymentUpdate.payment_amount_paid = totalAmount
+        paymentUpdate.payment_amount_due = 0
+      } else if (payment === "deposit_paid") {
+        const deposit = depositAmount ?? Math.ceil(totalAmount * 0.5)
+        paymentUpdate.payment_amount_paid = deposit
+        paymentUpdate.payment_amount_due = Math.max(totalAmount - deposit, 0)
+      }
+      await supabase.from("orders").update(paymentUpdate).eq("id", orderId)
     }
 
     router.refresh()
@@ -84,6 +97,7 @@ export function AdminOrderActions({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
             <SelectItem value="paid">Paid</SelectItem>
             <SelectItem value="expired">Expired</SelectItem>
           </SelectContent>

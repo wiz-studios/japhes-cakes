@@ -18,11 +18,11 @@ export function OrderStatusDisplay({ order }: { order: any }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card border rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="lux-card p-6 space-y-6">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-sm text-muted-foreground uppercase font-bold tracking-tight">Status</h3>
-            <div className={`text-2xl font-bold flex items-center gap-2 mt-1 ${config.color}`}>
+            <h3 className="text-xs text-muted-foreground uppercase font-bold tracking-[0.28em]">Status</h3>
+            <div className={`text-2xl font-semibold flex items-center gap-2 mt-2 ${config.color}`}>
               <StatusIcon size={24} /> {config.label}
             </div>
           </div>
@@ -33,7 +33,7 @@ export function OrderStatusDisplay({ order }: { order: any }) {
 
         <Progress value={config.progress} className="h-3" />
 
-        <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t">
+        <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t border-white/60">
           <div>
             <span className="text-muted-foreground block">Order Type</span>
             <span className="font-medium capitalize">{order.order_type}</span>
@@ -55,8 +55,8 @@ export function OrderStatusDisplay({ order }: { order: any }) {
         </div>
       </div>
 
-      <div className="bg-card border rounded-2xl p-6 shadow-sm">
-        <h4 className="font-bold mb-4">Items</h4>
+      <div className="lux-card p-6">
+        <h4 className="font-semibold mb-4 font-serif">Items</h4>
         <div className="space-y-4">
           {order.order_items.map((item: any) => (
             <div key={item.id} className="flex justify-between items-start text-sm">

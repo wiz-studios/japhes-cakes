@@ -1,11 +1,114 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Bike, CalendarDays, CookingPot, LayoutDashboard, MapPin, ShieldCheck } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+const navItems = [
+  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Scheduled Pizza", href: "/admin/recent-scheduled-pizza", icon: CalendarDays },
+  { label: "Delivery Zones", href: "/admin/zones", icon: MapPin },
+  { label: "Kitchen", href: "/kitchen", icon: CookingPot },
+  { label: "Delivery", href: "/delivery", icon: Bike },
+]
+
 export default function AdminLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode
+  children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const isLogin = pathname === "/admin/login"
+
+  if (isLogin) {
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            {children}
+      <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#efeaf4_55%,#ece6f1_100%)] px-6 py-12">
+        <div className="mx-auto w-full max-w-lg">
+          <div className="mb-6 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Staff Access</p>
+            <h1 className="text-2xl font-semibold text-slate-900 font-serif">Japhe's Staff Console</h1>
+            <p className="mt-2 text-sm text-slate-600">Secure sign-in for operations staff.</p>
+          </div>
+          {children}
         </div>
+      </div>
     )
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f6f3f7] text-slate-900">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-72 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#0f1016_0%,#141626_100%)] px-6 py-8 text-white lg:flex">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-white/50">Staff</p>
+              <p className="text-lg font-semibold">Operations Hub</p>
+            </div>
+          </div>
+
+          <nav className="mt-10 space-y-2">
+            {navItems.map((item) => {
+              const isActive = pathname?.startsWith(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] transition",
+                    isActive ? "bg-white text-slate-900" : "text-white/70 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+
+          <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
+            Internal tools only. Customer actions are disabled in this space.
+          </div>
+        </aside>
+
+        <div className="flex flex-1 flex-col">
+          <header className="sticky top-0 z-10 border-b border-white/60 bg-white/85 px-6 py-4 backdrop-blur-xl">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Staff Console</p>
+                <h2 className="text-xl font-semibold text-slate-900 font-serif">Operational Dashboard</h2>
+              </div>
+              <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
+                Logged in as staff
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+              {navItems.map((item) => {
+                const isActive = pathname?.startsWith(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold transition",
+                      isActive
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 bg-white text-slate-600"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          </header>
+
+          <main className="flex-1 px-6 py-8 lg:px-10">{children}</main>
+        </div>
+      </div>
+    </div>
+  )
 }

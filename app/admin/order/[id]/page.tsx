@@ -78,6 +78,8 @@ export default async function AdminOrderDetailPage({
               currentPayment={order.payment_status}
               orderType={order.order_type}
               fulfilment={order.fulfilment}
+              totalAmount={order.total_amount || 0}
+              depositAmount={order.payment_deposit_amount}
             />
           </CardContent>
         </Card>

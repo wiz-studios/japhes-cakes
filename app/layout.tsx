@@ -1,19 +1,21 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Playfair_Display, Inter } from "next/font/google"
+import { Cormorant_Garamond, Manrope } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import SiteHeader from "@/components/SiteHeader"
 import SiteFooter from "@/components/SiteFooter"
 import "./globals.css"
 
-const playfair = Playfair_Display({
+const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  variable: "--font-serif",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-display",
 })
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-body",
 })
 
 export const metadata: Metadata = {
@@ -46,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased min-h-screen bg-background flex flex-col`}>
+      <body className={`${manrope.variable} ${cormorant.variable} font-sans antialiased min-h-screen bg-background flex flex-col`}>
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

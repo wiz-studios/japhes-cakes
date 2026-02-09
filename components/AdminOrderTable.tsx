@@ -88,7 +88,7 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
       className="space-y-4"
     >
       {/* Header Actions */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white/90 p-4 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 backdrop-blur">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -109,9 +109,9 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
       </div>
 
       {/* Table Container */}
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <div className="bg-white/90 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 overflow-hidden backdrop-blur">
         <Table>
-          <TableHeader className="bg-gray-50/50">
+          <TableHeader className="bg-white/70">
             <TableRow>
               <TableHead className="w-[180px]">Order ID</TableHead>
               <TableHead>Date</TableHead>
@@ -134,7 +134,7 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
               paginatedOrders.map((order) => (
                 <TableRow
                   key={order.id}
-                  className="group hover:bg-gray-50/80 transition-colors cursor-pointer"
+                  className="group hover:bg-white/60 transition-colors cursor-pointer"
                   onClick={() => router.push(`/admin/order/${order.id}`)}
                 >
                   <TableCell className="font-mono font-medium text-gray-700 group-hover:text-gray-900">
@@ -151,15 +151,16 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={order.order_type === 'cake' ? "border-rose-200 text-rose-700 bg-rose-50" : "border-orange-200 text-orange-700 bg-orange-50"}>
-                      {order.order_type === 'cake' ? "🍰 Cake" : "🍕 Pizza"}
+                      {order.order_type === 'cake' ? "Cake" : "Pizza"}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     {/* Payment Status */}
                     <div className="flex flex-col gap-1">
-                      <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                          order.payment_status === 'pending' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                            'bg-blue-100 text-blue-700 border-blue-200'
+                        <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                          order.payment_status === 'deposit_paid' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                            order.payment_status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-blue-100 text-blue-700 border-blue-200'
                         }`}>
                         {order.payment_status?.replace(/_/g, " ") || "unknown"}
                       </Badge>

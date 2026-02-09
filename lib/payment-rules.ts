@@ -1,11 +1,12 @@
-import type { PaymentMethod, PaymentStatus, Fulfilment, Order, UserRole } from "./types/payment"
+import type { PaymentMethod, PaymentStatus, Fulfilment, Order, UserRole, PaymentPlan } from "./types/payment"
 
 /**
  * Determines initial payment status based on payment method and fulfilment type
  */
 export function getInitialPaymentStatus(
     paymentMethod: PaymentMethod,
-    fulfilment: Fulfilment
+    fulfilment: Fulfilment,
+    paymentPlan: PaymentPlan = "full"
 ): PaymentStatus {
     if (paymentMethod === "mpesa") {
         return "pending"
@@ -16,8 +17,9 @@ export function getInitialPaymentStatus(
 
 // Payment State Machine
 const ALLOWED_PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
-    "pending": ["initiated", "pay_on_delivery", "pay_on_pickup"], // Can move to initiated (STK) or Cash modes
-    "initiated": ["paid", "failed", "initiated"], // Can succeed, fail, or retry (re-initiate)
+    "pending": ["initiated", "deposit_paid", "paid", "pay_on_delivery", "pay_on_pickup"], // Can move to initiated (STK) or Cash modes
+    "initiated": ["deposit_paid", "paid", "failed", "initiated"], // Can succeed, fail, or retry (re-initiate)
+    "deposit_paid": ["paid", "initiated", "failed"],
     "paid": [], // TERMINAL STATE (Refunds handled separately if ever)
     "failed": ["initiated"], // Can retry
     "pay_on_delivery": ["paid", "failed"], // Can eventually be paid (e.g. driver collects) or fail
@@ -44,11 +46,13 @@ export function isValidPaymentTransition(
  * Checks if an order requires payment before kitchen can prepare
  */
 export function requiresPaymentBeforePreparation(order: Order): boolean {
-    return (
-        order.fulfilment === "delivery" &&
-        order.payment_method === "mpesa" &&
-        order.payment_status !== "paid"
-    )
+    if (order.payment_method !== "mpesa") return false
+
+    // For M-Pesa, allow prep when deposit is paid (or fully paid).
+    const paidEnough = order.payment_status === "paid" || order.payment_status === "deposit_paid"
+    if (!paidEnough) return true
+
+    return false
 }
 
 /**
@@ -117,6 +121,8 @@ export function getPaymentStatusMessage(
             return "Payment Pending"
         case "initiated":
             return "Payment Initiated"
+        case "deposit_paid":
+            return "Deposit Received"
         case "paid":
             return "Payment Received"
         case "pay_on_delivery":
@@ -150,6 +156,10 @@ export function getPaymentInstruction(
 
     if (paymentStatus === "initiated") {
         return "Check your phone for the M-Pesa STK prompt."
+    }
+
+    if (paymentStatus === "deposit_paid") {
+        return "Deposit received. Clear the balance on pickup/delivery, or pay the remainder now."
     }
 
     if (paymentStatus === "paid") {

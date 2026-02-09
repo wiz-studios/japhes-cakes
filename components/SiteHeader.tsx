@@ -13,6 +13,11 @@ export default function SiteHeader() {
   const { scrollY } = useScroll()
   const pathname = usePathname()
   const isOrderPage = pathname?.startsWith("/order")
+  const isStaffArea =
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/kitchen") ||
+    pathname?.startsWith("/delivery") ||
+    pathname?.startsWith("/staff")
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() ?? 0
@@ -27,7 +32,7 @@ export default function SiteHeader() {
     document.body.style.overflow = isMobileMenuOpen ? "hidden" : "unset"
   }, [isMobileMenuOpen])
 
-  if (isOrderPage) return null
+  if (isOrderPage || isStaffArea) return null
 
   const navLinks = [
     { name: "Cakes", href: "/order/cake" },
@@ -41,16 +46,16 @@ export default function SiteHeader() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out border-b",
           isScrolled
-            ? "bg-white/90 backdrop-blur-xl border-slate-200/70 shadow-sm py-3"
-            : "bg-white/60 backdrop-blur-lg border-white/40 py-5"
+            ? "bg-white/85 backdrop-blur-xl border-white/60 shadow-[0_20px_60px_-45px_rgba(15,20,40,0.6)] py-3"
+            : "bg-white/55 backdrop-blur-xl border-white/40 py-5"
         )}
-        initial={{ y: -100, opacity: 0 }}
+        initial={{ y: 0, opacity: 1 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="container mx-auto px-6 h-full flex items-center justify-between">
           <Link href="/" className="relative z-50">
-            <span className="font-serif text-2xl font-bold tracking-tight text-slate-900">
+            <span className="font-serif text-2xl font-semibold tracking-tight text-[var(--lux-ink)]">
               Japhe's Cakes & Pizza
             </span>
           </Link>
@@ -60,10 +65,10 @@ export default function SiteHeader() {
               <Link
                 key={link.name}
                 href={link.href}
-                className="text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors relative group"
+                className="text-[11px] uppercase tracking-[0.28em] text-slate-600 hover:text-slate-900 font-semibold transition-colors relative group"
               >
                 {link.name}
-                <span className="absolute left-0 bottom-[-4px] w-0 h-[2px] bg-slate-900 transition-all duration-300 group-hover:w-full opacity-80" />
+                <span className="absolute left-0 bottom-[-6px] w-0 h-[2px] bg-[var(--lux-ink)] transition-all duration-300 group-hover:w-full opacity-80" />
               </Link>
             ))}
           </nav>
@@ -73,7 +78,7 @@ export default function SiteHeader() {
               <motion.button
                 whileHover={{ scale: 1.02, boxShadow: "0 16px 30px rgba(15,23,42,0.18)" }}
                 whileTap={{ scale: 0.98 }}
-                className="bg-slate-950 hover:bg-slate-900 text-white border border-slate-950/60 px-6 py-2 rounded-full text-sm font-semibold transition-all"
+                className="bg-[#0f1116] hover:bg-[#191c24] text-white border border-white/10 px-6 py-2 rounded-full text-sm font-semibold transition-all"
               >
                 Order Now
               </motion.button>
@@ -97,7 +102,7 @@ export default function SiteHeader() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-white/95 backdrop-blur-xl md:hidden flex flex-col items-center justify-center"
+            className="fixed inset-0 z-40 bg-white/90 backdrop-blur-xl md:hidden flex flex-col items-center justify-center"
           >
             <nav className="flex flex-col items-center gap-8">
               {navLinks.map((link, i) => (
@@ -126,7 +131,7 @@ export default function SiteHeader() {
                 className="mt-8"
               >
                 <Link href="/order/cake" onClick={() => setIsMobileMenuOpen(false)}>
-                  <button className="bg-slate-950 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-slate-800 transition-colors">
+                  <button className="bg-[#0f1116] text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-[#191c24] transition-colors">
                     Order Now
                   </button>
                 </Link>
