@@ -2,15 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Bike, CalendarDays, CookingPot, LayoutDashboard, MapPin, ShieldCheck } from "lucide-react"
+import { CalendarDays, LayoutDashboard, MapPin, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Scheduled Pizza", href: "/admin/recent-scheduled-pizza", icon: CalendarDays },
   { label: "Delivery Zones", href: "/admin/zones", icon: MapPin },
-  { label: "Kitchen", href: "/kitchen", icon: CookingPot },
-  { label: "Delivery", href: "/delivery", icon: Bike },
 ]
 
 export default function AdminLayout({
@@ -26,9 +24,9 @@ export default function AdminLayout({
       <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#efeaf4_55%,#ece6f1_100%)] px-6 py-12">
         <div className="mx-auto w-full max-w-lg">
           <div className="mb-6 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Staff Access</p>
-            <h1 className="text-2xl font-semibold text-slate-900 font-serif">Japhe's Staff Console</h1>
-            <p className="mt-2 text-sm text-slate-600">Secure sign-in for operations staff.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Admin Access</p>
+            <h1 className="text-2xl font-semibold text-slate-900 font-serif">Japhe's Admin Console</h1>
+            <p className="mt-2 text-sm text-slate-600">Secure sign-in for order management.</p>
           </div>
           {children}
         </div>
@@ -45,7 +43,7 @@ export default function AdminLayout({
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-white/50">Staff</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-white/50">Admin</p>
               <p className="text-lg font-semibold">Operations Hub</p>
             </div>
           </div>
@@ -70,7 +68,7 @@ export default function AdminLayout({
           </nav>
 
           <div className="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
-            Internal tools only. Customer actions are disabled in this space.
+            Admin tools only. Customer actions are disabled in this space.
           </div>
         </aside>
 
@@ -78,11 +76,11 @@ export default function AdminLayout({
           <header className="sticky top-0 z-10 border-b border-white/60 bg-white/85 px-6 py-4 backdrop-blur-xl">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Staff Console</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Admin Console</p>
                 <h2 className="text-xl font-semibold text-slate-900 font-serif">Operational Dashboard</h2>
               </div>
               <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
-                Logged in as staff
+                Logged in as admin
               </div>
             </div>
             <div className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">

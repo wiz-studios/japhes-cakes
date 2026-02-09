@@ -63,50 +63,11 @@ export function canProgressToStatus(
     newStatus: string,
     actorRole: UserRole
 ): { allowed: boolean; reason?: string } {
-    // 1. ADMIN OVERRIDE
-    // Admins can do anything valid (state machine validation happens in action)
-    if (actorRole === "admin") return { allowed: true }
-
-    // 2. KITCHEN STAFF RULES
-    if (actorRole === "kitchen") {
-        // Allowed actions: "in_kitchen", "ready_for_pickup"
-        // Forbidden: "out_for_delivery", "delivered"
-        if (["out_for_delivery", "delivered"].includes(newStatus)) {
-            return { allowed: false, reason: "Kitchen staff cannot dispatch deliveries" }
-        }
-
-        // STRICT PAYMENT LOCK: Cannot start/finish prep if unpaid M-Pesa Delivery
-        const preparationStatuses = ["preparing", "in_kitchen", "ready_for_pickup"]
-        if (preparationStatuses.includes(newStatus)) {
-            if (requiresPaymentBeforePreparation(order)) {
-                return {
-                    allowed: false,
-                    reason: "STRICT LOCK: Delivery orders with M-Pesa payment must be paid before preparation"
-                }
-            }
-        }
-
-        return { allowed: true }
+    if (actorRole !== "admin") {
+        return { allowed: false, reason: "Unauthorized: admin access required" }
     }
 
-    // 3. DELIVERY STAFF RULES
-    if (actorRole === "delivery") {
-        // Allowed: "out_for_delivery", "delivered"
-        // Forbidden: "in_kitchen", "ready_for_pickup"
-        if (["in_kitchen", "preparing", "ready_for_pickup"].includes(newStatus)) {
-            return { allowed: false, reason: "Delivery staff cannot prepare food" }
-        }
-
-        // Delivery staff can only update if order is ready
-        if (newStatus === "out_for_delivery" && order.status !== "ready_for_pickup") {
-            return { allowed: false, reason: "Order must be Ready for Pickup before delivery" }
-        }
-
-        return { allowed: true }
-    }
-
-    // Default deny for unknown roles
-    return { allowed: false, reason: "Unauthorized role" }
+    return { allowed: true }
 }
 
 /**

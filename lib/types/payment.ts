@@ -15,7 +15,7 @@ export type PaymentStatus =
 
 export type Fulfilment = "delivery" | "pickup"
 
-export type UserRole = "admin" | "kitchen" | "delivery"
+export type UserRole = "admin"
 
 export interface PaymentInfo {
     payment_method: PaymentMethod

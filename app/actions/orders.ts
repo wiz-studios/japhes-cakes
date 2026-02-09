@@ -37,17 +37,20 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
     return { success: false, error: `Invalid transition from ${order.status} to ${newStatus}` }
   }
 
-  // Get current user and role
+  // Get current user and enforce admin-only access
   const { data: { user } } = await supabase.auth.getUser()
-  const role = user?.user_metadata?.role as "admin" | "kitchen" | "delivery" | undefined
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please sign in" }
+  }
 
-  if (!role) {
-    return { success: false, error: "Unauthorized: No role found" }
+  const role = user?.user_metadata?.role as "admin" | undefined
+  if (role && role !== "admin") {
+    return { success: false, error: "Unauthorized: Admin access required" }
   }
 
   // Enforce payment & role rules
   // We cast order to any temporarily because deep types might mismatch, but logic holds
-  const progressCheck = canProgressToStatus(order as any, newStatus, role)
+  const progressCheck = canProgressToStatus(order as any, newStatus, "admin")
 
   if (!progressCheck.allowed) {
     return { success: false, error: progressCheck.reason || "Action not allowed for your role" }
@@ -63,6 +66,16 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
  */
 export async function markOrderAsPaid(orderId: string, transactionId?: string) {
   const supabase = await createServerSupabaseClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please sign in" }
+  }
+
+  const role = user?.user_metadata?.role as "admin" | undefined
+  if (role && role !== "admin") {
+    return { success: false, error: "Unauthorized: Admin access required" }
+  }
 
   const { data: order } = await supabase
     .from("orders")
@@ -94,12 +107,15 @@ export async function markOrderAsPaid(orderId: string, transactionId?: string) {
 export async function completeDelivery(orderId: string, collectedCash: boolean = false) {
   const supabase = await createServerSupabaseClient()
 
-  // 1. Role Check
+  // 1. Role Check (Admin only)
   const { data: { user } } = await supabase.auth.getUser()
-  const role = user?.user_metadata?.role as "admin" | "kitchen" | "delivery" | undefined
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please sign in" }
+  }
 
-  if (role !== "delivery" && role !== "admin") {
-    return { success: false, error: "Unauthorized: only Delivery Staff can perform this action" }
+  const role = user?.user_metadata?.role as "admin" | undefined
+  if (role && role !== "admin") {
+    return { success: false, error: "Unauthorized: Admin access required" }
   }
 
   // 2. Fetch Order
