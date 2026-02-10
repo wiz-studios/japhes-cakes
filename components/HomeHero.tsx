@@ -42,6 +42,34 @@ export default function HomeHero() {
         <motion.div
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative overflow-hidden rounded-[24px] border border-white/50 bg-white/70 px-6 py-4 shadow-[0_20px_70px_-50px_rgba(15,20,40,0.5)] backdrop-blur-md"
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(58,78,216,0.16),rgba(216,47,125,0.12))]" />
+          <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-[var(--brand-blue-deep)] shadow-sm">
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.35em] text-slate-500">Pizza Offer</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  2-for-1 Medium & Large pizzas every Tuesday & Thursday
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push("/order/pizza")}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0f1116] px-5 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#191c24]"
+            >
+              Order Pizza <ArrowUpRight className="h-4 w-4" />
+            </button>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
         >
