@@ -487,7 +487,7 @@ function OrderReviewContent() {
             <Button
               type="button"
               onClick={handleSubmit}
-              className="w-1/2 h-12 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)]"
+              className="w-1/2 h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)]"
               disabled={submitting}
             >
               {submitting ? (

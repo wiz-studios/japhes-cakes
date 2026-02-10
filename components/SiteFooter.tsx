@@ -99,11 +99,11 @@ export default function SiteFooter() {
                 <ul className="space-y-3 text-sm text-slate-300/85">
                   <li className="flex items-center gap-3">
                     <Phone className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span>+254 700 000 000</span>
+                    <span>0708244764</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span>hello@japhes.co.ke</span>
+                    <span>ericklangat716@gmail.com</span>
                   </li>
                 </ul>
               </div>
