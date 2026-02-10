@@ -110,16 +110,17 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
 
       {/* Table Container */}
       <div className="bg-white/90 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 overflow-hidden backdrop-blur">
-        <Table>
+        <div className="w-full overflow-x-auto">
+          <Table className="min-w-[720px] md:min-w-full">
           <TableHeader className="bg-white/70">
             <TableRow>
               <TableHead className="w-[180px]">Order ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead className="hidden lg:table-cell">Type</TableHead>
+              <TableHead className="hidden lg:table-cell">Payment</TableHead>
+              <TableHead className="hidden md:table-cell">Status</TableHead>
+              <TableHead className="hidden sm:table-cell">Total</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -147,14 +148,30 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                     <div className="flex flex-col">
                       <span>{order.customer_name || "Guest"}</span>
                       <span className="text-xs text-muted-foreground font-normal">{order.fulfilment}</span>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground sm:hidden">
+                        <Badge variant="outline" className={order.order_type === 'cake' ? "border-rose-200 text-rose-700 bg-rose-50" : "border-orange-200 text-orange-700 bg-orange-50"}>
+                          {order.order_type === 'cake' ? "Cake" : "Pizza"}
+                        </Badge>
+                        <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${getBadgeStyle(order.status)} border`}>
+                          {order.status.replace(/_/g, " ")}
+                        </Badge>
+                        <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                          order.payment_status === 'deposit_paid' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                            order.payment_status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-blue-100 text-blue-700 border-blue-200'
+                        }`}>
+                          {order.payment_status?.replace(/_/g, " ") || "unknown"}
+                        </Badge>
+                        <span className="font-semibold text-slate-700">{(order.total_amount || 0).toLocaleString()} KES</span>
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     <Badge variant="outline" className={order.order_type === 'cake' ? "border-rose-200 text-rose-700 bg-rose-50" : "border-orange-200 text-orange-700 bg-orange-50"}>
                       {order.order_type === 'cake' ? "Cake" : "Pizza"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     {/* Payment Status */}
                     <div className="flex flex-col gap-1">
                         <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
@@ -169,12 +186,12 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none ${getBadgeStyle(order.status)} border`}>
                       {order.status.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium text-gray-900">
+                  <TableCell className="hidden sm:table-cell font-medium text-gray-900">
                     {(order.total_amount || 0).toLocaleString()} KES
                   </TableCell>
                   <TableCell className="text-right">
@@ -195,7 +212,8 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
               ))
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
 
 
