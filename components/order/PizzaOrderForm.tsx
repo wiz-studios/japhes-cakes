@@ -41,6 +41,7 @@ const PIZZA_TYPES = [
 
 
 const PIZZA_SIZES = [
+    { value: "Pizza Pie", label: "Pizza Pie", meta: "Ksh 350" },
     { value: "Small", label: "Small", meta: "Personal" },
     { value: "Medium", label: "Medium", meta: "2-3 people" },
     { value: "Large", label: "Large", meta: "4-5 people" },
@@ -281,7 +282,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
 
                             <div className="mt-5 grid gap-5">
                                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                                    Pizza pie from Ksh 350 · choose any classic flavour
+                                    Pizza pie from Ksh 350 - choose any classic flavour
                                 </p>
                                 <FormField control={form.control} name="pizzaType" render={({ field }) => (
                                     <FormItem>
@@ -312,7 +313,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                                 <SelectContent>
                                                     {PIZZA_SIZES.map((size) => (
                                                         <SelectItem key={size.value} value={size.value}>
-                                                            {size.label} · {size.meta}
+                                                            {size.label} - {size.meta}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>

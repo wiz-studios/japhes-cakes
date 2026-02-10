@@ -1,21 +1,22 @@
 export const PIZZA_BASE_PRICES: Record<string, number> = {
+  "Pizza Pie": 350,
   Small: 650,
   Medium: 850,
   Large: 1150,
 }
 
 export const PIZZA_TYPE_PRICES: Record<string, Record<string, number>> = {
-  Margherita: { Small: 650, Medium: 850, Large: 1150 },
-  Vegetarian: { Small: 650, Medium: 850, Large: 1150 },
-  "Beef Supreme": { Small: 650, Medium: 850, Large: 1150 },
-  Hawaiian: { Small: 650, Medium: 850, Large: 1150 },
-  "Meat Deluxe": { Small: 700, Medium: 900, Large: 1200 },
-  "BBQ Steak": { Small: 650, Medium: 850, Large: 1150 },
-  "BBQ Chicken": { Small: 650, Medium: 850, Large: 1150 },
-  "Chicken Periperi": { Small: 650, Medium: 850, Large: 1150 },
-  "Chicken Tikka": { Small: 650, Medium: 850, Large: 1150 },
-  "Chicken Supreme": { Small: 650, Medium: 850, Large: 1150 },
-  "Chicken Macon": { Small: 700, Medium: 900, Large: 1200 },
+  Margherita: { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  Vegetarian: { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  "Beef Supreme": { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  Hawaiian: { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  "Meat Deluxe": { "Pizza Pie": 350, Small: 700, Medium: 900, Large: 1200 },
+  "BBQ Steak": { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  "BBQ Chicken": { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Periperi": { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Tikka": { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Supreme": { "Pizza Pie": 350, Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Macon": { "Pizza Pie": 350, Small: 700, Medium: 900, Large: 1200 },
 }
 
 export function getPizzaUnitPrice(

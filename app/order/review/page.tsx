@@ -8,18 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import Confetti from "react-confetti"
 
-// Example toppings for pizza
-const PIZZA_TOPPINGS: string[] = [
-  "Extra Cheese",
-  "Pepperoni",
-  "Mushrooms",
-  "Onions",
-  "Olives",
-  "Pineapple",
-  "Chicken",
-]
-
-
 // Import backend submission functions
 import { submitPizzaOrder, submitCakeOrder } from "@/app/actions/orders"
 import { initiateMpesaSTK } from "@/lib/mpesa"
@@ -27,7 +15,7 @@ import { PaymentMethodSelector } from "@/components/PaymentMethodSelector"
 import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
-import { CAKE_FLAVORS, CAKE_SIZES, getCakePrice } from "@/lib/cake-pricing"
+import { getCakePrice } from "@/lib/cake-pricing"
 
 // Main review page component
 // Types for order and item
@@ -114,32 +102,6 @@ function OrderReviewContent() {
     setOrder((o: Order) => ({ ...o, total }))
     setDiscountTotal(discount)
   }, [order?.items, order?.deliveryFee, order?.type])
-
-  // Inline edit handlers
-  const updateItem = (idx: number, changes: Partial<PizzaOrderItem | CakeOrderItem>) => {
-    setOrder((o: Order) => {
-      const items = [...o.items]
-      items[idx] = { ...items[idx], ...changes }
-      return { ...o, items }
-    })
-  }
-  const updateNotes = (idx: number, notes: string) => updateItem(idx, { notes })
-  const updateQuantity = (idx: number, quantity: number) => updateItem(idx, { quantity: Math.max(1, quantity) })
-  const updateSize = (idx: number, size: string) => updateItem(idx, { size })
-  const updateToppings = (idx: number, topping: string) => {
-    setOrder((o: Order) => {
-      const items = [...o.items]
-      const item = { ...items[idx] } as PizzaOrderItem
-      item.toppings = item.toppings || []
-      if (item.toppings.includes(topping)) {
-        item.toppings = item.toppings.filter((t: string) => t !== topping)
-      } else {
-        item.toppings.push(topping)
-      }
-      items[idx] = item
-      return { ...o, items }
-    })
-  }
 
   // Validation (example: Nairobi min order, late-night cutoff)
   useEffect(() => {
@@ -332,91 +294,61 @@ function OrderReviewContent() {
           transition={{ delay: 0.2 }}
           className="w-full max-w-lg"
         >
+          <div className="mb-4 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm">
+            Review your order details below. If you need to make changes, tap <span className="font-semibold text-slate-900">Back</span>.
+          </div>
           {/* Editable Order Items */}
           {order.items.map((item, idx) => (
             <div key={idx} className="lux-card p-6 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-lg">{item.name}</span>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium">Qty</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                    onChange={e => updateQuantity(idx, parseInt(e.target.value))}
-                    className="w-14 px-2 py-1 border rounded focus:ring-2 focus:ring-amber-400 transition"
-                    aria-label="Quantity"
-                  />
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-lg font-semibold text-slate-900">{item.name}</p>
+                  {order.type === "pizza" ? (
+                    <p className="mt-1 text-sm text-slate-600">
+                      {(item as PizzaOrderItem).size} · Qty {(item as PizzaOrderItem).quantity}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-slate-600">
+                      {(item as CakeOrderItem).size} · {(item as CakeOrderItem).flavor || "Vanilla"} · Qty {(item as CakeOrderItem).quantity}
+                    </p>
+                  )}
                 </div>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  {order.type === "pizza" ? "Pizza" : "Cake"}
+                </span>
               </div>
-              <div className="flex gap-4 items-center mb-2">
-                <label className="text-sm font-medium">Size</label>
-                <select
-                  value={item.size}
-                  onChange={e => updateSize(idx, e.target.value)}
-                  className="px-2 py-1 border rounded focus:ring-2 focus:ring-rose-400 transition"
-                  aria-label="Size"
-                >
-                  {order.type === "cake"
-                    ? CAKE_SIZES.map((size) => (
-                      <option key={size} value={size}>{size}</option>
-                    ))
-                    : ["Small", "Medium", "Large"].map((size) => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                </select>
-                {/* Cake flavor selector */}
-                {order.type === "cake" && (
-                  <>
-                    <label className="text-sm font-medium ml-2">Flavor</label>
-                    <select
-                      value={(item as CakeOrderItem).flavor || "Vanilla"}
-                      onChange={e => updateItem(idx, { flavor: e.target.value })}
-                      className="px-2 py-1 border rounded focus:ring-2 focus:ring-rose-400 transition"
-                      aria-label="Flavor"
-                    >
-                      {CAKE_FLAVORS.map((flavor) => (
-                        <option key={flavor} value={flavor}>{flavor}</option>
-                      ))}
-                    </select>
-                  </>
-                )}
-              </div>
-              {/* Pizza toppings selector */}
-              {order.type === "pizza" && (
-                <div className="mb-2">
-                  <label className="text-sm font-medium">Toppings</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {PIZZA_TOPPINGS.map(topping => (
-                      <button
+
+              {order.type === "pizza" && (item as PizzaOrderItem).toppings?.length ? (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Extras</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(item as PizzaOrderItem).toppings?.map((topping) => (
+                      <span
                         key={topping}
-                        type="button"
-                        onClick={() => updateToppings(idx, topping)}
-                        className={`px-3 py-1 rounded-full border text-xs font-semibold transition-all duration-150
-                          ${(item as PizzaOrderItem).toppings?.includes(topping)
-                            ? "bg-amber-400 text-white border-amber-400 scale-105 shadow"
-                            : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-amber-100"}
-                        `}
-                        aria-pressed={(item as PizzaOrderItem).toppings?.includes(topping)}
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
                       >
                         {topping}
-                      </button>
+                      </span>
                     ))}
                   </div>
                 </div>
-              )}
-              {/* Notes */}
-              <div className="mt-2">
-                <label className="text-sm font-medium">Notes</label>
-                <input
-                  type="text"
-                  value={item.notes || ""}
-                  onChange={e => updateNotes(idx, e.target.value)}
-                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-rose-400 transition"
-                  placeholder="Add any special instructions..."
-                  aria-label="Notes"
-                />
-              </div>
+              ) : null}
+
+              {order.type === "cake" && (item as CakeOrderItem).message ? (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Message</p>
+                  <p className="mt-1 text-sm text-slate-700">{(item as CakeOrderItem).message}</p>
+                </div>
+              ) : null}
+
+              {item.notes ? (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    {order.type === "cake" ? "Design Notes" : "Notes"}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">{item.notes}</p>
+                </div>
+              ) : null}
             </div>
           ))}
 
