@@ -38,14 +38,14 @@ export default function HomeHero() {
         <div className="absolute inset-0 hero-grain" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-24 lg:pt-28">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-[calc(6.5rem+env(safe-area-inset-top))] md:pt-24 lg:pt-28">
         <motion.div
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
         >
-          <div className="space-y-6 rounded-[32px] p-8 text-white lux-glass">
+          <div className="space-y-6 rounded-[32px] p-8 pt-10 text-white lux-glass md:p-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white/85">
               Thika - Nairobi - Delivery
             </div>
