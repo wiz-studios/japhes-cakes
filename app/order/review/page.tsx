@@ -199,6 +199,7 @@ function OrderReviewContent() {
           pizzaType: order.items[0].name,
           pizzaSize: order.items[0].size,
           quantity: order.items[0].quantity,
+          toppings: (order.items[0] as PizzaOrderItem).toppings || [],
           fulfilment: order.fulfilment,
           deliveryZoneId: order.deliveryZoneId,
           deliveryLat: (order as any).deliveryLat,

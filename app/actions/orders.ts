@@ -292,6 +292,9 @@ export async function submitPizzaOrder(values: any) {
     let deliveryFee = 0
     let deliveryWindow = "As soon as possible"
 
+    const toppings: string[] = Array.isArray(values.toppings) ? values.toppings : []
+    const toppingsCount = toppings.length
+
     if (values.fulfilment === "delivery") {
       // 1. GPS DELIVERY (Priority)
       if (values.deliveryLat && values.deliveryLng) {
@@ -312,7 +315,7 @@ export async function submitPizzaOrder(values: any) {
 
         if (zone) {
           const isNairobi = zone.name.toLowerCase().includes("nairobi")
-          const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, 0)
+          const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
           // Minimum value check uses pre-offer subtotal to avoid blocking valid offer orders
           const totalItemsValue = unitPrice * (values.quantity || 1)
 
@@ -329,7 +332,7 @@ export async function submitPizzaOrder(values: any) {
     }
 
     // Calculate pizza total with offer logic
-    const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, 0)
+    const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
     const quantity = values.quantity || 1
     const rawSubtotal = unitPrice * quantity
     const offer = getPizzaOfferDetails({
@@ -387,10 +390,13 @@ export async function submitPizzaOrder(values: any) {
 
     if (orderError || !order) throw orderError || new Error("Failed to create order")
 
+    const extrasNote = toppingsCount > 0
+      ? `Extras: ${toppings.join(", ")} (+${(toppingsCount * 100).toLocaleString()} KES)`
+      : ""
     const offerNote = offer.discount > 0
       ? `Offer: 2-for-1 applied (${offer.freeQuantity} free)`
       : ""
-    const combinedNotes = [values.notes, offerNote].filter(Boolean).join(" | ")
+    const combinedNotes = [values.notes, extrasNote, offerNote].filter(Boolean).join(" | ")
 
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
