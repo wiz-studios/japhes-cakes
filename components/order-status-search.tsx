@@ -67,7 +67,6 @@ export function OrderStatusSearch({
             onChange={(e) => setPhone(normalizeKenyaPhone(e.target.value))}
             inputMode="numeric"
             maxLength={10}
-            pattern="^(07|01)\\d{8}$"
             className="bg-slate-50 border-slate-200"
           />
         </div>

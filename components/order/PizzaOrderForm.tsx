@@ -470,7 +470,6 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                             placeholder="07XX..."
                                             inputMode="numeric"
                                             maxLength={10}
-                                            pattern="^(07|01)\\d{8}$"
                                             className={theme.colors.ring}
                                             {...field}
                                             onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}

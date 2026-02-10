@@ -80,7 +80,6 @@ function PaymentConfirmContent() {
                             onChange={(e) => setMpesaPhone(normalizeKenyaPhone(e.target.value))}
                             inputMode="numeric"
                             maxLength={10}
-                            pattern="^(07|01)\\d{8}$"
                             className="mt-1"
                         />
                         <p className="text-xs text-gray-500 mt-1">

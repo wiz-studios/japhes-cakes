@@ -295,13 +295,12 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="07XX XXX XXX or 01XX XXX XXX"
-                    inputMode="numeric"
-                    maxLength={10}
-                    pattern="^(07|01)\\d{8}$"
-                    {...field}
-                    onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}
-                  />
+                          placeholder="07XX XXX XXX or 01XX XXX XXX"
+                          inputMode="numeric"
+                          maxLength={10}
+                          {...field}
+                          onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}
+                        />
                 </FormControl>
                 <FormMessage />
               </FormItem>

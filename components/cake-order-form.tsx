@@ -320,7 +320,6 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                       placeholder="0712 345 678"
                       inputMode="numeric"
                       maxLength={10}
-                      pattern="^(07|01)\\d{8}$"
                       {...field}
                       onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}
                     />

@@ -95,7 +95,6 @@ export function PaymentMethodSelector({
                     value={mpesaPhone}
                     inputMode="numeric"
                     maxLength={10}
-                    pattern="^(07|01)\\d{8}$"
                     onChange={(e) => onMpesaPhoneChange?.(normalizeKenyaPhone(e.target.value))}
                     className="mt-1"
                     required
