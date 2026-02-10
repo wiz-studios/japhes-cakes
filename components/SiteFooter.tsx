@@ -69,7 +69,7 @@ export default function SiteFooter() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-4">
               <div className="space-y-4">
                 <h3 className="text-white font-semibold uppercase text-xs tracking-[0.32em]">Order</h3>
                 <ul className="space-y-3 text-sm text-slate-300/85">
@@ -103,7 +103,7 @@ export default function SiteFooter() {
                   </li>
                   <li className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span>ericklangat716@gmail.com</span>
+                    <span className="break-all">ericklangat716@gmail.com</span>
                   </li>
                 </ul>
               </div>
