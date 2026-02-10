@@ -545,11 +545,6 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                                     <div className="text-xs text-emerald-700 flex flex-wrap gap-x-3 gap-y-1 font-medium items-center">
                                                         <span>Dist: {validation.distance}km</span>
                                                         <span>Fee: {validation.fee} KES</span>
-                                                        {validation.timeMultiplier && validation.timeMultiplier > 1 && (
-                                                            <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[10px] border border-purple-200">
-                                                                Surge {validation.timeMultiplier}x
-                                                            </span>
-                                                        )}
                                                     </div>
                                                     {/* Warning Block */}
                                                     {validation.warning && (
