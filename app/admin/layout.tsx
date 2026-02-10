@@ -79,8 +79,17 @@ export default function AdminLayout({
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Admin Console</p>
                 <h2 className="text-xl font-semibold text-slate-900 font-serif">Operational Dashboard</h2>
               </div>
-              <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
-                Logged in as admin
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href="/Japhes_Letterhead_Template.docx"
+                  download
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Download Letterhead
+                </a>
+                <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
+                  Logged in as admin
+                </div>
               </div>
             </div>
             <div className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
