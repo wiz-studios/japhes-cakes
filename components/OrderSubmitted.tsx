@@ -346,7 +346,7 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
         transition={{ delay: 0.5 }}
         className="flex flex-col gap-3 w-full print:hidden"
       >
-        <Link href={`/status?id=${order.id}&phone=${order.phone}`} className="w-full">
+        <Link href={`/status?id=${formatFriendlyId(liveOrder)}&phone=${order.phone}`} className="w-full">
           <Button className={`w-full h-12 text-lg rounded-xl shadow-md transition-all ${theme.primaryBtn}`}>
             Track Order <ArrowRight className="ml-2 w-5 h-5" />
           </Button>

@@ -102,12 +102,12 @@ export default async function OrderStatusPage({
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
-      <div className="space-y-10 w-full max-w-6xl xl:max-w-7xl mx-auto px-6 md:px-10 py-12">
+      <div className="space-y-8 w-full max-w-6xl xl:max-w-7xl mx-auto px-6 md:px-10 py-12">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Tracking</p>
-          <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Customer Status Console</h2>
+          <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Track Your Order</h2>
           <p className="text-slate-500 max-w-3xl">
-            Search by order number or phone to view the live production and delivery status.
+            Enter your order number or phone to see production, payment, and delivery updates.
           </p>
         </div>
 
@@ -115,7 +115,7 @@ export default async function OrderStatusPage({
 
         {order && (
           <div className="space-y-6">
-            <div className={`${cardClass} p-6 md:p-7`}>
+            <div className={`${cardClass} p-6 md:p-8`}>
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Number</p>
@@ -123,7 +123,7 @@ export default async function OrderStatusPage({
                     {formatFriendlyId(order)}
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">Status</p>
                     <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusTone}`}>
@@ -140,7 +140,7 @@ export default async function OrderStatusPage({
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Fulfilment</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
@@ -164,69 +164,70 @@ export default async function OrderStatusPage({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-              <div className="space-y-6">
-                <div className={`${cardClass} p-6`}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Order Timeline</h3>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Clock className="h-4 w-4" /> Updated live
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <OrderStatusTimeline status={order.status} orderType={order.order_type} fulfilment={order.fulfilment} />
+            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className={`${cardClass} p-6`}>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Order Timeline</h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Clock className="h-4 w-4" /> Updated live
                   </div>
                 </div>
+                <div className="mt-6">
+                  <OrderStatusTimeline status={order.status} orderType={order.order_type} fulfilment={order.fulfilment} />
+                </div>
+              </div>
 
-                <div className={`${cardClass} p-6`}>
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-4">Items</h3>
-                  <div className="divide-y divide-slate-100">
-                    {order.order_items.map((item: any, idx: number) => (
-                      <div key={idx} className="py-4 flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900">{item.item_name}</p>
-                          {item.notes && <p className="text-xs text-slate-500 mt-1">{item.notes}</p>}
-                        </div>
-                        {item.quantity && (
-                          <span className="text-xs font-semibold text-slate-500">Qty: {item.quantity}</span>
-                        )}
-                      </div>
-                    ))}
+              <OrderPaymentStatusCard
+                paymentStatus={order.payment_status}
+                paymentMethod={order.payment_method}
+                fulfilment={order.fulfilment}
+                mpesaTransactionId={order.mpesa_transaction_id}
+                totalAmount={order.total_amount || 0}
+                amountPaid={order.payment_amount_paid || 0}
+                amountDue={order.payment_amount_due || 0}
+              />
+            </div>
+
+            <div className={`${cardClass} p-6`}>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-4">Items</h3>
+              <div className="divide-y divide-slate-100">
+                {order.order_items.map((item: any, idx: number) => (
+                  <div key={idx} className="py-4 flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">{item.item_name}</p>
+                      {item.notes && <p className="text-xs text-slate-500 mt-1">{item.notes}</p>}
+                    </div>
+                    {item.quantity && (
+                      <span className="text-xs font-semibold text-slate-500">Qty: {item.quantity}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className={`${cardClass} p-6`}>
+                <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-3">Order Meta</h3>
+                <div className="space-y-3 text-sm text-slate-600">
+                  <div className="flex items-center justify-between">
+                    <span>Placed</span>
+                    <span className="font-semibold text-slate-900">{new Date(order.created_at).toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Items</span>
+                    <span className="font-semibold text-slate-900">{order.order_items?.length || 0}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className={`${cardClass} p-6`}>
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-3">Order Meta</h3>
-                  <div className="space-y-3 text-sm text-slate-600">
-                    <div className="flex items-center justify-between">
-                      <span>Placed</span>
-                      <span className="font-semibold text-slate-900">{new Date(order.created_at).toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Items</span>
-                      <span className="font-semibold text-slate-900">{order.order_items?.length || 0}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <OrderPaymentStatusCard
-                  paymentStatus={order.payment_status}
-                  paymentMethod={order.payment_method}
-                  fulfilment={order.fulfilment}
-                  mpesaTransactionId={order.mpesa_transaction_id}
-                  totalAmount={order.total_amount || 0}
-                  amountPaid={order.payment_amount_paid || 0}
-                  amountDue={order.payment_amount_due || 0}
-                />
-
-                <div className={`${cardClass} p-6`}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Support</p>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Need adjustments? Contact our operations desk for immediate help.
-                  </p>
-                  <p className="mt-3 text-sm font-semibold text-slate-900">+254 700 000 000</p>
+              <div className={`${cardClass} p-6`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Support</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Need adjustments? Contact our operations desk for immediate help.
+                </p>
+                <div className="mt-3 text-sm font-semibold text-slate-900">
+                  <div>0708244764</div>
+                  <div className="text-slate-600 font-normal">ericklangat716@gmail.com</div>
                 </div>
               </div>
             </div>
