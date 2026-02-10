@@ -108,26 +108,25 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
         </div>
       </div>
 
-      {/* Table Container */}
-      <div className="bg-white/90 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 overflow-hidden backdrop-blur">
-        <div className="w-full overflow-x-auto">
-          <Table className="min-w-[720px] md:min-w-full">
+      {/* Table (Desktop) */}
+      <div className="hidden md:block bg-white/90 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 overflow-hidden backdrop-blur">
+          <Table className="min-w-full">
           <TableHeader className="bg-white/70">
             <TableRow>
               <TableHead className="w-[180px]">Order ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead className="hidden lg:table-cell">Type</TableHead>
-              <TableHead className="hidden lg:table-cell">Payment</TableHead>
-              <TableHead className="hidden md:table-cell">Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Total</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Total</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -148,30 +147,14 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                     <div className="flex flex-col">
                       <span>{order.customer_name || "Guest"}</span>
                       <span className="text-xs text-muted-foreground font-normal">{order.fulfilment}</span>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground sm:hidden">
-                        <Badge variant="outline" className={order.order_type === 'cake' ? "border-rose-200 text-rose-700 bg-rose-50" : "border-orange-200 text-orange-700 bg-orange-50"}>
-                          {order.order_type === 'cake' ? "Cake" : "Pizza"}
-                        </Badge>
-                        <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${getBadgeStyle(order.status)} border`}>
-                          {order.status.replace(/_/g, " ")}
-                        </Badge>
-                        <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                          order.payment_status === 'deposit_paid' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                            order.payment_status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                              'bg-blue-100 text-blue-700 border-blue-200'
-                        }`}>
-                          {order.payment_status?.replace(/_/g, " ") || "unknown"}
-                        </Badge>
-                        <span className="font-semibold text-slate-700">{(order.total_amount || 0).toLocaleString()} KES</span>
-                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  <TableCell>
                     <Badge variant="outline" className={order.order_type === 'cake' ? "border-rose-200 text-rose-700 bg-rose-50" : "border-orange-200 text-orange-700 bg-orange-50"}>
                       {order.order_type === 'cake' ? "Cake" : "Pizza"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  <TableCell>
                     {/* Payment Status */}
                     <div className="flex flex-col gap-1">
                         <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
@@ -186,12 +169,12 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
                     <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none ${getBadgeStyle(order.status)} border`}>
                       {order.status.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell font-medium text-gray-900">
+                  <TableCell className="font-medium text-gray-900">
                     {(order.total_amount || 0).toLocaleString()} KES
                   </TableCell>
                   <TableCell className="text-right">
@@ -213,7 +196,65 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
             )}
           </TableBody>
           </Table>
-        </div>
+      </div>
+
+      {/* Cards (Mobile) */}
+      <div className="md:hidden grid gap-4">
+        {paginatedOrders.length === 0 ? (
+          <div className="bg-white/90 rounded-2xl border border-white/60 p-6 text-center text-muted-foreground shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]">
+            No orders found.
+          </div>
+        ) : (
+          paginatedOrders.map((order) => (
+            <div
+              key={order.id}
+              className="bg-white/90 rounded-2xl border border-white/60 p-4 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Order ID</p>
+                  <p className="font-mono text-sm font-semibold text-slate-800">{formatFriendlyId(order)}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                  onClick={() => router.push(`/admin/order/${order.id}`)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="mt-3 text-xs text-muted-foreground">
+                {format(new Date(order.created_at), "MMM d, HH:mm")}
+              </div>
+              <div className="mt-3">
+                <p className="font-semibold text-slate-900">{order.customer_name || "Guest"}</p>
+                <p className="text-xs text-muted-foreground">{order.fulfilment}</p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge variant="outline" className={order.order_type === 'cake' ? "border-rose-200 text-rose-700 bg-rose-50" : "border-orange-200 text-orange-700 bg-orange-50"}>
+                  {order.order_type === 'cake' ? "Cake" : "Pizza"}
+                </Badge>
+                <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none ${getBadgeStyle(order.status)} border`}>
+                  {order.status.replace(/_/g, " ")}
+                </Badge>
+                <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                  order.payment_status === 'deposit_paid' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                    order.payment_status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-blue-100 text-blue-700 border-blue-200'
+                }`}>
+                  {order.payment_status?.replace(/_/g, " ") || "unknown"}
+                </Badge>
+              </div>
+              <div className="mt-3 text-sm font-semibold text-slate-900">
+                {(order.total_amount || 0).toLocaleString()} KES
+              </div>
+              <div className="mt-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                {order.payment_method === 'mpesa' ? 'M-Pesa' : 'Cash'}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
 
