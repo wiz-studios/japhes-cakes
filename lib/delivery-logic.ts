@@ -16,7 +16,7 @@ export const DELIVERY_RULES = {
     longDistanceThresholdKm: 35, // Triggers min order warning
     extremeDistanceThresholdKm: 40, // Triggers prepaid only warning
 
-    // Fee Tiers (Mwananchi Friendly)
+    // Base Distance Fee (by tiers)
     tiers: [
         { maxKm: 3, fee: 50 },     // Ultra Local (Walking/Boda)
         { maxKm: 10, fee: 150 },   // Town Outskirts (Standard Boda)
@@ -25,32 +25,62 @@ export const DELIVERY_RULES = {
         { maxKm: 50, fee: 1000 },  // Extreme Distance (Cost Recovery)
     ],
 
-    // Time-Based Multipliers (Relaxed)
-    // 06:00 - 22:00 = 1.0x (No penalty for dinner)
+    // Time-Based Multipliers
+    // 06:00 - 22:00 = 1.0x (Standard)
     // 22:00 - 06:00 = 1.3x (Safety Fee)
+
+    // Peak Demand Multipliers
+    // Lunch: 12:00 - 14:00 = 1.1x
+    // Dinner: 18:00 - 21:00 = 1.2x
+    // Weekend: Sat/Sun = 1.1x
 }
 
 /**
  * Get Nairobi Hour (UTC+3)
  */
-function getNairobiHour(): number {
-    const now = new Date();
-    const utcHour = now.getUTCHours(); // 0-23
-    return (utcHour + 3) % 24;
+function getNairobiTime(date: Date = new Date()): { hour: number; day: number } {
+    const nairobiDate = new Date(date.toLocaleString("en-US", { timeZone: "Africa/Nairobi" }))
+    return { hour: nairobiDate.getHours(), day: nairobiDate.getDay() }
 }
 
 /**
  * Get Time Multiplier based on Nairobi Time
  */
-export function getTimeMultiplier(hour: number = getNairobiHour()) {
+export function getTimeMultiplier(hour: number = getNairobiTime().hour) {
     // Night Rules (22:00 - 06:00) -> 1.3x
-    // Covers 22, 23, 0, 1, 2, 3, 4, 5
     if (hour >= 22 || hour < 6) {
         return { factor: 1.3, label: "Late Night Fee" }
     }
 
     // Standard (06:00 - 22:00) -> 1.0x
     return { factor: 1.0, label: "Standard Delivery" }
+}
+
+export function getDemandMultiplier(
+    hour: number = getNairobiTime().hour,
+    day: number = getNairobiTime().day
+) {
+    let factor = 1.0
+    const labels: string[] = []
+
+    if (hour >= 12 && hour < 14) {
+        factor *= 1.1
+        labels.push("Lunch Rush")
+    }
+    if (hour >= 18 && hour < 21) {
+        factor *= 1.2
+        labels.push("Dinner Rush")
+    }
+    const isWeekend = day === 0 || day === 6
+    if (isWeekend) {
+        factor *= 1.1
+        labels.push("Weekend")
+    }
+
+    return {
+        factor,
+        label: labels.length ? labels.join(" + ") : "Standard Demand"
+    }
 }
 
 /**
@@ -109,9 +139,15 @@ export function validateDeliveryRequest(lat: number, lng: number) {
     // 1. Calculate Base Fee (Distance)
     const baseFee = getBaseDistanceFee(distance)
 
-    // 2. Apply Time Multiplier
-    const { factor, label } = getTimeMultiplier()
-    const finalFee = Math.ceil(baseFee * factor) // Round up to nearest integer
+    // 2. Apply Time + Demand Multipliers
+    const { factor: timeFactor, label: timeLabel } = getTimeMultiplier()
+    const { factor: demandFactor, label: demandLabel } = getDemandMultiplier()
+    const combinedFactor = Number((timeFactor * demandFactor).toFixed(2))
+    const combinedLabel = [timeFactor > 1 ? timeLabel : null, demandFactor > 1 ? demandLabel : null]
+        .filter(Boolean)
+        .join(" + ") || "Standard Delivery"
+
+    const finalFee = Math.ceil(baseFee * combinedFactor) // Round up to nearest integer
 
     // Determine warnings/constraints
     let warning = undefined
@@ -132,8 +168,8 @@ export function validateDeliveryRequest(lat: number, lng: number) {
         distance,
         fee: finalFee,       // The final price shown to user
         baseFee,             // For admin/breakdown
-        timeMultiplier: factor, // For admin/breakdown
-        timeLabel: label,    // For UI badge
+        timeMultiplier: combinedFactor, // For admin/breakdown
+        timeLabel: combinedLabel,    // For UI badge
         warning,
         requiresMinOrder,
         requiresPrepaid
