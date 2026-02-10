@@ -1,19 +1,21 @@
 export const PIZZA_BASE_PRICES: Record<string, number> = {
-  Small: 700,
-  Medium: 1000,
-  Large: 1500,
+  Small: 650,
+  Medium: 850,
+  Large: 1150,
 }
 
-export const PIZZA_TYPE_SURCHARGES: Record<string, number> = {
-  Margherita: 0,
-  Vegetarian: 0,
-  "BBQ Chicken": 200,
-  "Chicken Periperi": 200,
-  "Beef & Onion": 200,
-  "Everything Meat": 300,
-  Hawaiian: 150,
-  Boerewors: 250,
-  "Chicken Mushroom": 200,
+export const PIZZA_TYPE_PRICES: Record<string, Record<string, number>> = {
+  Margherita: { Small: 650, Medium: 850, Large: 1150 },
+  Vegetarian: { Small: 650, Medium: 850, Large: 1150 },
+  "Beef Supreme": { Small: 650, Medium: 850, Large: 1150 },
+  Hawaiian: { Small: 650, Medium: 850, Large: 1150 },
+  "Meat Deluxe": { Small: 700, Medium: 900, Large: 1200 },
+  "BBQ Steak": { Small: 650, Medium: 850, Large: 1150 },
+  "BBQ Chicken": { Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Periperi": { Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Tikka": { Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Supreme": { Small: 650, Medium: 850, Large: 1150 },
+  "Chicken Macon": { Small: 700, Medium: 900, Large: 1200 },
 }
 
 export function getPizzaUnitPrice(
@@ -21,8 +23,8 @@ export function getPizzaUnitPrice(
   type: string,
   toppingsCount: number = 0
 ): number {
+  const typePrice = PIZZA_TYPE_PRICES[type]?.[size]
   const basePrice = PIZZA_BASE_PRICES[size] ?? PIZZA_BASE_PRICES.Medium
-  const typeSurcharge = PIZZA_TYPE_SURCHARGES[type] ?? 0
   const toppingsTotal = Math.max(0, toppingsCount) * 100
-  return basePrice + typeSurcharge + toppingsTotal
+  return (typePrice ?? basePrice) + toppingsTotal
 }

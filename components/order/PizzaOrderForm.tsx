@@ -25,18 +25,20 @@ import dynamic from "next/dynamic"
 const GPSLocationPicker = dynamic(() => import('@/components/GPSLocationPicker'), { ssr: false })
 
 const PIZZA_TYPES = [
+    "Margherita",
+    "Vegetarian",
+    "Beef Supreme",
+    "Hawaiian",
+    "Meat Deluxe",
+    "BBQ Steak",
     "BBQ Chicken",
     "Chicken Periperi",
-    "Beef & Onion",
-    "Everything Meat",
-    "Hawaiian",
-    "Boerewors",
-    "Chicken Mushroom",
-    "Vegetarian",
-    "Margherita",
+    "Chicken Tikka",
+    "Chicken Supreme",
+    "Chicken Macon",
 ]
 
-const POPULAR_PIZZAS = ["BBQ Chicken", "Chicken Periperi", "Margherita", "Everything Meat"]
+const POPULAR_PIZZAS = ["Margherita", "BBQ Chicken", "Chicken Tikka", "Meat Deluxe"]
 
 const PIZZA_SIZES = [
     { value: "Small", label: "Small", meta: "Personal" },
