@@ -54,9 +54,12 @@ export default function SiteHeader() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="container mx-auto px-6 h-full flex items-center justify-between">
-          <Link href="/" className="relative z-50">
+          <Link href="/" className="relative z-50 flex flex-col leading-tight">
             <span className="font-serif text-2xl font-semibold tracking-tight text-[var(--lux-ink)]">
               Japhe's Cakes & Pizza
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.32em] text-slate-500 font-semibold">
+              Quality is our Priority
             </span>
           </Link>
 
