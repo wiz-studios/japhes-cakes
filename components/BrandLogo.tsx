@@ -32,8 +32,23 @@ export default function BrandLogo({
       aria-label="Japhe's Cakes & Pizza"
     >
       {showMark && (
-        <span className={cn("flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full border text-lg md:text-xl font-semibold font-serif", markRing)}>
-          J
+        <span className={cn("flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full border", markRing)}>
+          <svg
+            viewBox="0 0 48 48"
+            className="h-5 w-5 md:h-6 md:w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 10h12" />
+            <path d="M28 10v18a10 10 0 0 1-10 10h-6" />
+            <path d="M28 14l14-6" />
+            <path d="M28 18h15" />
+            <path d="M28 22l14 6" />
+          </svg>
         </span>
       )}
       <span className="flex flex-col">
