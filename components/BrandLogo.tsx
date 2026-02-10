@@ -14,7 +14,7 @@ type BrandLogoProps = {
 export default function BrandLogo({
   variant = "light",
   showTagline = true,
-  showMark = true,
+  showMark = false,
   className,
   href = "/",
 }: BrandLogoProps) {

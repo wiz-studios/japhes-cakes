@@ -56,7 +56,7 @@ export default function SiteHeader() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="container mx-auto px-6 h-full flex items-center justify-between">
-          <BrandLogo />
+          <BrandLogo showMark={false} />
 
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
