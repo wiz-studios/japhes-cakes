@@ -79,7 +79,7 @@ export function OrderPaymentStatusCard({
 
     return (
         <div className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)]">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex items-start gap-3">
                     <div className={`h-10 w-10 rounded-xl border ${config.badgeBorder} ${config.badgeBg} flex items-center justify-center`}>
                         <Icon className={`h-5 w-5 ${config.iconColor}`} />
@@ -88,7 +88,7 @@ export function OrderPaymentStatusCard({
                         <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400 font-semibold">Payment Status</p>
                         <h3 className="text-lg font-semibold text-slate-900 mt-1">{statusMessage}</h3>
                         {instruction && (
-                            <p className="text-sm text-slate-600 mt-1">
+                            <p className="text-sm text-slate-600 mt-1 break-words">
                                 {instruction}
                             </p>
                         )}
