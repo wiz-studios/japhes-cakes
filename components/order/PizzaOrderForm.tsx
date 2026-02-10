@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { OrderLayout } from "./OrderLayout"
 import { orderThemes } from "./themes"
@@ -38,13 +39,17 @@ const PIZZA_TYPES = [
     "Chicken Macon",
 ]
 
-const POPULAR_PIZZAS = ["Margherita", "BBQ Chicken", "Chicken Tikka", "Meat Deluxe"]
 
 const PIZZA_SIZES = [
     { value: "Small", label: "Small", meta: "Personal" },
     { value: "Medium", label: "Medium", meta: "2-3 people" },
     { value: "Large", label: "Large", meta: "4-5 people" },
 ]
+
+const PIZZA_EXTRAS = [
+    { key: "extraCheese", label: "Extra Cheese", price: 100 },
+    { key: "extraToppings", label: "Extra Toppings", price: 100 },
+] as const
 
 const PIZZA_DESCRIPTIONS: Record<string, string> = {
     Margherita: "Classic tomato base and cheese.",
@@ -68,6 +73,8 @@ const pizzaSchema = z.object({
     pizzaType: z.string().min(1, "Select pizza"),
     pizzaSize: z.string().min(1, "Select size"),
     quantity: z.coerce.number().min(1).max(20),
+    extraCheese: z.boolean().optional(),
+    extraToppings: z.boolean().optional(),
     fulfilment: z.enum(["pickup", "delivery"]),
     deliveryZoneId: z.string().optional(),
     deliveryLat: z.number().optional(),
@@ -113,7 +120,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
         resolver: zodResolver(pizzaSchema),
         defaultValues: initialOrder || {
             fulfilment: "pickup", pizzaType: "", pizzaSize: "Medium", quantity: 1, customerName: "", phone: "",
-            notes: "", deliveryZoneId: "",
+            notes: "", deliveryZoneId: "", extraCheese: false, extraToppings: false,
         },
     })
 
@@ -121,8 +128,11 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const pizzaType = form.watch("pizzaType")
     const pizzaSize = form.watch("pizzaSize")
     const quantity = form.watch("quantity")
+    const extraCheese = form.watch("extraCheese")
+    const extraToppings = form.watch("extraToppings")
 
-    const baseUnitPrice = pizzaSize && pizzaType ? getPizzaUnitPrice(pizzaSize, pizzaType, 0) : 0
+    const extrasCount = (extraCheese ? 1 : 0) + (extraToppings ? 1 : 0)
+    const baseUnitPrice = pizzaSize && pizzaType ? getPizzaUnitPrice(pizzaSize, pizzaType, extrasCount) : 0
     const totalQty = Number.isFinite(quantity) ? quantity : 1
     const rawSubtotal = baseUnitPrice * (totalQty || 1)
     const offerActive = isPizzaOfferDay()
@@ -131,6 +141,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
         quantity: totalQty || 1,
         unitPrice: baseUnitPrice,
     })
+    const extrasTotal = extrasCount * 100
     const estimatedPrice = rawSubtotal - offerDetails.discount
 
     // Check for late night orders
@@ -156,7 +167,10 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                     name: values.pizzaType,
                     quantity: values.quantity,
                     size: values.pizzaSize,
-                    toppings: [],
+                    toppings: [
+                        ...(values.extraCheese ? ["Extra Cheese"] : []),
+                        ...(values.extraToppings ? ["Extra Toppings"] : []),
+                    ],
                     notes: values.notes
                 }],
                 deliveryFee: values.fulfilment === "delivery" ? (values.deliveryFee || 0) : 0,
@@ -211,6 +225,9 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                 <div className="mt-4 space-y-3">
                                     <div>
                                         <p className="text-sm text-slate-600">{pizzaSize} {pizzaType} x {quantity}</p>
+                                        {extrasTotal > 0 && (
+                                            <p className="text-xs text-slate-500 mt-1">Extras: + {extrasTotal.toLocaleString()} KES</p>
+                                        )}
                                         {offerDetails.discount > 0 && (
                                             <p className="text-xs text-emerald-700 mt-1">
                                                 Offer applied: {offerDetails.freeQuantity} free pizza{offerDetails.freeQuantity > 1 ? "s" : ""} (-{offerDetails.discount.toLocaleString()} KES)
@@ -263,6 +280,9 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                             </div>
 
                             <div className="mt-5 grid gap-5">
+                                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                                    Pizza pie from Ksh 350 · choose any classic flavour
+                                </p>
                                 <FormField control={form.control} name="pizzaType" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Flavor</FormLabel>
@@ -279,23 +299,6 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                         {PIZZA_DESCRIPTIONS[pizzaType]}
                                     </p>
                                 )}
-                                <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                                            {POPULAR_PIZZAS.map((pizza) => (
-                                                <button
-                                                    key={pizza}
-                                                    type="button"
-                                                    onClick={() => form.setValue("pizzaType", pizza, { shouldValidate: true, shouldDirty: true })}
-                                                    className={cn(
-                                                        "rounded-full border px-3 py-1 transition",
-                                                        pizzaType === pizza
-                                                            ? "border-[var(--brand-blue)] bg-[rgba(58,78,216,0.12)] text-[var(--brand-blue-deep)]"
-                                                            : "border-slate-200 bg-white/70 text-slate-500 hover:border-[var(--brand-blue)]"
-                                                    )}
-                                                >
-                                                    {pizza}
-                                                </button>
-                                            ))}
-                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
@@ -324,6 +327,30 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                             <FormMessage />
                                         </FormItem>
                                     )} />
+                                </div>
+
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    {PIZZA_EXTRAS.map((extra) => (
+                                        <FormField
+                                            key={extra.key}
+                                            control={form.control}
+                                            name={extra.key}
+                                            render={({ field }) => (
+                                                <FormItem className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/70 px-4 py-3">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value}
+                                                            onCheckedChange={(val) => field.onChange(Boolean(val))}
+                                                        />
+                                                    </FormControl>
+                                                    <div className="flex-1">
+                                                        <FormLabel className="font-semibold">{extra.label}</FormLabel>
+                                                        <p className="text-xs text-slate-500">+ Ksh {extra.price}</p>
+                                                    </div>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    ))}
                                 </div>
 
                                 <FormField control={form.control} name="notes" render={({ field }) => (
