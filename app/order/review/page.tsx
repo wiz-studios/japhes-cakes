@@ -27,7 +27,7 @@ import { PaymentMethodSelector } from "@/components/PaymentMethodSelector"
 import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
-import { getCakePrice } from "@/lib/cake-pricing"
+import { CAKE_FLAVORS, CAKE_SIZES, getCakePrice } from "@/lib/cake-pricing"
 
 // Main review page component
 // Types for order and item
@@ -356,9 +356,13 @@ function OrderReviewContent() {
                   className="px-2 py-1 border rounded focus:ring-2 focus:ring-rose-400 transition"
                   aria-label="Size"
                 >
-                  <option value="Small">Small</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Large">Large</option>
+                  {order.type === "cake"
+                    ? CAKE_SIZES.map((size) => (
+                      <option key={size} value={size}>{size}</option>
+                    ))
+                    : ["Small", "Medium", "Large"].map((size) => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
                 </select>
                 {/* Cake flavor selector */}
                 {order.type === "cake" && (
@@ -370,10 +374,9 @@ function OrderReviewContent() {
                       className="px-2 py-1 border rounded focus:ring-2 focus:ring-rose-400 transition"
                       aria-label="Flavor"
                     >
-                      <option value="Vanilla">Vanilla</option>
-                      <option value="Chocolate">Chocolate</option>
-                      <option value="Red Velvet">Red Velvet</option>
-                      <option value="Lemon">Lemon</option>
+                      {CAKE_FLAVORS.map((flavor) => (
+                        <option key={flavor} value={flavor}>{flavor}</option>
+                      ))}
                     </select>
                   </>
                 )}

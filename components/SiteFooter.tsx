@@ -4,6 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Instagram, Facebook, Phone, MapPin, Clock, Mail } from "lucide-react"
 import { usePathname } from "next/navigation"
+import BrandLogo from "@/components/BrandLogo"
 
 function TikTokIcon({ className }: { className?: string }) {
   return (
@@ -50,7 +51,7 @@ export default function SiteFooter() {
         <div className="rounded-[32px] border border-white/10 bg-white/5 p-10 md:p-14 shadow-[0_40px_140px_-100px_rgba(6,7,14,0.9)] backdrop-blur-2xl">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.2fr_2fr]">
             <div className="space-y-6">
-              <h2 className="font-serif text-3xl text-white font-semibold tracking-tight">Japhe's Cakes & Pizza</h2>
+              <BrandLogo variant="dark" showTagline={false} />
               <p className="text-sm text-slate-300/80 max-w-sm leading-relaxed">
                 Crafted for celebrations and everyday cravings. Baked fresh, finished with care, delivered with pride.
               </p>
