@@ -107,9 +107,12 @@ export default function HomeHero() {
                 <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-7 text-white md:min-h-[18rem]">
                   <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/70">
                     Signature Cakes
-                    <span className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80">
+                    <button
+                      onClick={() => router.push("/order/cake")}
+                      className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80 transition hover:bg-white/15"
+                    >
                       Order Now
-                    </span>
+                    </button>
                   </div>
                   <div className="space-y-3">
                     <p className="text-3xl font-semibold font-serif">Velvet & Citrus</p>
@@ -137,9 +140,12 @@ export default function HomeHero() {
                 <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-7 text-white md:min-h-[18rem]">
                   <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/70">
                     Stone-Fired Pizza
-                    <span className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80">
+                    <button
+                      onClick={() => router.push("/order/pizza")}
+                      className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80 transition hover:bg-white/15"
+                    >
                       Order Hot
-                    </span>
+                    </button>
                   </div>
                   <div className="space-y-3">
                     <p className="text-3xl font-semibold font-serif">Fire & Cheese</p>
