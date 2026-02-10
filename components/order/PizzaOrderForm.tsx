@@ -19,6 +19,7 @@ import { OrderLayout } from "./OrderLayout"
 import { orderThemes } from "./themes"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails, isPizzaOfferDay } from "@/lib/pizza-offer"
+import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 
 import dynamic from "next/dynamic"
 
@@ -84,7 +85,7 @@ const pizzaSchema = z.object({
     deliveryFee: z.number().optional(),
     deliveryDistance: z.number().optional(),
     customerName: z.string().min(2, "Name req"),
-    phone: z.string().min(10, "Phone req"),
+    phone: z.string().regex(KENYA_PHONE_REGEX, "Use 07XXXXXXXX or 01XXXXXXXX"),
     notes: z.string().optional(),
 }).refine((data) => {
     // Require precise location for delivery
@@ -461,13 +462,23 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                                <FormField control={form.control} name="phone" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Phone</FormLabel>
-                                        <FormControl><Input placeholder="07XX..." className={theme.colors.ring} {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                            <FormField control={form.control} name="phone" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Phone</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="07XX..."
+                                            inputMode="numeric"
+                                            maxLength={10}
+                                            pattern="^(07|01)\\d{8}$"
+                                            className={theme.colors.ring}
+                                            {...field}
+                                            onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
                             </div>
                         </section>
                     </div>

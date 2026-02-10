@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Smartphone, Banknote } from "lucide-react"
+import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import type { PaymentPlan, Fulfilment } from "@/lib/types/payment"
 
 interface PaymentMethodSelectorProps {
@@ -92,7 +93,10 @@ export function PaymentMethodSelector({
                     type="tel"
                     placeholder="07XX XXX XXX"
                     value={mpesaPhone}
-                    onChange={(e) => onMpesaPhoneChange?.(e.target.value)}
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="^(07|01)\\d{8}$"
+                    onChange={(e) => onMpesaPhoneChange?.(normalizeKenyaPhone(e.target.value))}
                     className="mt-1"
                     required
                 />

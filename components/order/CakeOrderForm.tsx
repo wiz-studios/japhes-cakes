@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils"
 import { OrderLayout } from "./OrderLayout"
 import { orderThemes } from "./themes"
 import { CAKE_FLAVORS, CAKE_SIZES, getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
+import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 
 import dynamic from "next/dynamic"
 
@@ -44,7 +45,7 @@ const cakeSchema = z.object({
     deliveryDistance: z.number().optional(),
     preferredDate: z.date({ required_error: "Date required" }),
     customerName: z.string().min(2, "Min 2 chars"),
-    phone: z.string().min(10, "Valid phone req"),
+    phone: z.string().regex(KENYA_PHONE_REGEX, "Use 07XXXXXXXX or 01XXXXXXXX"),
 }).refine((data) => {
     // Custom validation: Require location coords if delivery is selected
     if (data.fulfilment === "delivery" && (!data.deliveryLat || !data.deliveryLng)) return false
@@ -286,7 +287,21 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                 <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="John Doe" className={theme.colors.ring} {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="phone" render={({ field }) => (
-                                <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="07XX..." className={theme.colors.ring} {...field} /></FormControl><FormMessage /></FormItem>
+                                <FormItem>
+                                    <FormLabel>Phone</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="07XX..."
+                                            inputMode="numeric"
+                                            maxLength={10}
+                                            pattern="^(07|01)\\d{8}$"
+                                            className={theme.colors.ring}
+                                            {...field}
+                                            onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                             )} />
                         </div>
                     </div>

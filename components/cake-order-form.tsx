@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { CalendarIcon, Loader2 } from "lucide-react"
 import { format, addHours, isBefore, startOfToday } from "date-fns"
 
@@ -32,7 +33,7 @@ const cakeSchema = z
       required_error: "A preferred date is required.",
     }),
     customerName: z.string().min(2, "Name must be at least 2 characters"),
-    phone: z.string().min(10, "Please enter a valid phone number"),
+    phone: z.string().regex(KENYA_PHONE_REGEX, "Use 07XXXXXXXX or 01XXXXXXXX"),
   })
   .refine(
     (data) => {
@@ -315,7 +316,14 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                 <FormItem>
                   <FormLabel>WhatsApp Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="0712 345 678" {...field} />
+                    <Input
+                      placeholder="0712 345 678"
+                      inputMode="numeric"
+                      maxLength={10}
+                      pattern="^(07|01)\\d{8}$"
+                      {...field}
+                      onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

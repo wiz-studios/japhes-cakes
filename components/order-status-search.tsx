@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, Search } from "lucide-react"
+import { normalizeKenyaPhone } from "@/lib/phone"
 
 export function OrderStatusSearch({
   initialId = "",
@@ -63,7 +64,10 @@ export function OrderStatusSearch({
             id="phone"
             placeholder="07XX XXX XXX"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(normalizeKenyaPhone(e.target.value))}
+            inputMode="numeric"
+            maxLength={10}
+            pattern="^(07|01)\\d{8}$"
             className="bg-slate-50 border-slate-200"
           />
         </div>

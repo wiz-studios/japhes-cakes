@@ -27,7 +27,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     const phoneRegex = /^(07|01)[0-9]{8}$/
     if (!phoneRegex.test(phone)) {
         console.warn(`[STK-INIT] Invalid phone format: ${phone}`)
-        return { success: false, error: "Invalid phone number. Use format 07XXXXXXXX" }
+        return { success: false, error: "Invalid phone number. Use 07XXXXXXXX or 01XXXXXXXX" }
     }
 
     // 2. Fetch Order Details (Secure Source of Truth for Amount)

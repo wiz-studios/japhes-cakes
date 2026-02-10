@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,7 @@ const pizzaSchema = z
     fulfilment: z.enum(["pickup", "delivery"]),
     deliveryZoneId: z.string().optional(),
     customerName: z.string().min(2, "Name must be at least 2 characters"),
-    phone: z.string().min(10, "Please enter a valid phone number"),
+    phone: z.string().regex(KENYA_PHONE_REGEX, "Use 07XXXXXXXX or 01XXXXXXXX"),
     notes: z.string().optional(),
   })
   .refine(
@@ -293,7 +294,14 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="07XX XXX XXX or 01XX XXX XXX" {...field} />
+                  <Input
+                    placeholder="07XX XXX XXX or 01XX XXX XXX"
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="^(07|01)\\d{8}$"
+                    {...field}
+                    onChange={(e) => field.onChange(normalizeKenyaPhone(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

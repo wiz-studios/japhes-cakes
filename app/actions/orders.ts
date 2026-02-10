@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { addHours, isAfter, setHours, setMinutes } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
+import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
@@ -169,6 +170,15 @@ export async function submitCakeOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
   try {
+    const normalizedPhone = normalizeKenyaPhone(values.phone || "")
+    if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
+      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
+    }
+    const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
+    if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
+      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
+    }
+
     if (values.paymentMethod !== "mpesa") {
       return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
     }
@@ -218,7 +228,7 @@ export async function submitCakeOrder(values: any) {
           order_type: "cake",
           fulfilment: values.fulfilment,
           customer_name: values.customerName,
-          phone: values.phone,
+          phone: normalizedPhone,
           delivery_zone_id: values.deliveryZoneId || null,
           delivery_window: deliveryWindow,
           delivery_fee: deliveryFee,
@@ -240,7 +250,7 @@ export async function submitCakeOrder(values: any) {
           payment_amount_paid: 0,
           payment_amount_due: total,
           payment_deposit_amount: depositAmount,
-          mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
+          mpesa_phone: values.paymentMethod === "mpesa" ? normalizedMpesaPhone : null,
         })
         .select()
         .single()
@@ -277,6 +287,15 @@ export async function submitPizzaOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
   try {
+    const normalizedPhone = normalizeKenyaPhone(values.phone || "")
+    if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
+      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
+    }
+    const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
+    if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
+      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
+    }
+
     if (values.paymentMethod !== "mpesa") {
       return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
     }
@@ -356,7 +375,7 @@ export async function submitPizzaOrder(values: any) {
           order_type: "pizza",
           fulfilment: values.fulfilment,
           customer_name: values.customerName,
-          phone: values.phone,
+          phone: normalizedPhone,
           delivery_zone_id: values.deliveryZoneId || null,
           delivery_window: deliveryWindow,
           delivery_fee: deliveryFee,
@@ -373,7 +392,7 @@ export async function submitPizzaOrder(values: any) {
           payment_amount_paid: 0,
           payment_amount_due: total,
           payment_deposit_amount: depositAmount,
-          mpesa_phone: values.paymentMethod === "mpesa" ? values.mpesaPhone : null,
+          mpesa_phone: values.paymentMethod === "mpesa" ? normalizedMpesaPhone : null,
         })
         .select()
         .single()

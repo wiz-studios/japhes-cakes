@@ -4,6 +4,7 @@ import { OrderStatusSearch } from "@/components/order-status-search"
 import OrderStatusTimeline from "@/components/OrderStatusTimeline"
 import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { formatFriendlyId, getDeliveryEstimate } from "@/lib/order-helpers"
+import { normalizeKenyaPhone } from "@/lib/phone"
 import { Package, Clock } from "lucide-react"
 
 export default async function OrderStatusPage({
@@ -19,10 +20,11 @@ export default async function OrderStatusPage({
 
   const trimmedId = id?.trim()
   const trimmedPhone = phone?.trim()
+  const normalizedPhone = trimmedPhone ? normalizeKenyaPhone(trimmedPhone) : undefined
   const normalizedId = trimmedId ? trimmedId.toUpperCase() : undefined
   const isUuid = !!trimmedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmedId)
 
-  if (trimmedId || trimmedPhone) {
+    if (trimmedId || normalizedPhone) {
     if (trimmedId) {
       let query = supabase
         .from("orders")
@@ -34,8 +36,8 @@ export default async function OrderStatusPage({
         query = query.eq("friendly_id", normalizedId)
       }
 
-      if (trimmedPhone) {
-        query = query.eq("phone", trimmedPhone)
+      if (normalizedPhone) {
+        query = query.eq("phone", normalizedPhone)
       }
 
       const { data: directData } = await query.maybeSingle()
@@ -45,11 +47,11 @@ export default async function OrderStatusPage({
       }
     }
 
-    if (!order && trimmedPhone && !trimmedId) {
+    if (!order && normalizedPhone && !trimmedId) {
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
         .select("*, order_items(*), delivery_zones(name)")
-        .eq("phone", trimmedPhone)
+        .eq("phone", normalizedPhone)
         .order("created_at", { ascending: false })
         .limit(1)
 
@@ -58,11 +60,11 @@ export default async function OrderStatusPage({
       }
     }
 
-    if (!order && trimmedPhone && trimmedId) {
+    if (!order && normalizedPhone && trimmedId) {
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
         .select("*, order_items(*), delivery_zones(name)")
-        .eq("phone", trimmedPhone)
+        .eq("phone", normalizedPhone)
         .order("created_at", { ascending: false })
         .limit(5)
 
@@ -75,7 +77,7 @@ export default async function OrderStatusPage({
     }
 
     if (!order) {
-      error = trimmedId && trimmedPhone
+      error = trimmedId && normalizedPhone
         ? "Order not found. Please check your order number and phone number."
         : trimmedId
           ? "Order not found. Please check your order number."
@@ -111,7 +113,7 @@ export default async function OrderStatusPage({
           </p>
         </div>
 
-        {!order && <OrderStatusSearch initialId={id} initialPhone={phone} error={error} />}
+        {!order && <OrderStatusSearch initialId={id} initialPhone={normalizedPhone || ""} error={error} />}
 
         {order && (
           <div className="space-y-6">
@@ -164,7 +166,7 @@ export default async function OrderStatusPage({
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
               <div className={`${cardClass} p-6`}>
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Order Timeline</h3>
@@ -177,15 +179,17 @@ export default async function OrderStatusPage({
                 </div>
               </div>
 
-              <OrderPaymentStatusCard
-                paymentStatus={order.payment_status}
-                paymentMethod={order.payment_method}
-                fulfilment={order.fulfilment}
-                mpesaTransactionId={order.mpesa_transaction_id}
-                totalAmount={order.total_amount || 0}
-                amountPaid={order.payment_amount_paid || 0}
-                amountDue={order.payment_amount_due || 0}
-              />
+              <div className="min-w-0 w-full">
+                <OrderPaymentStatusCard
+                  paymentStatus={order.payment_status}
+                  paymentMethod={order.payment_method}
+                  fulfilment={order.fulfilment}
+                  mpesaTransactionId={order.mpesa_transaction_id}
+                  totalAmount={order.total_amount || 0}
+                  amountPaid={order.payment_amount_paid || 0}
+                  amountDue={order.payment_amount_due || 0}
+                />
+              </div>
             </div>
 
             <div className={`${cardClass} p-6`}>
@@ -207,15 +211,17 @@ export default async function OrderStatusPage({
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className={`${cardClass} p-6`}>
-                <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-3">Order Meta</h3>
-                <div className="space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center justify-between">
-                    <span>Placed</span>
-                    <span className="font-semibold text-slate-900">{new Date(order.created_at).toLocaleString()}</span>
+                <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-4">Order Meta</h3>
+                <div className="grid gap-4 text-sm">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.25em] text-slate-400">Placed</p>
+                    <p className="mt-1 font-semibold text-slate-900">
+                      {new Date(order.created_at).toLocaleString()}
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Items</span>
-                    <span className="font-semibold text-slate-900">{order.order_items?.length || 0}</span>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.25em] text-slate-400">Items</p>
+                    <p className="mt-1 font-semibold text-slate-900">{order.order_items?.length || 0}</p>
                   </div>
                 </div>
               </div>

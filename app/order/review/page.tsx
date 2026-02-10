@@ -16,6 +16,7 @@ import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakePrice } from "@/lib/cake-pricing"
+import { isValidKenyaPhone, normalizeKenyaPhone } from "@/lib/phone"
 
 // Main review page component
 // Types for order and item
@@ -146,6 +147,11 @@ function OrderReviewContent() {
     if (!mpesaPhone) {
       console.log("Validation failed: M-Pesa phone required")
       setError("Please enter your M-Pesa phone number")
+      setSubmitting(false)
+      return
+    }
+    if (!isValidKenyaPhone(mpesaPhone)) {
+      setError("Use 07XXXXXXXX or 01XXXXXXXX")
       setSubmitting(false)
       return
     }
@@ -380,7 +386,7 @@ function OrderReviewContent() {
               onChange={setPaymentPlan}
               totalAmount={order.total}
               mpesaPhone={mpesaPhone}
-              onMpesaPhoneChange={setMpesaPhone}
+              onMpesaPhoneChange={(value) => setMpesaPhone(normalizeKenyaPhone(value))}
             />
           </div>
 

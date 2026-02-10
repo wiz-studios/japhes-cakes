@@ -7,6 +7,7 @@ import { Smartphone, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { isValidKenyaPhone, normalizeKenyaPhone } from "@/lib/phone"
 
 /**
  * Payment Confirmation Page (Optional for v1)
@@ -26,7 +27,7 @@ function PaymentConfirmContent() {
     const [processing, setProcessing] = useState(false)
 
     const handlePayment = async () => {
-        if (!mpesaPhone || mpesaPhone.length < 10) {
+        if (!isValidKenyaPhone(mpesaPhone)) {
             alert("Please enter a valid phone number")
             return
         }
@@ -76,7 +77,10 @@ function PaymentConfirmContent() {
                             type="tel"
                             placeholder="07XX XXX XXX"
                             value={mpesaPhone}
-                            onChange={(e) => setMpesaPhone(e.target.value)}
+                            onChange={(e) => setMpesaPhone(normalizeKenyaPhone(e.target.value))}
+                            inputMode="numeric"
+                            maxLength={10}
+                            pattern="^(07|01)\\d{8}$"
                             className="mt-1"
                         />
                         <p className="text-xs text-gray-500 mt-1">
