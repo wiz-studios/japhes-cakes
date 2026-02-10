@@ -10,6 +10,7 @@ import { formatFriendlyId } from "@/lib/order-helpers"
 import { Button } from "@/components/ui/button"
 import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { initiateMpesaSTK } from "@/lib/mpesa"
+import BrandLogo from "@/components/BrandLogo"
 
 type OrderSubmittedProps = {
   order: any
@@ -260,10 +261,9 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
               <p className="text-xs uppercase tracking-[0.32em] text-slate-400 font-semibold">Receipt</p>
-              <h3 className="text-xl font-serif font-semibold text-slate-900">Japhe's Cakes & Pizza</h3>
-              <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500 font-semibold">
-                Quality is our Priority
-              </p>
+              <div className="mt-2">
+                <BrandLogo size="sm" />
+              </div>
             </div>
             <div className="text-sm text-slate-600">
               <div><span className="font-semibold text-slate-900">Order:</span> {friendlyId}</div>

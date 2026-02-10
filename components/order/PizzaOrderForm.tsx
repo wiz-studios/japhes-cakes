@@ -46,6 +46,20 @@ const PIZZA_SIZES = [
     { value: "Large", label: "Large", meta: "4-5 people" },
 ]
 
+const PIZZA_DESCRIPTIONS: Record<string, string> = {
+    Margherita: "Classic tomato base and cheese.",
+    Vegetarian: "Tomatoes, onions, green pepper & chills.",
+    "Beef Supreme": "Marinated beef, pineapples, cheese.",
+    Hawaiian: "Pineapples, bacon & cheese.",
+    "Meat Deluxe": "Beef, macon, ham, pepperoni.",
+    "BBQ Steak": "Marinated beef.",
+    "BBQ Chicken": "Marinated chicken & cheese.",
+    "Chicken Periperi": "The heat with its bold flavors! Tender & cheese.",
+    "Chicken Tikka": "Marinated mild chicken, olives, bell pepper & cheese.",
+    "Chicken Supreme": "Marinated chicken & pineapples.",
+    "Chicken Macon": "Marinated chicken, macon, onions & sweetcorn.",
+}
+
 /**
  * Zod schema for validating pizza order inputs.
  * Ensures quantity, size, and type selection, plus delivery details if applicable.
@@ -252,15 +266,20 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                 <FormField control={form.control} name="pizzaType" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Flavor</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Select Pizza" /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                {PIZZA_TYPES.map(p => (
-                                                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Select Pizza" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {PIZZA_TYPES.map(p => (
+                                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {pizzaType && PIZZA_DESCRIPTIONS[pizzaType] && (
+                                    <p className="mt-2 text-xs text-slate-500">
+                                        {PIZZA_DESCRIPTIONS[pizzaType]}
+                                    </p>
+                                )}
+                                <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
                                             {POPULAR_PIZZAS.map((pizza) => (
                                                 <button
                                                     key={pizza}
