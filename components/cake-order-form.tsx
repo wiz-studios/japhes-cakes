@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { submitCakeOrder } from "@/app/actions/orders"
+import { CAKE_FLAVORS, CAKE_SIZES, getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
 
 const cakeSchema = z
   .object({
@@ -82,7 +83,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
         type: "cake",
         items: [
           {
-            name: `${values.cakeFlavor} Cake`,
+            name: getCakeDisplayName(values.cakeFlavor),
             quantity: 1,
             size: values.cakeSize,
             flavor: values.cakeFlavor,
@@ -93,6 +94,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
         deliveryFee: zones.find((z) => z.id === values.deliveryZoneId)?.delivery_fee || 0,
         fulfilment: values.fulfilment,
         deliveryZone: zones.find((z) => z.id === values.deliveryZoneId)?.name || "",
+        total: getCakePrice(values.cakeFlavor, values.cakeSize),
         scheduledDate: values.preferredDate ? values.preferredDate.toISOString().slice(0, 10) : "",
         placedHour: new Date().getHours(),
         phone: values.phone,
@@ -129,10 +131,9 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="1kg">1kg (approx 8 slices)</SelectItem>
-                    <SelectItem value="1.5kg">1.5kg</SelectItem>
-                    <SelectItem value="2kg">2kg</SelectItem>
-                    <SelectItem value="custom">Larger / Custom</SelectItem>
+                    {CAKE_SIZES.map((size) => (
+                      <SelectItem key={size} value={size}>{size.toUpperCase()}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -153,10 +154,9 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="vanilla">Vanilla</SelectItem>
-                    <SelectItem value="chocolate">Chocolate</SelectItem>
-                    <SelectItem value="red_velvet">Red Velvet</SelectItem>
-                    <SelectItem value="fruit">Fruit Cake</SelectItem>
+                    {CAKE_FLAVORS.map((flavor) => (
+                      <SelectItem key={flavor} value={flavor}>{flavor}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

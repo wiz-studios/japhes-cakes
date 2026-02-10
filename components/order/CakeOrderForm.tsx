@@ -19,6 +19,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { OrderLayout } from "./OrderLayout"
 import { orderThemes } from "./themes"
+import { CAKE_FLAVORS, CAKE_SIZES, getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
 
 import dynamic from "next/dynamic"
 
@@ -52,19 +53,6 @@ const cakeSchema = z.object({
 
 interface DeliveryZone {
     id: string; name: string; delivery_fee: number; allows_cake: boolean;
-}
-
-// Pricing Constants used for real-time estimation
-const CAKE_PRICES: Record<string, number> = {
-    "1kg": 2500,
-    "1.5kg": 3700,
-    "2kg": 4800,
-    "3kg": 7000
-}
-
-const FLAVOR_SURCHARGES: Record<string, number> = {
-    "Vanilla": 0, "Lemon": 0, "Fruit": 0,
-    "Chocolate": 500, "Red Velvet": 500, "Black Forest": 500, "Blueberry": 500
 }
 
 /**
@@ -122,9 +110,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
     const watchSize = form.watch("cakeSize")
     const watchFlavor = form.watch("cakeFlavor")
 
-    const basePrice = CAKE_PRICES[watchSize] || 0
-    const surcharge = FLAVOR_SURCHARGES[watchFlavor] || 0
-    const estimatedTotal = basePrice + surcharge
+    const estimatedTotal = watchSize && watchFlavor ? getCakePrice(watchFlavor, watchSize) : 0
 
     /**
      * Form Submission Handler
@@ -135,15 +121,15 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
         const orderData = {
             type: "cake",
             items: [{
-                name: `${values.cakeFlavor} Cake`,
+                name: getCakeDisplayName(values.cakeFlavor),
                 quantity: 1,
                 size: values.cakeSize,
                 flavor: values.cakeFlavor,
                 notes: values.designNotes,
                 message: values.cakeMessage,
-                price: CAKE_PRICES[values.cakeSize] + (FLAVOR_SURCHARGES[values.cakeFlavor] || 0)
+                price: getCakePrice(values.cakeFlavor, values.cakeSize)
             }],
-            total: CAKE_PRICES[values.cakeSize] + (FLAVOR_SURCHARGES[values.cakeFlavor] || 0),
+            total: getCakePrice(values.cakeFlavor, values.cakeSize),
             deliveryFee: values.fulfilment === "delivery" ? (values.deliveryFee || 0) : 0,
             fulfilment: values.fulfilment,
             deliveryZone: values.fulfilment === "delivery" ? `GPS Delivery (${values.deliveryDistance}km)` : "",
@@ -181,10 +167,9 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Select Weight" /></SelectTrigger></FormControl>
                                         <SelectContent>
-                                            <SelectItem value="1kg">1 KG (2,500 KES)</SelectItem>
-                                            <SelectItem value="1.5kg">1.5 KG (3,700 KES)</SelectItem>
-                                            <SelectItem value="2kg">2 KG (4,800 KES)</SelectItem>
-                                            <SelectItem value="3kg">3 KG (7,000 KES)</SelectItem>
+                                            {CAKE_SIZES.map((size) => (
+                                                <SelectItem key={size} value={size}>{size.toUpperCase()}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -197,15 +182,8 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                         <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Select Flavor" /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             {/* Standard Flavors */}
-                                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Standard (No Charge)</div>
-                                            {["Vanilla", "Lemon", "Fruit"].map(f => (
-                                                <SelectItem key={f} value={f}>{f}</SelectItem>
-                                            ))}
-
-                                            {/* Premium Flavors */}
-                                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-2">Premium (+500 KES)</div>
-                                            {["Chocolate", "Red Velvet", "Black Forest", "Blueberry"].map(f => (
-                                                <SelectItem key={f} value={f}>{f} (+500)</SelectItem>
+                                            {CAKE_FLAVORS.map((flavor) => (
+                                                <SelectItem key={flavor} value={flavor}>{flavor}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

@@ -6,6 +6,7 @@ import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rule
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
+import { getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   order_received: ["ready_for_pickup", "cancelled"],
@@ -164,13 +165,6 @@ export async function completeDelivery(orderId: string, collectedCash: boolean =
   return { success: !error, error: error?.message }
 }
 
-// Pricing constants for cakes
-const CAKE_PRICES: Record<string, number> = { "1kg": 2500, "1.5kg": 3700, "2kg": 4800, "3kg": 7000 }
-const FLAVOR_SURCHARGES: Record<string, number> = {
-  "Vanilla": 0, "Lemon": 0, "Fruit": 0,
-  "Chocolate": 500, "Red Velvet": 500, "Black Forest": 500, "Blueberry": 500
-}
-
 export async function submitCakeOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
@@ -206,10 +200,8 @@ export async function submitCakeOrder(values: any) {
       }
     }
 
-    // Calculate cake price
-    const basePrice = CAKE_PRICES[values.cakeSize.toLowerCase()] || CAKE_PRICES["1kg"]
-    const flavorSurcharge = FLAVOR_SURCHARGES[values.cakeFlavor] || 0
-    const itemTotal = basePrice + flavorSurcharge
+    // Calculate cake price from pricing table
+    const itemTotal = getCakePrice(values.cakeFlavor, values.cakeSize)
     const total = itemTotal + deliveryFee
     const paymentPlan = (values.paymentPlan || "full") as "full" | "deposit"
     const depositAmount = Math.ceil(total * 0.5)
@@ -268,7 +260,7 @@ export async function submitCakeOrder(values: any) {
     // 3. Insert order item
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
-      item_name: `${values.cakeSize} ${values.cakeFlavor} Cake`,
+      item_name: `${values.cakeSize} ${getCakeDisplayName(values.cakeFlavor)}`,
       notes: `Design: ${values.designNotes || "None"}. Message: ${values.cakeMessage || "None"}`,
     })
 

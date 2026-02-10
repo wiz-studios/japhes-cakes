@@ -27,6 +27,7 @@ import { PaymentMethodSelector } from "@/components/PaymentMethodSelector"
 import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
+import { getCakePrice } from "@/lib/cake-pricing"
 
 // Main review page component
 // Types for order and item
@@ -82,10 +83,6 @@ function OrderReviewContent() {
   const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("deposit")
   const [mpesaPhone, setMpesaPhone] = useState("")
 
-  // Pricing Constants (should match Order Forms)
-  const CAKE_PRICES: Record<string, number> = { "1kg": 2500, "1.5kg": 3700, "2kg": 4800, "3kg": 7000 }
-  const FLAVOR_SURCHARGES: Record<string, number> = { "Vanilla": 0, "Lemon": 0, "Fruit": 0, "Chocolate": 500, "Red Velvet": 500, "Black Forest": 500, "Blueberry": 500 }
-
   // Live price calculation
   useEffect(() => {
     if (!order) return
@@ -97,9 +94,8 @@ function OrderReviewContent() {
         const cakeItem = item as CakeOrderItem
         // Use strict pricing matrix
         // Fallback to "1kg" price if size not found to prevent NaN, though size should be valid
-        const sizePrice = CAKE_PRICES[cakeItem.size.toLowerCase()] || CAKE_PRICES["1kg"]
-        const flavorSurcharge = FLAVOR_SURCHARGES[cakeItem.flavor || "Vanilla"] || 0
-        lineTotal = (sizePrice + flavorSurcharge) * cakeItem.quantity
+        const unitPrice = getCakePrice(cakeItem.flavor || "Vanilla", cakeItem.size)
+        lineTotal = unitPrice * cakeItem.quantity
       } else {
         const pizzaItem = item as PizzaOrderItem
         const toppingsCount = pizzaItem.toppings?.length || 0
