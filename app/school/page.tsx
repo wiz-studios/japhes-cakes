@@ -213,6 +213,9 @@ export default function SchoolPage() {
           <div className="mt-6 text-sm text-slate-600">
             School fees to be paid to Imarisha Sacco Account. Account number: <span className="font-semibold text-slate-800">5040323411</span>.
           </div>
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800">
+            Minimum of <span className="font-semibold">Ksh 10,000</span> must be paid before enrollment.
+          </div>
         </div>
       </section>
 

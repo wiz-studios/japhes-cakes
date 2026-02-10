@@ -4,6 +4,7 @@ import { Cormorant_Garamond, Manrope } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import SiteHeader from "@/components/SiteHeader"
 import SiteFooter from "@/components/SiteFooter"
+import FloatingWhatsApp from "@/components/FloatingWhatsApp"
 import "./globals.css"
 
 const cormorant = Cormorant_Garamond({
@@ -52,6 +53,7 @@ export default function RootLayout({
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <FloatingWhatsApp />
         <Analytics />
       </body>
     </html>
