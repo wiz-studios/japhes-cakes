@@ -547,7 +547,7 @@ export default function GPSLocationPicker({ onLocationSelect }: GPSLocationPicke
                                                         <span>Fee: {validation.fee} KES</span>
                                                         {validation.timeMultiplier && validation.timeMultiplier > 1 && (
                                                             <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[10px] border border-purple-200">
-                                                                {validation.timeLabel} ({validation.timeMultiplier}x)
+                                                                Surge {validation.timeMultiplier}x
                                                             </span>
                                                         )}
                                                     </div>
