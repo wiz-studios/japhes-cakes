@@ -25,6 +25,7 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
   const friendlyId = formatFriendlyId(order)
   const isCake = order.order_type === "cake"
   const isDelivery = order.fulfilment === "delivery"
+  const formatMoney = (value: number) => `${value.toLocaleString()} KES`
 
 
   // Theme colors based on order type
@@ -123,7 +124,7 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
   useEffect(() => setShowConfetti(true), [])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-md mx-auto print:min-h-0 print:justify-start print:pt-8">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-2xl mx-auto print:min-h-0 print:justify-start print:pt-8">
       {showConfetti && (
         <div className="print:hidden">
           <Confetti numberOfPieces={200} recycle={false} />
@@ -212,7 +213,7 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
               disabled={isRetrying || retryCooldown > 0}
               className="w-full bg-red-100 text-red-700 hover:bg-red-200"
             >
-              {isRetrying ? "Sending Request..." : retryCooldown > 0 ? `Wait ${retryCooldown}s` : (liveOrder.payment_status === "pending" ? "Pay Now" : "Payment failed — retry")}
+              {isRetrying ? "Sending Request..." : retryCooldown > 0 ? `Wait ${retryCooldown}s` : (liveOrder.payment_status === "pending" ? "Pay Now" : "Payment failed - retry")}
             </Button>
             <p className="text-xs text-muted-foreground mt-2">
               Did the prompt fail to appear? Click above to try again.
@@ -246,6 +247,97 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
             </p>
           </div>
         )}
+      </motion.div>
+
+      {/* Professional Receipt */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="w-full mb-8"
+      >
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)] print:shadow-none print:border-2">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-200 pb-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.32em] text-slate-400 font-semibold">Receipt</p>
+              <h3 className="text-xl font-serif font-semibold text-slate-900">Japhe's Cakes & Pizza</h3>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500 font-semibold">
+                Quality is our Priority
+              </p>
+            </div>
+            <div className="text-sm text-slate-600">
+              <div><span className="font-semibold text-slate-900">Order:</span> {friendlyId}</div>
+              <div><span className="font-semibold text-slate-900">Date:</span> {new Date(liveOrder.created_at).toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 py-4 text-sm text-slate-700">
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold">Customer</p>
+              <p className="mt-1 font-semibold text-slate-900">{liveOrder.customer_name || "Guest"}</p>
+              <p className="text-slate-600">{liveOrder.phone}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold">Fulfilment</p>
+              <p className="mt-1 font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
+              <p className="text-slate-600">
+                {isDelivery ? liveOrder.delivery_zones?.name || "Delivery location" : "Thika Branch"}
+              </p>
+              {liveOrder.delivery_window && (
+                <p className="text-slate-600">Window: {liveOrder.delivery_window}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 pt-4">
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold mb-2">Items</p>
+            <div className="space-y-3 text-sm text-slate-700">
+              {(liveOrder.order_items || []).map((item: any, idx: number) => (
+                <div key={idx} className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">{item.item_name}</p>
+                    {item.notes && <p className="text-xs text-slate-500 mt-1">{item.notes}</p>}
+                  </div>
+                  {item.quantity && <span className="text-xs font-semibold text-slate-500">Qty {item.quantity}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 mt-4 pt-4 text-sm">
+            <div className="flex justify-between text-slate-600">
+              <span>Subtotal</span>
+              <span className="font-semibold text-slate-900">
+                {formatMoney(Math.max((liveOrder.total_amount || 0) - (liveOrder.delivery_fee || 0), 0))}
+              </span>
+            </div>
+            <div className="flex justify-between text-slate-600">
+              <span>Delivery Fee</span>
+              <span className="font-semibold text-slate-900">{formatMoney(liveOrder.delivery_fee || 0)}</span>
+            </div>
+            <div className="flex justify-between text-slate-900 font-semibold text-base mt-2">
+              <span>Total</span>
+              <span>{formatMoney(liveOrder.total_amount || 0)}</span>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 mt-4 pt-4 text-sm text-slate-600">
+            <div className="flex justify-between">
+              <span>Payment Status</span>
+              <span className="font-semibold text-slate-900">{liveOrder.payment_status?.replace(/_/g, " ")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Method</span>
+              <span className="font-semibold text-slate-900">{liveOrder.payment_method === "mpesa" ? "M-Pesa" : "Cash"}</span>
+            </div>
+            {liveOrder.mpesa_transaction_id && (
+              <div className="flex justify-between">
+                <span>Transaction ID</span>
+                <span className="font-mono font-semibold text-slate-900">{liveOrder.mpesa_transaction_id}</span>
+              </div>
+            )}
+          </div>
+        </div>
       </motion.div>
 
       <motion.div
