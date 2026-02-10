@@ -24,8 +24,9 @@ export function PaymentMethodSelector({
     mpesaPhone = "",
     onMpesaPhoneChange
 }: PaymentMethodSelectorProps) {
-    const depositAmount = Math.ceil(totalAmount * 0.5)
-    const remainingAmount = Math.max(totalAmount - depositAmount, 0)
+    const safeTotal = Number.isFinite(totalAmount) ? totalAmount : 0
+    const depositAmount = Math.ceil(safeTotal * 0.5)
+    const remainingAmount = Math.max(safeTotal - depositAmount, 0)
 
     return (
         <div className="space-y-4">
@@ -52,7 +53,7 @@ export function PaymentMethodSelector({
                             </p>
 
                             <div className="mt-2 text-sm font-semibold text-emerald-700">
-                                {totalAmount.toLocaleString()} KES
+                                {safeTotal.toLocaleString()} KES
                             </div>
                         </div>
                     </div>
