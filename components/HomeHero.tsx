@@ -38,7 +38,7 @@ export default function HomeHero() {
         <div className="absolute inset-0 hero-grain" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-16 lg:pt-24">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-24 lg:pt-28">
         <motion.div
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}

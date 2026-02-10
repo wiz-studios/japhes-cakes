@@ -476,13 +476,18 @@ function OrderReviewContent() {
 
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-8 gap-4">
-            <Button type="button" variant="outline" className="w-1/2" onClick={handleBack}>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-1/2 h-12 rounded-full shadow-[0_16px_40px_-28px_rgba(15,20,40,0.35)]"
+              onClick={handleBack}
+            >
               Back
             </Button>
             <Button
               type="button"
               onClick={handleSubmit}
-              className="w-1/2 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white font-bold"
+              className="w-1/2 h-12 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)]"
               disabled={submitting}
             >
               {submitting ? (

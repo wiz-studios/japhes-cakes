@@ -424,7 +424,15 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                     </div>
 
                     <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:static md:bg-transparent md:border-0 md:p-0 z-50">
-                        <Button type="submit" disabled={isSubmitting} className={cn("w-full h-12 text-lg font-bold rounded-xl shadow-lg transition-all", theme.colors.primary)}>
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className={cn(
+                                "w-full h-12 text-lg font-semibold rounded-full shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] transition-all",
+                                "hover:-translate-y-0.5 active:translate-y-0",
+                                theme.colors.primary
+                            )}
+                        >
                             {isSubmitting ? <Loader2 className="animate-spin" /> : "Review Order"}
                         </Button>
                     </div>
