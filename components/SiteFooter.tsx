@@ -75,6 +75,7 @@ export default function SiteFooter() {
                 <ul className="space-y-3 text-sm text-slate-300/85">
                   <li><Link href="/order/cake" className="hover:text-white transition-colors">Cakes</Link></li>
                   <li><Link href="/order/pizza" className="hover:text-white transition-colors">Pizza</Link></li>
+                  <li><Link href="/school" className="hover:text-white transition-colors">School of Cakes</Link></li>
                   <li><Link href="/status" className="hover:text-white transition-colors">Track Order</Link></li>
                 </ul>
               </div>

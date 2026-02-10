@@ -38,6 +38,7 @@ export default function SiteHeader() {
   const navLinks = [
     { name: "Cakes", href: "/order/cake" },
     { name: "Pizza", href: "/order/pizza" },
+    { name: "School", href: "/school" },
     { name: "Track Order", href: "/status" },
   ]
 

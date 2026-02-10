@@ -175,6 +175,30 @@ export default function HomeHero() {
         <motion.div
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.25 }}
+          className="relative overflow-hidden rounded-[32px] border border-white/40 bg-white/70 px-8 py-8 shadow-[0_30px_80px_-55px_rgba(15,20,40,0.45)] backdrop-blur-sm md:flex md:items-center md:justify-between"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(216,47,125,0.15),transparent_55%),radial-gradient(circle_at_right,rgba(58,78,216,0.2),transparent_45%)]" />
+          <div className="relative space-y-3">
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-500">School of Cakes</p>
+            <h2 className="text-2xl font-semibold font-serif text-slate-900">
+              We Bake & Learn
+            </h2>
+            <p className="text-sm text-slate-600 max-w-xl">
+              Join our hands-on cake school with a 20% offer on every course. Learn baking, decoration, bread products, and more.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/school")}
+            className="relative mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#0f1116] px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#191c24] md:mt-0"
+          >
+            Explore the School <ArrowUpRight className="h-4 w-4" />
+          </button>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="flex flex-col gap-6 rounded-[32px] border border-white/30 bg-[linear-gradient(120deg,var(--brand-magenta),var(--brand-blue))] px-8 py-10 text-white shadow-2xl shadow-black/25 md:flex-row md:items-center md:justify-between"
         >

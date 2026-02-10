@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Loader2, Sparkles } from "lucide-react"
+import { Loader2, Sparkles, Clock } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -23,6 +23,26 @@ import dynamic from "next/dynamic"
 
 // Dynamically import GPS Picker to avoid SSR issues with Leaflet
 const GPSLocationPicker = dynamic(() => import('@/components/GPSLocationPicker'), { ssr: false })
+
+const PIZZA_TYPES = [
+    "BBQ Chicken",
+    "Chicken Periperi",
+    "Beef & Onion",
+    "Everything Meat",
+    "Hawaiian",
+    "Boerewors",
+    "Chicken Mushroom",
+    "Vegetarian",
+    "Margherita",
+]
+
+const POPULAR_PIZZAS = ["BBQ Chicken", "Chicken Periperi", "Margherita", "Everything Meat"]
+
+const PIZZA_SIZES = [
+    { value: "Small", label: "Small", meta: "Personal" },
+    { value: "Medium", label: "Medium", meta: "2-3 people" },
+    { value: "Large", label: "Large", meta: "4-5 people" },
+]
 
 /**
  * Zod schema for validating pizza order inputs.
@@ -143,158 +163,264 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
         <OrderLayout theme={theme} title="Build Your Pizza" subtitle="Hot, fresh, and made to order.">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    {lateNightWarning && (
-                        <div className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 mb-4">
-                            <p className="font-bold">Late Night Order?</p>
-                            <p>We stop taking orders at 9 PM. Call us if strict.</p>
+                    <div className="grid gap-6 md:grid-cols-[1.15fr_0.85fr]">
+                        <div className={cn("rounded-[26px] border bg-white/80 p-6 shadow-[0_24px_60px_-42px_rgba(15,20,40,0.45)]", theme.colors.border)}>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-3">
+                                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(58,78,216,0.12)] text-[var(--brand-blue-deep)]">
+                                        <Sparkles className="h-5 w-5" />
+                                    </span>
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Pizza Offer Days</p>
+                                        <h3 className="text-lg font-semibold text-slate-900">2-for-1 Tuesdays & Thursdays</h3>
+                                        <p className="text-sm text-slate-600">Medium & Large only. Order two, pay for one.</p>
+                                    </div>
+                                </div>
+                                <span className={cn(
+                                    "rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap",
+                                    offerActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                                )}>
+                                    {offerActive ? "Offer Active Today" : "Next Tue/Thu"}
+                                </span>
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.3em] text-slate-500">
+                                <span className="rounded-full bg-slate-100 px-3 py-1">Buy 1 Get 1</span>
+                                <span className="rounded-full bg-slate-100 px-3 py-1">Medium / Large</span>
+                            </div>
                         </div>
-                    )}
 
-                    <div className="lux-card px-4 py-3 flex items-center justify-between gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-slate-700">
-                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                                <Sparkles className="h-4 w-4" />
+                        <div className={cn("rounded-[26px] border bg-white/80 p-6 shadow-[0_24px_60px_-42px_rgba(15,20,40,0.45)]", theme.colors.border)}>
+                            <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Estimated Total</p>
+                            {estimatedPrice > 0 ? (
+                                <div className="mt-4 space-y-3">
+                                    <div>
+                                        <p className="text-sm text-slate-600">{pizzaSize} {pizzaType} x {quantity}</p>
+                                        {offerDetails.discount > 0 && (
+                                            <p className="text-xs text-emerald-700 mt-1">
+                                                Offer applied: {offerDetails.freeQuantity} free pizza{offerDetails.freeQuantity > 1 ? "s" : ""} (-{offerDetails.discount.toLocaleString()} KES)
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex items-end justify-between">
+                                        <div className="text-sm text-slate-500">
+                                            {offerDetails.discount > 0 && (
+                                                <span className="line-through">{rawSubtotal.toLocaleString()} KES</span>
+                                            )}
+                                        </div>
+                                        <div className="text-3xl font-bold text-[var(--brand-blue-deep)]">
+                                            {estimatedPrice.toLocaleString()} KES
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="mt-4 text-sm text-slate-500">
+                                    Choose your pizza and size to see the estimate.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {lateNightWarning && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 shadow-sm flex items-start gap-3">
+                            <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                                <Clock className="h-4 w-4" />
                             </span>
                             <div>
-                                <p className="font-semibold">Pizza Offer Days</p>
-                                <p className="text-xs text-slate-500">2-for-1 on Medium & Large pizzas every Tue & Thu.</p>
-                            </div>
-                        </div>
-                        <span className={cn(
-                            "rounded-full px-3 py-1 text-xs font-semibold",
-                            offerActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                        )}>
-                            {offerActive ? "Offer Active Today" : "Next Tue/Thu"}
-                        </span>
-                    </div>
-
-                    {/* Price Display */}
-                    {estimatedPrice > 0 && (
-                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-orange-500 p-4 mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div>
-                                <p className="font-bold text-orange-800">Estimated Total</p>
-                                <p className="text-sm text-orange-600">
-                                    {pizzaSize} {pizzaType} x {quantity}
-                                </p>
-                                {offerDetails.discount > 0 && (
-                                    <p className="text-xs text-emerald-700 mt-1">
-                                        Offer applied: {offerDetails.freeQuantity} free pizza{offerDetails.freeQuantity > 1 ? "s" : ""} (-{offerDetails.discount.toLocaleString()} KES)
-                                    </p>
-                                )}
-                            </div>
-                            <div className="text-right">
-                                {offerDetails.discount > 0 && (
-                                    <div className="text-sm text-slate-500 line-through">
-                                        {rawSubtotal.toLocaleString()} KES
-                                    </div>
-                                )}
-                                <div className="text-3xl font-bold text-orange-700">
-                                    {estimatedPrice.toLocaleString()} KES
-                                </div>
+                                <p className="font-semibold">Late night order notice</p>
+                                <p className="text-xs text-amber-700/80">We stop taking orders at 9 PM. Call us if you need a special exception.</p>
                             </div>
                         </div>
                     )}
 
-                    <div className="space-y-6">
-                        <h3 className={cn("text-lg font-bold border-b pb-2", theme.colors.border, theme.colors.accent)}>1. Pizza Selection</h3>
-                        <FormField control={form.control} name="pizzaType" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Flavor</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Select Pizza" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {["BBQ Chicken", "Chicken Periperi", "Beef & Onion", "Everything Meat", "Hawaiian", "Boerewors", "Chicken Mushroom", "Vegetarian", "Margherita"].map(p => (
-                                            <SelectItem key={p} value={p}>{p}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+                    <div className="grid gap-6">
+                        <section className={cn("rounded-[26px] border bg-white/80 p-6 md:p-7 shadow-[0_22px_55px_-40px_rgba(15,20,40,0.4)]", theme.colors.border)}>
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+                                <div>
+                                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Step 1</p>
+                                    <h3 className={cn("text-lg font-semibold", theme.colors.accent)}>Pizza Selection</h3>
+                                </div>
+                                {baseUnitPrice > 0 && (
+                                    <span className="text-sm font-semibold text-slate-600">
+                                        {baseUnitPrice.toLocaleString()} KES / pizza
+                                    </span>
+                                )}
+                            </div>
 
-                        <div className="grid grid-cols-2 gap-6">
-                            <FormField control={form.control} name="pizzaSize" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Size</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Size" /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="Small">Small</SelectItem>
-                                            <SelectItem value="Medium">Medium</SelectItem>
-                                            <SelectItem value="Large">Large</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="quantity" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Quantity</FormLabel>
-                                    <FormControl><Input type="number" min={1} className={theme.colors.ring} {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
-                        <FormField control={form.control} name="notes" render={({ field }) => (
-                            <FormItem><FormLabel>Special Instructions</FormLabel><FormControl><Input placeholder="Less cheese, spicy..." className={theme.colors.ring} {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                    </div>
-
-                    <div className="space-y-6">
-                        <h3 className={cn("text-lg font-bold border-b pb-2", theme.colors.border, theme.colors.accent)}>2. Delivery</h3>
-                        <FormField control={form.control} name="fulfilment" render={({ field }) => (
-                            <FormItem className="space-y-3">
-                                <FormLabel>Method</FormLabel>
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="pickup" /></FormControl><FormLabel>Pickup</FormLabel></FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="delivery" /></FormControl><FormLabel>Delivery</FormLabel></FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        {form.watch("fulfilment") === "delivery" && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                                <FormLabel>Where are we delivering?</FormLabel>
-                                <GPSLocationPicker
-                                    onLocationSelect={(loc) => {
-                                        if (loc) {
-                                            form.setValue("deliveryLat", loc.lat)
-                                            form.setValue("deliveryLng", loc.lng)
-                                            form.setValue("deliveryFee", loc.fee)
-                                            form.setValue("deliveryDistance", loc.distance)
-                                            form.clearErrors("fulfilment")
-                                        } else {
-                                            form.setValue("deliveryLat", undefined)
-                                            form.setValue("deliveryFee", 0)
-                                        }
-                                    }}
-                                />
-                                <FormField control={form.control} name="deliveryAddress" render={({ field }) => (
+                            <div className="mt-5 grid gap-5">
+                                <FormField control={form.control} name="pizzaType" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Building / Apartment / Landmark</FormLabel>
+                                        <FormLabel>Flavor</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Select Pizza" /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {PIZZA_TYPES.map(p => (
+                                                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                                            {POPULAR_PIZZAS.map((pizza) => (
+                                                <button
+                                                    key={pizza}
+                                                    type="button"
+                                                    onClick={() => form.setValue("pizzaType", pizza, { shouldValidate: true, shouldDirty: true })}
+                                                    className={cn(
+                                                        "rounded-full border px-3 py-1 transition",
+                                                        pizzaType === pizza
+                                                            ? "border-[var(--brand-blue)] bg-[rgba(58,78,216,0.12)] text-[var(--brand-blue-deep)]"
+                                                            : "border-slate-200 bg-white/70 text-slate-500 hover:border-[var(--brand-blue)]"
+                                                    )}
+                                                >
+                                                    {pizza}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <FormField control={form.control} name="pizzaSize" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Size</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger className={theme.colors.ring}><SelectValue placeholder="Size" /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    {PIZZA_SIZES.map((size) => (
+                                                        <SelectItem key={size.value} value={size.value}>
+                                                            {size.label} · {size.meta}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="quantity" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Quantity</FormLabel>
+                                            <FormControl><Input type="number" min={1} className={theme.colors.ring} {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
+
+                                <FormField control={form.control} name="notes" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Special Instructions</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="E.g. Green Towers, 3rd Floor, House 12..." className={theme.colors.ring} {...field} />
+                                            <Textarea placeholder="Extra cheese, spicy, no onions..." className={theme.colors.ring} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
                             </div>
-                        )}
-                        {minError && <p className="text-red-600 text-sm font-medium">{minError}</p>}
-                    </div>
+                        </section>
 
-                    <div className="space-y-6">
-                        <h3 className={cn("text-lg font-bold border-b pb-2", theme.colors.border, theme.colors.accent)}>3. Contact Info</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="customerName" render={({ field }) => (
-                                <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="John Doe" className={theme.colors.ring} {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="phone" render={({ field }) => (
-                                <FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="07XX..." className={theme.colors.ring} {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                        </div>
+                        <section className={cn("rounded-[26px] border bg-white/80 p-6 md:p-7 shadow-[0_22px_55px_-40px_rgba(15,20,40,0.4)]", theme.colors.border)}>
+                            <div className="flex items-center justify-between border-b pb-3">
+                                <div>
+                                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Step 2</p>
+                                    <h3 className={cn("text-lg font-semibold", theme.colors.accent)}>Delivery</h3>
+                                </div>
+                                <span className="text-xs text-slate-500">Fee auto-calculates with GPS</span>
+                            </div>
+
+                            <div className="mt-5 space-y-5">
+                                <FormField control={form.control} name="fulfilment" render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <FormLabel>Method</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid gap-3 sm:grid-cols-2">
+                                                <FormItem className={cn(
+                                                    "flex items-center gap-3 rounded-2xl border px-4 py-3 transition",
+                                                    field.value === "pickup"
+                                                        ? "border-[var(--brand-blue)] bg-[rgba(58,78,216,0.08)]"
+                                                        : "border-slate-200 bg-white/70"
+                                                )}>
+                                                    <FormControl><RadioGroupItem value="pickup" /></FormControl>
+                                                    <div>
+                                                        <FormLabel className="font-semibold">Pickup (Thika)</FormLabel>
+                                                        <p className="text-xs text-slate-500">Ready in ~30 mins</p>
+                                                    </div>
+                                                </FormItem>
+                                                <FormItem className={cn(
+                                                    "flex items-center gap-3 rounded-2xl border px-4 py-3 transition",
+                                                    field.value === "delivery"
+                                                        ? "border-[var(--brand-blue)] bg-[rgba(58,78,216,0.08)]"
+                                                        : "border-slate-200 bg-white/70"
+                                                )}>
+                                                    <FormControl><RadioGroupItem value="delivery" /></FormControl>
+                                                    <div>
+                                                        <FormLabel className="font-semibold">Delivery</FormLabel>
+                                                        <p className="text-xs text-slate-500">GPS-based pricing</p>
+                                                    </div>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                {form.watch("fulfilment") === "delivery" && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                        <FormLabel>Where are we delivering?</FormLabel>
+                                        <div className="rounded-2xl border border-slate-200 bg-white/70 p-3">
+                                            <GPSLocationPicker
+                                                onLocationSelect={(loc) => {
+                                                    if (loc) {
+                                                        form.setValue("deliveryLat", loc.lat)
+                                                        form.setValue("deliveryLng", loc.lng)
+                                                        form.setValue("deliveryFee", loc.fee)
+                                                        form.setValue("deliveryDistance", loc.distance)
+                                                        form.clearErrors("fulfilment")
+                                                    } else {
+                                                        form.setValue("deliveryLat", undefined)
+                                                        form.setValue("deliveryFee", 0)
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <FormField control={form.control} name="deliveryAddress" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Building / Apartment / Landmark</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="E.g. Green Towers, 3rd Floor, House 12..." className={theme.colors.ring} {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    </div>
+                                )}
+                                {minError && <p className="text-red-600 text-sm font-medium">{minError}</p>}
+                            </div>
+                        </section>
+
+                        <section className={cn("rounded-[26px] border bg-white/80 p-6 md:p-7 shadow-[0_22px_55px_-40px_rgba(15,20,40,0.4)]", theme.colors.border)}>
+                            <div className="flex items-center justify-between border-b pb-3">
+                                <div>
+                                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Step 3</p>
+                                    <h3 className={cn("text-lg font-semibold", theme.colors.accent)}>Contact Info</h3>
+                                </div>
+                                <span className="text-xs text-slate-500">We&apos;ll confirm by call</span>
+                            </div>
+                            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <FormField control={form.control} name="customerName" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <FormControl><Input placeholder="John Doe" className={theme.colors.ring} {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="phone" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Phone</FormLabel>
+                                        <FormControl><Input placeholder="07XX..." className={theme.colors.ring} {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                        </section>
                     </div>
 
                     <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:static md:bg-transparent md:border-0 md:p-0 z-50">
