@@ -23,8 +23,6 @@ export interface PaymentInfo {
     payment_status: PaymentStatus
     mpesa_phone?: string
     mpesa_transaction_id?: string
-    lipana_transaction_id?: string | null
-    lipana_checkout_request_id?: string | null
     payment_amount_paid?: number | null
     payment_amount_due?: number | null
     payment_deposit_amount?: number | null
@@ -40,8 +38,6 @@ export interface Order {
     status: string
     mpesa_phone?: string
     mpesa_transaction_id?: string
-    lipana_transaction_id?: string | null
-    lipana_checkout_request_id?: string | null
     payment_amount_paid?: number | null
     payment_amount_due?: number | null
     payment_deposit_amount?: number | null

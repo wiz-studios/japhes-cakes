@@ -58,7 +58,6 @@ async function main() {
       "migrations/add_mpesa_checkout_id.sql",
       "migrations/add_gps_delivery.sql",
       "migrations/add_friendly_id.sql",
-      "migrations/add_lipana_fields.sql",
       "migrations/update_payment_status_constraint.sql",
       "scripts/06-get-recent-scheduled-pizza-orders.sql",
     ]

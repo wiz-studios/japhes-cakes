@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js"
-import { PAYMENT_CONFIG } from "@/lib/config/payments"
 
 export async function expireStaleOrders() {
     const supabase = createClient(
