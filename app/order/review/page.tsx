@@ -102,6 +102,14 @@ function OrderReviewContent() {
     setDiscountTotal(discount)
   }, [order?.items, order?.deliveryFee, order?.type])
 
+  // Prefill M-Pesa phone from order phone if user hasn't entered one yet
+  useEffect(() => {
+    if (!order?.phone) return
+    if (!mpesaPhone) {
+      setMpesaPhone(normalizeKenyaPhone(order.phone))
+    }
+  }, [order?.phone, mpesaPhone])
+
   // Validation (example: Nairobi min order, late-night cutoff)
   useEffect(() => {
     if (!order) return
@@ -132,7 +140,8 @@ function OrderReviewContent() {
     console.log("=== SUBMIT CLICKED ===")
     console.log("Payment method:", paymentMethod)
     console.log("Payment plan:", paymentPlan)
-    console.log("M-Pesa phone:", mpesaPhone)
+    const normalizedMpesaPhone = normalizeKenyaPhone(mpesaPhone || order?.phone || "")
+    console.log("M-Pesa phone:", normalizedMpesaPhone)
     console.log("Order data:", order)
 
     setSubmitting(true)
@@ -142,13 +151,13 @@ function OrderReviewContent() {
     // ... existing submission logic ...
 
     // Re-validate M-Pesa phone if selected
-    if (!mpesaPhone) {
+    if (!normalizedMpesaPhone) {
       console.log("Validation failed: M-Pesa phone required")
       setError("Please enter your M-Pesa phone number")
       setSubmitting(false)
       return
     }
-    if (!isValidKenyaPhone(mpesaPhone)) {
+    if (!isValidKenyaPhone(normalizedMpesaPhone)) {
       setError("Use 07XXXXXXXX or 01XXXXXXXX")
       setSubmitting(false)
       return
@@ -177,7 +186,7 @@ function OrderReviewContent() {
           notes: order.items[0].notes,
           paymentMethod,
           paymentPlan,
-          mpesaPhone,
+          mpesaPhone: normalizedMpesaPhone,
         }
         result = await submitPizzaOrder(pizzaData)
       } else if (order.type === "cake") {
@@ -198,23 +207,20 @@ function OrderReviewContent() {
           phone: order.phone,
           paymentMethod,
           paymentPlan,
-          mpesaPhone,
+          mpesaPhone: normalizedMpesaPhone,
         }
         result = await submitCakeOrder(cakeData)
       }
       if (result && result.success) {
-        // NON-BLOCKING STK PUSH (v0 Prompt)
-        if (mpesaPhone) {
-          console.log("Triggering Fire-and-Forget STK Push for:", result.orderId)
-          // We do NOT await this result for the UI block. 
-          // Ideally we await just to ensure the request was sent successfully to OUR backend?
-          // The prompt said "Call initiateMpesaSTK... Return immediately (no waiting)".
-          // It meant from the SERVER action perspective mostly, but frontend should also not block deeply.
-          // However, we MUST call correct action.
-
-          // We can await the *initiation* to ensure we get a success signal that the process started,
-          // but we do NOT wait for payment completion.
-          await initiateMpesaSTK(result.orderId, mpesaPhone)
+        // STK Push: wait for initiation so prompt shows before redirect
+        if (normalizedMpesaPhone) {
+          console.log("Triggering STK Push for:", result.orderId)
+          const stkResult = await initiateMpesaSTK(result.orderId, normalizedMpesaPhone)
+          if (!stkResult.success) {
+            setError(stkResult.error || "Failed to initiate M-Pesa prompt")
+            setSubmitting(false)
+            return
+          }
         }
 
         setProgress(100)
