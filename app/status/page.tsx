@@ -116,8 +116,8 @@ export default async function OrderStatusPage({
         {!order && <OrderStatusSearch initialId={id} initialPhone={normalizedPhone || ""} error={error} />}
 
         {order && (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="space-y-6 min-w-0">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-6 min-w-0 lg:col-span-2">
               <div className={`${cardClass} p-6 md:p-8`}>
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                   <div>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import Confetti from "react-confetti"
 import { Check, ArrowRight, Download } from "lucide-react"
 import Link from "next/link"
 import { formatFriendlyId } from "@/lib/order-helpers"
@@ -120,17 +119,11 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
     }
   }
 
-  // Hydration fix for Confetti (window size varies)
-  const [showConfetti, setShowConfetti] = useState(false)
-  useEffect(() => setShowConfetti(true), [])
+  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-2xl mx-auto print:min-h-0 print:justify-start print:pt-8">
-      {showConfetti && (
-        <div className="print:hidden">
-          <Confetti numberOfPieces={200} recycle={false} />
-        </div>
-      )}
+      
 
       {showSandboxBadge && (
         <div className="bg-amber-100 border-amber-300 border text-amber-800 px-3 py-1 rounded-full text-xs font-bold mb-4 uppercase tracking-wider print:hidden">

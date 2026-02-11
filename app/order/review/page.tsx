@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import OrderSummary from "@/components/OrderSummary"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import Confetti from "react-confetti"
 
 // Import backend submission functions
 import { submitPizzaOrder, submitCakeOrder } from "@/app/actions/orders"
@@ -62,7 +61,6 @@ function OrderReviewContent() {
   const initialOrder: Order | null = orderQuery ? JSON.parse(orderQuery) : null
   const [order, setOrder] = useState<Order>(initialOrder as Order)
   const [submitting, setSubmitting] = useState(false)
-  const [showConfetti, setShowConfetti] = useState(false)
   const [error, setError] = useState("")
   const [progress, setProgress] = useState(80) // 80%: review step
   const [discountTotal, setDiscountTotal] = useState(0)
@@ -219,7 +217,6 @@ function OrderReviewContent() {
           await initiateMpesaSTK(result.orderId, mpesaPhone)
         }
 
-        setShowConfetti(true)
         setProgress(100)
         // Redirect immediately - user will see status on next page
         setTimeout(() => {
@@ -234,8 +231,8 @@ function OrderReviewContent() {
       console.error("Order submission error:", err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
-      // Keep submitting true during redirect to prevent double clicks
-      if (!showConfetti) setSubmitting(false)
+      // Clear submitting state (redirect may follow)
+      setSubmitting(false)
     }
   }
 
@@ -275,7 +272,6 @@ function OrderReviewContent() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)] flex flex-col">
-      {showConfetti && <Confetti />}
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}

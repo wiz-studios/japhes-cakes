@@ -85,7 +85,18 @@ export default function SiteFooter() {
                 <ul className="space-y-3 text-sm text-slate-300/85">
                   <li className="flex items-start gap-3">
                     <MapPin className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span>Thika, Kenya<br />Nairobi delivery available</span>
+                    <div>
+                      <a
+                        href="https://www.google.com/maps/search/?api=1&query=W3G3%2BQ8V%20Thika%20Kenya"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-white transition-colors font-semibold"
+                        aria-label="Open W3G3+Q8V Thika in Google Maps"
+                      >
+                        W3G3+Q8V, Thika
+                      </a>
+                      <div className="text-sm text-slate-300/85">Nairobi delivery available</div>
+                    </div>
                   </li>
                   <li className="flex items-center gap-3">
                     <Clock className="w-4 h-4 text-slate-500 shrink-0" />
@@ -99,11 +110,23 @@ export default function SiteFooter() {
                 <ul className="space-y-3 text-sm text-slate-300/85">
                   <li className="flex items-center gap-3">
                     <Phone className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span>0708244764</span>
+                    <a
+                      href="tel:+254708244764"
+                      className="hover:text-white transition-colors"
+                      aria-label="Call 0708244764"
+                    >
+                      0708244764
+                    </a>
                   </li>
                   <li className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="break-all">ericklangat716@gmail.com</span>
+                    <a
+                      href="mailto:ericklangat716@gmail.com"
+                      className="break-all hover:text-white transition-colors"
+                      aria-label="Email ericklangat716@gmail.com"
+                    >
+                      ericklangat716@gmail.com
+                    </a>
                   </li>
                 </ul>
               </div>
