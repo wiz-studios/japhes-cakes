@@ -21,3 +21,9 @@ export function normalizeKenyaPhone(input: string): string {
 export function isValidKenyaPhone(input: string): boolean {
   return KENYA_PHONE_REGEX.test(input)
 }
+
+export function toKenyaMsisdn(input: string): string | null {
+  const normalized = normalizeKenyaPhone(input)
+  if (!isValidKenyaPhone(normalized)) return null
+  return `254${normalized.slice(1)}`
+}

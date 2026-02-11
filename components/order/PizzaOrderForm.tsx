@@ -42,6 +42,7 @@ const PIZZA_TYPES = [
 
 
 const PIZZA_SIZES = [
+    { value: "Test", label: "Test Item", meta: "Ksh 10 (STK test)" },
     { value: "Pizza Pie", label: "Pizza Pie", meta: "Ksh 350" },
     { value: "Small", label: "Small", meta: "Personal" },
     { value: "Medium", label: "Medium", meta: "2-3 people" },
@@ -283,7 +284,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
 
                             <div className="mt-5 grid gap-5">
                                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                                    Pizza pie from Ksh 350 - choose any classic flavour
+                                    Pizza pie from Ksh 350 — test item Ksh 10 available for STK checks
                                 </p>
                                 <FormField control={form.control} name="pizzaType" render={({ field }) => (
                                     <FormItem>

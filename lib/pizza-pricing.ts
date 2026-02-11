@@ -1,4 +1,5 @@
 export const PIZZA_BASE_PRICES: Record<string, number> = {
+  Test: 10,
   "Pizza Pie": 350,
   Small: 650,
   Medium: 850,

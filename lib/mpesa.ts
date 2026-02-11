@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { PAYMENT_CONFIG } from "@/lib/config/payments"
 import { Lipana } from "@lipana/sdk"
+import { isValidKenyaPhone, normalizeKenyaPhone, toKenyaMsisdn } from "@/lib/phone"
 
 /**
  * Initiates an M-Pesa STK Push for an existing order using Lipana SDK.
@@ -22,11 +23,14 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
 
     console.log(`[STK-INIT] Request for Order ${orderId} to ${phone}`)
 
-    // 1. Validate Phone (Basic Kenya validation: starts with 07 or 01, 10 digits)
-    // Converting 07XX... to 2547XX... would happen here in a real app
-    const phoneRegex = /^(07|01)[0-9]{8}$/
-    if (!phoneRegex.test(phone)) {
+    // 1. Validate Phone (Kenya format: 07/01, 10 digits)
+    const normalizedPhone = normalizeKenyaPhone(phone)
+    if (!isValidKenyaPhone(normalizedPhone)) {
         console.warn(`[STK-INIT] Invalid phone format: ${phone}`)
+        return { success: false, error: "Invalid phone number. Use 07XXXXXXXX or 01XXXXXXXX" }
+    }
+    const msisdn = toKenyaMsisdn(normalizedPhone)
+    if (!msisdn) {
         return { success: false, error: "Invalid phone number. Use 07XXXXXXXX or 01XXXXXXXX" }
     }
 
@@ -77,7 +81,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     }
 
     console.log(`[STK-INIT] Initiating STK via SDK (${PAYMENT_CONFIG.env}):`, {
-        phone,
+        phone: msisdn,
         amount: amountToCharge,
         orderId: orderId.slice(0, 8),
         baseUrl: normalizedBaseUrl || "SDK default"
@@ -86,10 +90,10 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     try {
         // 4. Call SDK Method
         const result = await lipana.transactions.initiateStkPush({
-            phone: phone,
+            phone: msisdn,
             amount: amountToCharge,
-            accountReference: `Order ${orderId.slice(0, 8)}`,
-            transactionDesc: "Payment for order",
+            accountReference: PAYMENT_CONFIG.lipana.paybillAccount,
+            transactionDesc: `Order ${orderId.slice(0, 8)} - Paybill ${PAYMENT_CONFIG.lipana.paybillNumber}`,
         })
 
         console.log("[STK-INIT] SDK Response:", result)
@@ -111,7 +115,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
             .from("orders")
             .update({
                 payment_status: "initiated",
-                mpesa_phone: phone,
+                mpesa_phone: normalizedPhone,
                 lipana_checkout_request_id: checkoutRequestId,
                 payment_last_request_amount: amountToCharge,
             })
