@@ -4,8 +4,12 @@ function normalizeLipanaBaseUrl(baseUrl: string | undefined, env: "sandbox" | "p
     const trimmed = baseUrl.replace(/\/+$/, "")
     const lower = trimmed.toLowerCase()
 
-    if (lower.includes("api-sandbox.lipana.dev")) return trimmed
-    if (lower.includes("api.lipana.dev")) return trimmed
+    if (lower.includes("api-sandbox.lipana.dev")) {
+        return env === "production" ? "https://api.lipana.dev" : trimmed
+    }
+    if (lower.includes("api.lipana.dev")) {
+        return env === "sandbox" ? "https://api-sandbox.lipana.dev" : trimmed
+    }
 
     if (lower.includes("sandbox.lipana.dev") || lower === "https://lipana.dev") {
         return env === "production"

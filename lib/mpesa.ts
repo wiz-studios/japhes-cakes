@@ -98,6 +98,15 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
 
         console.log("[STK-INIT] SDK Response:", result)
 
+        const responseCode = (result as any)?.responseCode
+        if (responseCode && responseCode !== "0") {
+            const providerMessage =
+                (result as any)?.responseDescription ||
+                (result as any)?.customerMessage ||
+                "Payment provider rejected the request"
+            return { success: false, error: providerMessage }
+        }
+
         // 5. Extract Checkout Request ID (note: SDK uses checkoutRequestID with capital ID)
         const checkoutRequestId =
             (result as any).checkoutRequestID ||
@@ -107,7 +116,12 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
 
         if (!checkoutRequestId) {
             console.error("[STK-INIT] No checkoutRequestID in SDK response:", result)
-            return { success: false, error: "Invalid response from payment provider" }
+            const providerMessage =
+                (result as any)?.message ||
+                (result as any)?.error ||
+                (result as any)?.responseDescription ||
+                (result as any)?.customerMessage
+            return { success: false, error: providerMessage || "Invalid response from payment provider" }
         }
 
         // 6. Update Order
