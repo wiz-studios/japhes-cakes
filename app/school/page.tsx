@@ -4,6 +4,7 @@ import { BadgeCheck, CalendarClock, GraduationCap, MapPin, Phone, Sparkles } fro
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import type { SchoolGalleryItem } from "@/lib/school-gallery"
 import SchoolGallerySection from "@/components/school/SchoolGallerySection"
+import SchoolInquiryForm from "@/components/school/SchoolInquiryForm"
 
 export const metadata: Metadata = {
   title: "School of Cakes | Japhe's Cakes & Pizza",
@@ -328,6 +329,7 @@ export default async function SchoolPage() {
                 <span>Witeithie Town along Thika Super Highway</span>
               </div>
             </div>
+            <SchoolInquiryForm />
             <div className="mt-6 flex flex-col gap-3">
               <Link
                 href="tel:+254708244764"
