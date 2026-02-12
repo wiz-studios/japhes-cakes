@@ -59,13 +59,25 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
-SELECT 'Cake Class Session', 'class', '/cake-hero.png', 3, false, true
+SELECT 'Cake Class Session', 'class', '/images/school/kenya-classroom.jpg', 3, false, true
 WHERE NOT EXISTS (
     SELECT 1 FROM school_gallery WHERE title = 'Cake Class Session'
 );
 
 INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
-SELECT 'Student Practice Board', 'students', '/placeholder-user.jpg', 4, false, true
+SELECT 'Student Practice Board', 'students', '/images/school/kenya-students-university.jpg', 4, false, true
 WHERE NOT EXISTS (
     SELECT 1 FROM school_gallery WHERE title = 'Student Practice Board'
+);
+
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Community Classroom Session', 'class', '/images/school/kenya-classroom-community.jpg', 5, false, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Community Classroom Session'
+);
+
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Karatina Student Practice', 'students', '/images/school/kenya-special-school.jpg', 6, false, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Karatina Student Practice'
 );
