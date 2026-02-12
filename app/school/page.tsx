@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import Image from "next/image"
 import { BadgeCheck, CalendarClock, GraduationCap, MapPin, Phone, Sparkles } from "lucide-react"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import type { SchoolGalleryItem } from "@/lib/school-gallery"
@@ -136,7 +135,9 @@ export default async function SchoolPage() {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false })
 
-  const galleryItems = (galleryRows || []) as SchoolGalleryItem[]
+  const galleryItems = ((galleryRows || []) as SchoolGalleryItem[]).filter(
+    (item) => item.title !== "Pizza Shop Interior" && item.title !== "Cake Shop Front"
+  )
 
   return (
     <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)] text-slate-900">
@@ -206,50 +207,6 @@ export default async function SchoolPage() {
       </section>
 
       <SchoolGallerySection items={galleryItems} />
-
-      <section className="mx-auto max-w-6xl px-6 pb-10">
-        <div className="lux-card p-8 md:p-10">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Our Shops</p>
-              <h2 className="text-2xl font-serif font-semibold text-slate-900">Where classes and orders happen</h2>
-            </div>
-            <p className="text-sm text-slate-600">Pizza station and cake house at the Thika branch.</p>
-          </div>
-          <div className="grid gap-5 md:grid-cols-2">
-            <article className="overflow-hidden rounded-[24px] border border-slate-200/70 bg-white">
-              <div className="relative h-56 w-full">
-                <Image
-                  src="/images/shop-pizza.jpg"
-                  alt="Pizza shop interior"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-base font-semibold text-slate-900">Pizza Shop</h3>
-                <p className="mt-1 text-sm text-slate-600">Fast pickup and dine-in service for pizza and snacks.</p>
-              </div>
-            </article>
-            <article className="overflow-hidden rounded-[24px] border border-slate-200/70 bg-white">
-              <div className="relative h-56 w-full">
-                <Image
-                  src="/images/shop-cake.jpg"
-                  alt="Cake shop front"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-base font-semibold text-slate-900">Cake House & School</h3>
-                <p className="mt-1 text-sm text-slate-600">Cake orders, desserts, and live training sessions in one space.</p>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-10">
         <div className="lux-card p-8 md:p-10">

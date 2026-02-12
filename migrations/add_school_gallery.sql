@@ -69,15 +69,3 @@ SELECT 'Student Practice Board', 'students', '/placeholder-user.jpg', 4, false, 
 WHERE NOT EXISTS (
     SELECT 1 FROM school_gallery WHERE title = 'Student Practice Board'
 );
-
-INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
-SELECT 'Pizza Shop Interior', 'pizza', '/images/shop-pizza.jpg', 5, false, true
-WHERE NOT EXISTS (
-    SELECT 1 FROM school_gallery WHERE title = 'Pizza Shop Interior'
-);
-
-INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
-SELECT 'Cake Shop Front', 'cakes', '/images/shop-cake.jpg', 6, false, true
-WHERE NOT EXISTS (
-    SELECT 1 FROM school_gallery WHERE title = 'Cake Shop Front'
-);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -255,6 +256,24 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                             )}
                         </div>
                     </div>
+
+                    <section className={cn("overflow-hidden rounded-[26px] border bg-white/80 shadow-[0_22px_55px_-40px_rgba(15,20,40,0.4)]", theme.colors.border)}>
+                        <div className="relative h-52 w-full md:h-64">
+                            <Image
+                                src="/shop-pizza.jpg"
+                                alt="Japhe's pizza shop interior"
+                                fill
+                                priority
+                                className="object-cover"
+                                sizes="100vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                            <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+                                <p className="text-[10px] uppercase tracking-[0.35em] text-white/80">Pizza Shop</p>
+                                <h3 className="mt-1 text-lg font-semibold">Dine-in & pickup at our Thika branch</h3>
+                            </div>
+                        </div>
+                    </section>
 
                     {lateNightWarning && (
                         <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 shadow-sm flex items-start gap-3">

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -151,6 +152,24 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
         <OrderLayout theme={theme} title="Design Your Cake" subtitle="Customize every detail.">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    <section className={cn("overflow-hidden rounded-[26px] border bg-white/80 shadow-[0_22px_55px_-40px_rgba(15,20,40,0.4)]", theme.colors.border)}>
+                        <div className="relative h-52 w-full md:h-60">
+                            <Image
+                                src="/shop-cake.jpg"
+                                alt="Japhe's Cake House storefront"
+                                fill
+                                priority
+                                className="object-cover"
+                                sizes="100vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                            <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+                                <p className="text-[10px] uppercase tracking-[0.35em] text-white/80">Cake House</p>
+                                <h3 className="mt-1 text-lg font-semibold">Visit our Thika cake shop</h3>
+                            </div>
+                        </div>
+                    </section>
+
                     <div className="space-y-6">
                         <div className="flex justify-between items-center border-b pb-2">
                             <h3 className={cn("text-lg font-bold", theme.colors.accent)}>1. Cake Details</h3>
