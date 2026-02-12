@@ -153,7 +153,7 @@ export default async function SchoolPage() {
                 School of Cakes
               </div>
               <h1 className="text-4xl md:text-5xl font-serif font-semibold leading-tight">
-                Japhe&apos;s Cake House School
+                Japhe&apos;s School of Cake
               </h1>
               <p className="text-lg text-slate-700 max-w-xl">
                 Learn professional cake making, decoration, bread products, pastries, and desserts with hands-on guidance.
