@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { BadgeCheck, CalendarClock, GraduationCap, MapPin, Phone, Sparkles } from "lucide-react"
+import { createServerSupabaseClient } from "@/lib/supabase-server"
+import type { SchoolGalleryItem } from "@/lib/school-gallery"
+import SchoolGallerySection from "@/components/school/SchoolGallerySection"
 
 export const metadata: Metadata = {
   title: "School of Cakes | Japhe's Cakes & Pizza",
@@ -123,7 +126,17 @@ const yoghurtCourses = [
   "Any other flavour",
 ]
 
-export default function SchoolPage() {
+export default async function SchoolPage() {
+  const supabase = await createServerSupabaseClient()
+  const { data: galleryRows } = await supabase
+    .from("school_gallery")
+    .select("*")
+    .eq("is_visible", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false })
+
+  const galleryItems = (galleryRows || []) as SchoolGalleryItem[]
+
   return (
     <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)] text-slate-900">
       <section className="relative overflow-hidden">
@@ -191,6 +204,8 @@ export default function SchoolPage() {
         </div>
       </section>
 
+      <SchoolGallerySection items={galleryItems} />
+
       <section className="mx-auto max-w-6xl px-6 pb-10">
         <div className="lux-card p-8 md:p-10">
           <div className="flex items-center justify-between gap-6 flex-wrap">
@@ -211,7 +226,8 @@ export default function SchoolPage() {
             ))}
           </div>
           <div className="mt-6 text-sm text-slate-600">
-            School fees to be paid to Imarisha Sacco Account. Account number: <span className="font-semibold text-slate-800">5040323411</span>.
+            School fees to be paid to Imarisha Sacco Account. Account number:{" "}
+            <span className="font-semibold text-slate-800">5040323411</span>.
           </div>
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800">
             Minimum of <span className="font-semibold">Ksh 10,000</span> must be paid before enrollment.
@@ -256,7 +272,7 @@ export default function SchoolPage() {
             <div>
               <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Short Courses</p>
               <h2 className="text-2xl font-serif font-semibold text-slate-900">5-day intensives</h2>
-              <p className="text-sm text-slate-600">Duration: 5 days · Cost: Ksh 8,000</p>
+              <p className="text-sm text-slate-600">Duration: 5 days - Cost: Ksh 8,000</p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-600">
               Quick skills upgrade
@@ -286,7 +302,7 @@ export default function SchoolPage() {
           <div className="lux-card p-8 md:p-10">
             <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Yoghurt & Milkshake</p>
             <h2 className="text-2xl font-serif font-semibold text-slate-900">2-day course</h2>
-            <p className="text-sm text-slate-600">Duration: 2 days · Cost: Ksh 6,000</p>
+            <p className="text-sm text-slate-600">Duration: 2 days - Cost: Ksh 6,000</p>
             <div className="mt-5 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
               {yoghurtCourses.map((item) => (
                 <div key={item} className="flex items-start gap-2">
@@ -325,7 +341,7 @@ export default function SchoolPage() {
               </Link>
             </div>
             <div className="mt-6 text-xs text-slate-500">
-              Paybill: 982100 · Account: 5040323411 (Imarisha Sacco)
+              Paybill: 982100 - Account: 5040323411 (Imarisha Sacco)
             </div>
           </div>
         </div>

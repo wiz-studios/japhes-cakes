@@ -40,6 +40,7 @@ async function main() {
       "migrations/add_gps_delivery.sql",
       "migrations/add_friendly_id.sql",
       "migrations/update_payment_status_constraint.sql",
+      "migrations/add_school_gallery.sql",
       "scripts/06-get-recent-scheduled-pizza-orders.sql",
       "scripts/02-seed-zones.sql",
     ]

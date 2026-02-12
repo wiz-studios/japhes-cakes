@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CalendarDays, LayoutDashboard, MapPin, ShieldCheck } from "lucide-react"
+import { CalendarDays, Images, LayoutDashboard, MapPin, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Scheduled Pizza", href: "/admin/recent-scheduled-pizza", icon: CalendarDays },
+  { label: "School Gallery", href: "/admin/school-gallery", icon: Images },
   { label: "Delivery Zones", href: "/admin/zones", icon: MapPin },
 ]
 
