@@ -23,6 +23,23 @@ const featureItems = [
   },
 ]
 
+const shopItems = [
+  {
+    title: "Pizza Shop - Dine In & Pickup",
+    subtitle: "Stone-fired pizzas, hot snacks, and quick service.",
+    image: "/images/shop-pizza.jpg",
+    cta: "Order Pizza",
+    href: "/order/pizza",
+  },
+  {
+    title: "Cake Shop - Bakery & School",
+    subtitle: "Custom cakes, desserts, and cake classes under one roof.",
+    image: "/images/shop-cake.jpg",
+    cta: "Order Cake",
+    href: "/order/cake",
+  },
+]
+
 export default function HomeHero() {
   const router = useRouter()
 
@@ -181,6 +198,48 @@ export default function HomeHero() {
             )
           })}
         </motion.div>
+
+        <motion.section
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.23 }}
+          className="relative overflow-hidden rounded-[32px] border border-white/40 bg-white/70 p-6 shadow-[0_30px_80px_-55px_rgba(15,20,40,0.45)] backdrop-blur-sm md:p-8"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,rgba(216,47,125,0.15),transparent_50%),radial-gradient(circle_at_right,rgba(58,78,216,0.2),transparent_45%)]" />
+          <div className="relative">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Visit Our Spaces</p>
+                <h2 className="text-2xl font-semibold font-serif text-slate-900">Two shops, one kitchen standard</h2>
+              </div>
+              <p className="text-sm text-slate-600">Thika branch for cakes, pizza, and school support.</p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              {shopItems.map((shop) => (
+                <article
+                  key={shop.title}
+                  className="overflow-hidden rounded-[24px] border border-white/60 bg-white shadow-[0_24px_60px_-45px_rgba(15,20,40,0.45)]"
+                >
+                  <div className="relative h-52 w-full">
+                    <Image src={shop.image} alt={shop.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-lg font-semibold font-serif text-slate-900">{shop.title}</h3>
+                    <p className="mt-2 text-sm text-slate-600">{shop.subtitle}</p>
+                    <button
+                      onClick={() => router.push(shop.href)}
+                      className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:bg-slate-50"
+                    >
+                      {shop.cta}
+                      <ArrowUpRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </motion.section>
 
         <motion.div
           initial={{ opacity: 1, y: 0 }}

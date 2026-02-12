@@ -275,9 +275,18 @@ function OrderReviewContent() {
   }
 
   const { label: dateLabel, value: dateValue } = getDateDisplay()
+  const isCakeOrder = order.type === "cake"
+  const pageBackground = isCakeOrder
+    ? "bg-[linear-gradient(138deg,#fff4fc_0%,#f8e9ff_30%,#efe0ff_58%,#e3ddff_78%,#d6e2ff_100%)]"
+    : "bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)]"
+  const titleColor = isCakeOrder ? "text-[var(--brand-magenta-deep)]" : "text-[var(--brand-blue-deep)]"
+  const submitButtonColor = isCakeOrder
+    ? "bg-[var(--brand-magenta-deep)] hover:bg-[#7a0e48]"
+    : "bg-amber-500 hover:bg-amber-600"
+  const highlightColor = isCakeOrder ? "text-[var(--brand-magenta-deep)]" : "text-[var(--brand-blue-deep)]"
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)] flex flex-col">
+    <div className={`min-h-screen ${pageBackground} flex flex-col`}>
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
@@ -285,7 +294,7 @@ function OrderReviewContent() {
         transition={{ duration: 0.7 }}
         className="py-8 text-center"
       >
-        <h1 className="text-3xl md:text-4xl font-extrabold text-rose-600 mb-2 animate-pulse">
+        <h1 className={`text-3xl md:text-4xl font-extrabold mb-2 animate-pulse ${titleColor}`}>
           Review Your Order
         </h1>
         <p className="text-muted-foreground text-lg">Almost there! Just confirm your delicious order.</p>
@@ -313,11 +322,11 @@ function OrderReviewContent() {
                   <p className="text-lg font-semibold text-slate-900">{item.name}</p>
                   {order.type === "pizza" ? (
                     <p className="mt-1 text-sm text-slate-600">
-                      {(item as PizzaOrderItem).size} · Qty {(item as PizzaOrderItem).quantity}
+                      {(item as PizzaOrderItem).size} - Qty {(item as PizzaOrderItem).quantity}
                     </p>
                   ) : (
                     <p className="mt-1 text-sm text-slate-600">
-                      {(item as CakeOrderItem).size} · {(item as CakeOrderItem).flavor || "Vanilla"} · Qty {(item as CakeOrderItem).quantity}
+                      {(item as CakeOrderItem).size} - {(item as CakeOrderItem).flavor || "Vanilla"} - Qty {(item as CakeOrderItem).quantity}
                     </p>
                   )}
                 </div>
@@ -364,7 +373,7 @@ function OrderReviewContent() {
           <div className="lux-card p-5 mb-4 flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="font-semibold">{order.fulfilment === "delivery" ? "Delivery" : "Pickup"}:</span>
-              <span className="text-rose-600 font-bold">
+              <span className={`font-bold ${highlightColor}`}>
                 {order.fulfilment === "pickup" ? "Thika" : order.deliveryZone}
               </span>
             </div>
@@ -428,7 +437,7 @@ function OrderReviewContent() {
             <Button
               type="button"
               onClick={handleSubmit}
-              className="w-1/2 h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)]"
+              className={`w-1/2 h-12 rounded-full text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] ${submitButtonColor}`}
               disabled={submitting}
             >
               {submitting ? (

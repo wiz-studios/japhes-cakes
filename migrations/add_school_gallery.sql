@@ -44,3 +44,40 @@ ON storage.objects
 FOR SELECT
 TO anon, authenticated
 USING (bucket_id = 'school-gallery');
+
+-- Seed sample gallery photos for testing
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Premium Cake Finish', 'cakes', '/images/premium-cake.jpg', 1, true, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Premium Cake Finish'
+);
+
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Stone-Fired Pizza Pull', 'pizza', '/images/premium-pizza.jpg', 2, true, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Stone-Fired Pizza Pull'
+);
+
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Cake Class Session', 'class', '/cake-hero.png', 3, false, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Cake Class Session'
+);
+
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Student Practice Board', 'students', '/placeholder-user.jpg', 4, false, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Student Practice Board'
+);
+
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Pizza Shop Interior', 'pizza', '/images/shop-pizza.jpg', 5, false, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Pizza Shop Interior'
+);
+
+INSERT INTO school_gallery (title, category, image_url, sort_order, is_featured, is_visible)
+SELECT 'Cake Shop Front', 'cakes', '/images/shop-cake.jpg', 6, false, true
+WHERE NOT EXISTS (
+    SELECT 1 FROM school_gallery WHERE title = 'Cake Shop Front'
+);
