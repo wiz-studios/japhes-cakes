@@ -145,7 +145,13 @@ export default function SiteFooter() {
 
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>(c) {currentYear} Japhe's Cakes & Pizza. All rights reserved.</p>
-          <p>Designed for Thika and Nairobi orders.</p>
+          <a
+            href="mailto:wiz.dev.studios@gmail.com"
+            className="hover:text-white transition-colors"
+            aria-label="Email Wiz Dev Studios"
+          >
+            Built by Wiz Dev Studios
+          </a>
         </div>
       </motion.div>
     </footer>
