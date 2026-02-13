@@ -72,10 +72,12 @@ export async function proxy(request: NextRequest) {
 
     // 4. Role-Based Access Control
     const role = user.user_metadata?.role
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
+    const isAdminByEmail = !!adminEmail && user.email?.toLowerCase() === adminEmail
 
     // KITCHEN Route: Allowed for 'kitchen' OR 'admin'
     if (path.startsWith("/kitchen")) {
-      const allowed = role === "admin" || role === "kitchen"
+      const allowed = isAdminByEmail || role === "admin" || role === "kitchen"
       if (!allowed) {
         if (role === "delivery") return NextResponse.redirect(new URL("/delivery", request.url))
         return NextResponse.redirect(new URL("/admin/login", request.url))
@@ -84,7 +86,7 @@ export async function proxy(request: NextRequest) {
 
     // DELIVERY Route: Allowed for 'delivery' OR 'admin'
     if (path.startsWith("/delivery")) {
-      const allowed = role === "admin" || role === "delivery"
+      const allowed = isAdminByEmail || role === "admin" || role === "delivery"
       if (!allowed) {
         if (role === "kitchen") return NextResponse.redirect(new URL("/kitchen", request.url))
         return NextResponse.redirect(new URL("/admin/login", request.url))
@@ -93,7 +95,7 @@ export async function proxy(request: NextRequest) {
 
     // ADMIN Route: Allowed ONLY for 'admin'
     if (path.startsWith("/admin") && !path.startsWith("/admin/login")) {
-      const allowed = role === "admin"
+      const allowed = isAdminByEmail || role === "admin"
       if (!allowed) {
         if (role === "kitchen") return NextResponse.redirect(new URL("/kitchen", request.url))
         if (role === "delivery") return NextResponse.redirect(new URL("/delivery", request.url))

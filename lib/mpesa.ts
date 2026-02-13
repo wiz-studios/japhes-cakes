@@ -31,13 +31,19 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     // 2. Fetch Order Details (Secure Source of Truth for Amount)
     const { data: order, error: orderError } = await supabase
         .from("orders")
-        .select("total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount")
+        .select("phone, total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount")
         .eq("id", orderId)
         .single()
 
     if (orderError || !order) {
         console.error(`[STK-INIT] Order lookup failed:`, orderError)
         return { success: false, error: "Order not found" }
+    }
+
+    // Prevent triggering STK for a different order's phone.
+    const orderPhone = normalizeKenyaPhone(order.phone || "")
+    if (!orderPhone || orderPhone !== normalizedPhone) {
+        return { success: false, error: "Phone does not match this order." }
     }
 
     const alreadyPaid = order.payment_status === "paid"

@@ -5,9 +5,9 @@ import { addHours, isAfter, setHours, setMinutes } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
-import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
+import { getPizzaUnitPrice, PIZZA_BASE_PRICES, PIZZA_TYPE_PRICES } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
-import { getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
+import { getCakeDisplayName, getCakePrice, CAKE_FLAVORS, CAKE_SIZES } from "@/lib/cake-pricing"
 import type { User } from "@supabase/supabase-js"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -17,6 +17,14 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   out_for_delivery: ["delivered", "cancelled"],
   delivered: [], // Terminal state
   cancelled: [], // Terminal state
+}
+
+const ALLOWED_PIZZA_TOPPINGS = new Set(["Extra Cheese", "Extra Toppings"])
+const MAX_TEXT_LENGTHS = {
+  customerName: 80,
+  notes: 400,
+  cakeMessage: 120,
+  deliveryAddress: 240,
 }
 
 function generateOrderNumber(prefix: "C" | "P") {
@@ -32,6 +40,30 @@ function isAdminUser(user: User | null): boolean {
   if (role === "admin") return true
   if (adminEmail && user.email?.toLowerCase() === adminEmail) return true
   return false
+}
+
+async function checkOrderRateLimit(supabase: any, phone: string) {
+  const windowMinutes = Number(process.env.ORDER_RATE_LIMIT_WINDOW_MINUTES || 10)
+  const maxOrders = Number(process.env.ORDER_RATE_LIMIT_MAX_ORDERS || 4)
+  const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString()
+
+  const { count, error } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("phone", phone)
+    .gte("created_at", since)
+
+  if (error) return null
+  if ((count || 0) >= maxOrders) {
+    return `Too many attempts. Please wait ${windowMinutes} minutes and try again.`
+  }
+
+  return null
+}
+
+function sanitizeText(value: unknown, maxLength: number): string {
+  if (typeof value !== "string") return ""
+  return value.trim().slice(0, maxLength)
 }
 
 export async function updateOrderStatus(orderId: string, newStatus: string) {
@@ -177,10 +209,33 @@ export async function submitCakeOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
   try {
+    if (!values || typeof values !== "object") {
+      return { success: false, error: "Invalid request payload." }
+    }
+
     const normalizedPhone = normalizeKenyaPhone(values.phone || "")
     if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
       return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
     }
+    const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
+    if (rateLimitError) return { success: false, error: rateLimitError }
+
+    if (!CAKE_FLAVORS.includes(values.cakeFlavor)) {
+      return { success: false, error: "Invalid cake flavor selected." }
+    }
+    if (!CAKE_SIZES.includes(values.cakeSize)) {
+      return { success: false, error: "Invalid cake size selected." }
+    }
+    if (values.fulfilment !== "pickup" && values.fulfilment !== "delivery") {
+      return { success: false, error: "Invalid fulfilment method." }
+    }
+    const customerName = sanitizeText(values.customerName, MAX_TEXT_LENGTHS.customerName)
+    if (!customerName || customerName.length < 2) {
+      return { success: false, error: "Please enter a valid customer name." }
+    }
+    const designNotes = sanitizeText(values.designNotes, MAX_TEXT_LENGTHS.notes)
+    const cakeMessage = sanitizeText(values.cakeMessage, MAX_TEXT_LENGTHS.cakeMessage)
+    const deliveryAddress = sanitizeText(values.deliveryAddress, MAX_TEXT_LENGTHS.deliveryAddress)
     const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
     if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
       return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
@@ -193,10 +248,20 @@ export async function submitCakeOrder(values: any) {
     let deliveryFee = 0
     let deliveryWindow = "N/A"
 
+    let safeDeliveryLat: number | null = null
+    let safeDeliveryLng: number | null = null
+
     if (values.fulfilment === "delivery") {
       // 1. GPS DELIVERY (Priority)
       if (values.deliveryLat && values.deliveryLng) {
-        const check = validateDeliveryRequest(values.deliveryLat, values.deliveryLng)
+        const lat = Number(values.deliveryLat)
+        const lng = Number(values.deliveryLng)
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          return { success: false, error: "Invalid delivery coordinates." }
+        }
+        safeDeliveryLat = lat
+        safeDeliveryLng = lng
+        const check = validateDeliveryRequest(lat, lng)
         if (!check.allowed) {
           return { success: false, error: check.error || "Delivery location unavailable" }
         }
@@ -215,12 +280,19 @@ export async function submitCakeOrder(values: any) {
       } else {
         return { success: false, error: "Please select a delivery location" }
       }
+      if (!deliveryAddress) {
+        return { success: false, error: "Please provide a delivery address or landmark." }
+      }
     }
 
     // Calculate cake price from pricing table
     const itemTotal = getCakePrice(values.cakeFlavor, values.cakeSize)
     const total = itemTotal + deliveryFee
-    const paymentPlan = (values.paymentPlan || "full") as "full" | "deposit"
+    const paymentPlanRaw = values.paymentPlan || "full"
+    if (paymentPlanRaw !== "full" && paymentPlanRaw !== "deposit") {
+      return { success: false, error: "Invalid payment plan." }
+    }
+    const paymentPlan = paymentPlanRaw as "full" | "deposit"
     const depositAmount = Math.ceil(total * 0.5)
 
     // 2. Insert order (retry on friendly_id collision)
@@ -234,15 +306,17 @@ export async function submitCakeOrder(values: any) {
           friendly_id: friendlyId,
           order_type: "cake",
           fulfilment: values.fulfilment,
-          customer_name: values.customerName,
+          customer_name: customerName,
           phone: normalizedPhone,
           delivery_zone_id: values.deliveryZoneId || null,
           delivery_window: deliveryWindow,
           delivery_fee: deliveryFee,
-          delivery_lat: values.deliveryLat || null,
-          delivery_lng: values.deliveryLng || null,
-          delivery_address: values.deliveryAddress || null,
-          delivery_distance_km: values.deliveryLat ? validateDeliveryRequest(values.deliveryLat, values.deliveryLng).distance : null,
+          delivery_lat: safeDeliveryLat,
+          delivery_lng: safeDeliveryLng,
+          delivery_address: deliveryAddress || null,
+          delivery_distance_km: safeDeliveryLat !== null && safeDeliveryLng !== null
+            ? validateDeliveryRequest(safeDeliveryLat, safeDeliveryLng).distance
+            : null,
           total_amount: total,
           preferred_date: values.preferredDate,
           expires_at: addHours(new Date(), 2).toISOString(),
@@ -278,7 +352,7 @@ export async function submitCakeOrder(values: any) {
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
       item_name: `${values.cakeSize} ${getCakeDisplayName(values.cakeFlavor)}`,
-      notes: `Design: ${values.designNotes || "None"}. Message: ${values.cakeMessage || "None"}`,
+      notes: `Design: ${designNotes || "None"}. Message: ${cakeMessage || "None"}`,
     })
 
     if (itemError) throw itemError
@@ -294,10 +368,37 @@ export async function submitPizzaOrder(values: any) {
   const supabase = await createServerSupabaseClient()
 
   try {
+    if (!values || typeof values !== "object") {
+      return { success: false, error: "Invalid request payload." }
+    }
+
     const normalizedPhone = normalizeKenyaPhone(values.phone || "")
     if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
       return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
     }
+    const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
+    if (rateLimitError) return { success: false, error: rateLimitError }
+
+    if (!Object.keys(PIZZA_TYPE_PRICES).includes(values.pizzaType)) {
+      return { success: false, error: "Invalid pizza type selected." }
+    }
+    if (!Object.keys(PIZZA_BASE_PRICES).includes(values.pizzaSize)) {
+      return { success: false, error: "Invalid pizza size selected." }
+    }
+    if (values.fulfilment !== "pickup" && values.fulfilment !== "delivery") {
+      return { success: false, error: "Invalid fulfilment method." }
+    }
+    const safeQuantity = Number(values.quantity)
+    if (!Number.isFinite(safeQuantity) || safeQuantity < 1 || safeQuantity > 20) {
+      return { success: false, error: "Invalid pizza quantity." }
+    }
+    const customerName = sanitizeText(values.customerName, MAX_TEXT_LENGTHS.customerName)
+    if (!customerName || customerName.length < 2) {
+      return { success: false, error: "Please enter a valid customer name." }
+    }
+    const notes = sanitizeText(values.notes, MAX_TEXT_LENGTHS.notes)
+    const deliveryAddress = sanitizeText(values.deliveryAddress, MAX_TEXT_LENGTHS.deliveryAddress)
+
     const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
     if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
       return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
@@ -319,12 +420,24 @@ export async function submitPizzaOrder(values: any) {
     let deliveryWindow = "As soon as possible"
 
     const toppings: string[] = Array.isArray(values.toppings) ? values.toppings : []
+    if (toppings.length > 2 || toppings.some((entry) => !ALLOWED_PIZZA_TOPPINGS.has(entry))) {
+      return { success: false, error: "Invalid pizza extras selected." }
+    }
     const toppingsCount = toppings.length
+    let safeDeliveryLat: number | null = null
+    let safeDeliveryLng: number | null = null
 
     if (values.fulfilment === "delivery") {
       // 1. GPS DELIVERY (Priority)
       if (values.deliveryLat && values.deliveryLng) {
-        const check = validateDeliveryRequest(values.deliveryLat, values.deliveryLng)
+        const lat = Number(values.deliveryLat)
+        const lng = Number(values.deliveryLng)
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          return { success: false, error: "Invalid delivery coordinates." }
+        }
+        safeDeliveryLat = lat
+        safeDeliveryLng = lng
+        const check = validateDeliveryRequest(lat, lng)
         if (!check.allowed) {
           return { success: false, error: check.error || "Delivery location unavailable" }
         }
@@ -343,7 +456,7 @@ export async function submitPizzaOrder(values: any) {
           const isNairobi = zone.name.toLowerCase().includes("nairobi")
           const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
           // Minimum value check uses pre-offer subtotal to avoid blocking valid offer orders
-          const totalItemsValue = unitPrice * (values.quantity || 1)
+          const totalItemsValue = unitPrice * safeQuantity
 
           if (isNairobi && totalItemsValue < 2000) {
             return { success: false, error: "Nairobi pizza orders require a minimum value of KES 2,000" }
@@ -355,11 +468,14 @@ export async function submitPizzaOrder(values: any) {
       } else {
         return { success: false, error: "Please select a delivery location" }
       }
+      if (!deliveryAddress) {
+        return { success: false, error: "Please provide a delivery address or landmark." }
+      }
     }
 
     // Calculate pizza total with offer logic
     const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
-    const quantity = values.quantity || 1
+    const quantity = safeQuantity || 1
     const rawSubtotal = unitPrice * quantity
     const offer = getPizzaOfferDetails({
       size: values.pizzaSize,
@@ -368,7 +484,11 @@ export async function submitPizzaOrder(values: any) {
     })
     const itemTotal = rawSubtotal - offer.discount
     const total = itemTotal + deliveryFee
-    const paymentPlan = (values.paymentPlan || "full") as "full" | "deposit"
+    const paymentPlanRaw = values.paymentPlan || "full"
+    if (paymentPlanRaw !== "full" && paymentPlanRaw !== "deposit") {
+      return { success: false, error: "Invalid payment plan." }
+    }
+    const paymentPlan = paymentPlanRaw as "full" | "deposit"
     const depositAmount = Math.ceil(total * 0.5)
 
     let order = null
@@ -381,11 +501,14 @@ export async function submitPizzaOrder(values: any) {
           friendly_id: friendlyId,
           order_type: "pizza",
           fulfilment: values.fulfilment,
-          customer_name: values.customerName,
+          customer_name: customerName,
           phone: normalizedPhone,
           delivery_zone_id: values.deliveryZoneId || null,
           delivery_window: deliveryWindow,
           delivery_fee: deliveryFee,
+          delivery_lat: safeDeliveryLat,
+          delivery_lng: safeDeliveryLng,
+          delivery_address: deliveryAddress || null,
           total_amount: total,
           preferred_date: preferredDate, // use calculated date
           status: "order_received",
@@ -422,12 +545,12 @@ export async function submitPizzaOrder(values: any) {
     const offerNote = offer.discount > 0
       ? `Offer: 2-for-1 applied (${offer.freeQuantity} free)`
       : ""
-    const combinedNotes = [values.notes, extrasNote, offerNote].filter(Boolean).join(" | ")
+    const combinedNotes = [notes, extrasNote, offerNote].filter(Boolean).join(" | ")
 
     const { error: itemError } = await supabase.from("order_items").insert({
       order_id: order.id,
       item_name: `${values.pizzaSize} ${values.pizzaType} Pizza`,
-      quantity: values.quantity,
+      quantity: safeQuantity,
       notes: combinedNotes,
     })
 

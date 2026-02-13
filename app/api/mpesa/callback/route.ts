@@ -26,7 +26,7 @@ function verifyMpesaCallback(request: Request, payload: any) {
 export async function POST(request: Request) {
     try {
         const payload = await request.json()
-        console.log("[STK-CALLBACK] Received:", JSON.stringify(payload))
+        console.log("[STK-CALLBACK] Received callback payload")
 
         if (!verifyMpesaCallback(request, payload)) {
             return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
