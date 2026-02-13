@@ -25,7 +25,7 @@ export default function FloatingWhatsApp() {
       target="_blank"
       rel="noreferrer"
     >
-      <img src="/icons/whatsapp.svg" alt="WhatsApp" className="h-12 w-12" />
+      <img src="/whatsapp-color-svgrepo-com.svg" alt="WhatsApp" className="h-12 w-12" />
     </Link>
   )
 }
