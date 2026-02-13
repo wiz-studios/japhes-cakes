@@ -45,11 +45,16 @@ export async function POST(request: Request) {
         const checkoutRequestId = darajaCb?.CheckoutRequestID || payload.checkoutRequestId
         const resultCode = typeof darajaCb?.ResultCode === "number" ? darajaCb.ResultCode : payload.resultCode
         const resultDesc = darajaCb?.ResultDesc || payload.resultDesc
+        const merchantRequestId = darajaCb?.MerchantRequestID || payload.merchantRequestId
 
         let mpesaReceiptNumber: string | undefined
+        let callbackAmount: number | undefined
+        let callbackPhone: string | undefined
         const items = darajaCb?.CallbackMetadata?.Item || []
         for (const item of items) {
             if (item?.Name === "MpesaReceiptNumber") mpesaReceiptNumber = item.Value
+            if (item?.Name === "Amount") callbackAmount = Number(item.Value)
+            if (item?.Name === "PhoneNumber") callbackPhone = String(item.Value)
         }
 
         if (!checkoutRequestId) {
@@ -63,12 +68,67 @@ export async function POST(request: Request) {
             { auth: { persistSession: false } }
         )
 
+        // Replay guard (receipt-based)
+        if (mpesaReceiptNumber) {
+            const { data: existingReceipt } = await supabase
+                .from("payment_attempts")
+                .select("processed_at")
+                .eq("mpesa_receipt", mpesaReceiptNumber)
+                .maybeSingle()
+
+            if (existingReceipt?.processed_at) {
+                return NextResponse.json({ received: true })
+            }
+        }
+
         // 1. Find Order by Checkout ID
         const { data: order, error: findError } = await supabase
             .from("orders")
             .select("id, mpesa_checkout_request_id, payment_status, payment_plan, total_amount, payment_amount_paid, payment_deposit_amount, payment_last_request_amount")
             .eq("mpesa_checkout_request_id", checkoutRequestId)
             .single()
+
+        // 1b. Store callback attempt (audit trail)
+        const attemptPayload = {
+            order_id: order?.id ?? null,
+            checkout_request_id: checkoutRequestId || null,
+            merchant_request_id: merchantRequestId || null,
+            mpesa_receipt: mpesaReceiptNumber || null,
+            result_code: typeof resultCode === "number" ? resultCode : null,
+            result_desc: resultDesc || null,
+            amount: typeof callbackAmount === "number" && Number.isFinite(callbackAmount) ? callbackAmount : null,
+            phone: callbackPhone || null,
+            status: resultCode === 0 ? "success" : "failed",
+            raw_payload: payload,
+        }
+
+        const { error: attemptError } = await supabase
+            .from("payment_attempts")
+            .insert(attemptPayload)
+
+        if (attemptError?.code === "23505") {
+            if (mpesaReceiptNumber) {
+                const { data: existingByReceipt } = await supabase
+                    .from("payment_attempts")
+                    .select("processed_at")
+                    .eq("mpesa_receipt", mpesaReceiptNumber)
+                    .maybeSingle()
+
+                if (existingByReceipt) {
+                    return NextResponse.json({ received: true })
+                }
+            }
+
+            const { data: existingAttempt } = await supabase
+                .from("payment_attempts")
+                .select("processed_at")
+                .eq("checkout_request_id", checkoutRequestId)
+                .maybeSingle()
+
+            if (existingAttempt?.processed_at) {
+                return NextResponse.json({ received: true })
+            }
+        }
 
         if (findError || !order) {
             console.warn(`[STK-CALLBACK] Ignored: Order not found for ID ${checkoutRequestId}`)
@@ -118,6 +178,10 @@ export async function POST(request: Request) {
                 console.error(`[STK-CALLBACK] DB Update Failed: ${updateError.message}`)
                 return NextResponse.json({ error: "Internal Error" }, { status: 500 })
             }
+            await supabase
+                .from("payment_attempts")
+                .update({ processed_at: new Date().toISOString() })
+                .eq("checkout_request_id", checkoutRequestId)
             console.log(`[STK-CALLBACK] Order ${order.id} marked ${nextStatus}.`)
 
         } else {
@@ -131,6 +195,10 @@ export async function POST(request: Request) {
                 })
                 .eq("id", order.id)
 
+            await supabase
+                .from("payment_attempts")
+                .update({ processed_at: new Date().toISOString() })
+                .eq("checkout_request_id", checkoutRequestId)
             console.log(`[STK-CALLBACK] Order ${order.id} marked FAILED: ${resultDesc}`)
         }
 
