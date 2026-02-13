@@ -24,8 +24,12 @@ export default async function OrderStatusPage({
   const normalizedId = trimmedId ? trimmedId.toUpperCase() : undefined
   const isUuid = !!trimmedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmedId)
 
-    if (trimmedId || normalizedPhone) {
-    if (trimmedId) {
+  if (trimmedId || normalizedPhone) {
+    // Never allow direct UUID lookup without a phone match.
+    // This prevents order enumeration by leaked/internal IDs.
+    if (isUuid && !normalizedPhone) {
+      error = "Please enter your phone number together with the order number."
+    } else if (trimmedId) {
       let query = supabase
         .from("orders")
         .select("*, order_items(*), delivery_zones(name)")
@@ -47,7 +51,7 @@ export default async function OrderStatusPage({
       }
     }
 
-    if (!order && normalizedPhone && !trimmedId) {
+    if (!order && normalizedPhone && !trimmedId && !error) {
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
         .select("*, order_items(*), delivery_zones(name)")
@@ -60,7 +64,7 @@ export default async function OrderStatusPage({
       }
     }
 
-    if (!order && normalizedPhone && trimmedId) {
+    if (!order && normalizedPhone && trimmedId && !error) {
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
         .select("*, order_items(*), delivery_zones(name)")
@@ -76,7 +80,7 @@ export default async function OrderStatusPage({
       }
     }
 
-    if (!order) {
+    if (!order && !error) {
       error = trimmedId && normalizedPhone
         ? "Order not found. Please check your order number and phone number."
         : trimmedId

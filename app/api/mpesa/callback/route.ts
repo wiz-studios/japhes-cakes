@@ -1,8 +1,25 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 
-function verifyMpesaCallback(payload: any) {
-    // In production, verify SHA-256 signature from Safaricom
+function verifyMpesaCallback(request: Request, payload: any) {
+    // Optional shared-secret hardening for webhook sources that support custom headers.
+    // Keep backwards compatible when not configured.
+    const configuredSecret = process.env.MPESA_CALLBACK_SECRET?.trim()
+    if (configuredSecret) {
+        const receivedSecret =
+            request.headers.get("x-webhook-secret") ||
+            request.headers.get("x-callback-secret")
+
+        if (!receivedSecret || receivedSecret !== configuredSecret) {
+            return false
+        }
+    }
+
+    // Basic payload shape validation to reject malformed spoof requests.
+    if (!payload || typeof payload !== "object") return false
+    if (!payload.checkoutRequestId || typeof payload.checkoutRequestId !== "string") return false
+    if (typeof payload.resultCode !== "number") return false
+
     return true
 }
 
@@ -11,7 +28,7 @@ export async function POST(request: Request) {
         const payload = await request.json()
         console.log("[STK-CALLBACK] Received:", JSON.stringify(payload))
 
-        if (!verifyMpesaCallback(payload)) {
+        if (!verifyMpesaCallback(request, payload)) {
             return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
         }
 

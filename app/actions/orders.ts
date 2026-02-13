@@ -8,6 +8,7 @@ import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
+import type { User } from "@supabase/supabase-js"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   order_received: ["ready_for_pickup", "cancelled"],
@@ -22,6 +23,15 @@ function generateOrderNumber(prefix: "C" | "P") {
   const timePart = Date.now().toString(36).slice(-4).toUpperCase()
   const randomPart = Math.random().toString(36).slice(2, 4).toUpperCase()
   return `${prefix}${timePart}${randomPart}`
+}
+
+function isAdminUser(user: User | null): boolean {
+  if (!user) return false
+  const role = user.user_metadata?.role as string | undefined
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
+  if (role === "admin") return true
+  if (adminEmail && user.email?.toLowerCase() === adminEmail) return true
+  return false
 }
 
 export async function updateOrderStatus(orderId: string, newStatus: string) {
@@ -47,8 +57,7 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
     return { success: false, error: "Unauthorized: Please sign in" }
   }
 
-  const role = user?.user_metadata?.role as "admin" | undefined
-  if (role && role !== "admin") {
+  if (!isAdminUser(user)) {
     return { success: false, error: "Unauthorized: Admin access required" }
   }
 
@@ -76,8 +85,7 @@ export async function markOrderAsPaid(orderId: string, transactionId?: string) {
     return { success: false, error: "Unauthorized: Please sign in" }
   }
 
-  const role = user?.user_metadata?.role as "admin" | undefined
-  if (role && role !== "admin") {
+  if (!isAdminUser(user)) {
     return { success: false, error: "Unauthorized: Admin access required" }
   }
 
@@ -117,8 +125,7 @@ export async function completeDelivery(orderId: string, collectedCash: boolean =
     return { success: false, error: "Unauthorized: Please sign in" }
   }
 
-  const role = user?.user_metadata?.role as "admin" | undefined
-  if (role && role !== "admin") {
+  if (!isAdminUser(user)) {
     return { success: false, error: "Unauthorized: Admin access required" }
   }
 
