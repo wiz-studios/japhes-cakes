@@ -11,12 +11,21 @@ import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import BrandLogo from "@/components/BrandLogo"
 
+type PaymentAttempt = {
+  id?: string
+  mpesa_receipt?: string
+  amount?: number
+  result_code?: number
+  created_at?: string
+}
+
 type OrderSubmittedProps = {
   order: any
+  paymentAttempts?: PaymentAttempt[]
   isSandbox?: boolean
 }
 
-export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps) {
+export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox }: OrderSubmittedProps) {
   const router = useRouter()
   // Badge Logic: Only show if explicitly in Sandbox Mode AND not in Production Build (or if intended)
   // User Feedback: "Gate this behind NODE_ENV !== 'production'"
@@ -26,6 +35,10 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
   const isCake = order.order_type === "cake"
   const isDelivery = order.fulfilment === "delivery"
   const formatMoney = (value: number) => `${value.toLocaleString()} KES`
+
+  const successfulAttempts = paymentAttempts
+    .filter((attempt) => attempt.result_code === 0 && attempt.mpesa_receipt)
+    .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())
 
 
   // Theme colors based on order type
@@ -325,8 +338,35 @@ export default function OrderSubmitted({ order, isSandbox }: OrderSubmittedProps
             </div>
             {liveOrder.mpesa_transaction_id && (
               <div className="flex justify-between">
-                <span>Transaction ID</span>
+                <span>Latest Transaction ID</span>
                 <span className="font-mono font-semibold text-slate-900">{liveOrder.mpesa_transaction_id}</span>
+              </div>
+            )}
+            {successfulAttempts.length > 0 && (
+              <div className="mt-2 space-y-2">
+                <div className="text-xs uppercase tracking-[0.24em] text-slate-400 font-semibold">M-Pesa Receipts</div>
+                {successfulAttempts.map((attempt, index) => {
+                  const isDeposit = liveOrder.payment_plan === "deposit" && successfulAttempts.length > 1 && index === 0
+                  const label = isDeposit ? "Deposit" : successfulAttempts.length > 1 ? `Payment ${index + 1}` : "Payment"
+                  return (
+                    <div
+                      key={attempt.id || `${attempt.mpesa_receipt}-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 sm:gap-3 text-sm items-center"
+                    >
+                      <span>{label}</span>
+                      <span className="font-mono font-semibold text-slate-900">
+                        {attempt.mpesa_receipt}
+                      </span>
+                      {typeof attempt.amount === "number" ? (
+                        <span className="font-semibold text-slate-900">
+                          {formatMoney(attempt.amount)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

@@ -23,5 +23,17 @@ export default async function OrderSubmittedPage({
 
   if (error || !order) return notFound()
 
-  return <OrderSubmitted order={order} isSandbox={process.env.PAYMENTS_ENV === "sandbox"} />
+  const { data: paymentAttempts } = await supabase
+    .from("payment_attempts")
+    .select("id, mpesa_receipt, amount, result_code, created_at")
+    .eq("order_id", order.id)
+    .order("created_at", { ascending: true })
+
+  return (
+    <OrderSubmitted
+      order={order}
+      paymentAttempts={paymentAttempts || []}
+      isSandbox={process.env.PAYMENTS_ENV === "sandbox"}
+    />
+  )
 }

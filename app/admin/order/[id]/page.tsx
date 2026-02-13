@@ -21,6 +21,16 @@ export default async function AdminOrderDetailPage({
 
   if (!order) notFound()
 
+  const { data: paymentAttempts } = await supabase
+    .from("payment_attempts")
+    .select("id, mpesa_receipt, amount, result_code, created_at")
+    .eq("order_id", order.id)
+    .order("created_at", { ascending: true })
+
+  const successfulAttempts = (paymentAttempts || []).filter(
+    (attempt: any) => attempt.result_code === 0 && attempt.mpesa_receipt
+  )
+
   return (
     <div className="max-w-none space-y-6">
       <div className="flex items-center gap-4">
@@ -63,6 +73,25 @@ export default async function AdminOrderDetailPage({
                   {item.notes && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-wrap">{item.notes}</p>}
                 </div>
               ))}
+            </div>
+
+            <div className="border-t pt-4">
+              <h4 className="font-bold mb-2">M-Pesa Transaction IDs</h4>
+              {successfulAttempts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No transaction IDs recorded yet.</p>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  {successfulAttempts.map((attempt: any, index: number) => (
+                    <div key={attempt.id || `${attempt.mpesa_receipt}-${index}`} className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">Payment {index + 1}</span>
+                      <span className="font-mono text-primary">{attempt.mpesa_receipt}</span>
+                      {typeof attempt.amount === "number" && (
+                        <span className="font-semibold">{attempt.amount.toLocaleString()} KES</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
