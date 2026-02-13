@@ -17,6 +17,14 @@ function verifyMpesaCallback(request: Request, payload: any) {
 
     // Basic payload shape validation to reject malformed spoof requests.
     if (!payload || typeof payload !== "object") return false
+
+    const darajaCb = payload?.Body?.stkCallback
+    if (darajaCb) {
+        if (typeof darajaCb.CheckoutRequestID !== "string") return false
+        if (typeof darajaCb.ResultCode !== "number") return false
+        return true
+    }
+
     if (!payload.checkoutRequestId || typeof payload.checkoutRequestId !== "string") return false
     if (typeof payload.resultCode !== "number") return false
 
@@ -32,11 +40,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
         }
 
-        // Safaricom Payload Structure Simulation
-        // In reality: Body.stkCallback.CheckoutRequestID
-        const checkoutRequestId = payload.checkoutRequestId
-        const resultCode = payload.resultCode // 0 = Success, others = Fail
-        const resultDesc = payload.resultDesc
+        // Daraja payload: Body.stkCallback.*
+        const darajaCb = payload?.Body?.stkCallback
+        const checkoutRequestId = darajaCb?.CheckoutRequestID || payload.checkoutRequestId
+        const resultCode = typeof darajaCb?.ResultCode === "number" ? darajaCb.ResultCode : payload.resultCode
+        const resultDesc = darajaCb?.ResultDesc || payload.resultDesc
+
+        let mpesaReceiptNumber: string | undefined
+        const items = darajaCb?.CallbackMetadata?.Item || []
+        for (const item of items) {
+            if (item?.Name === "MpesaReceiptNumber") mpesaReceiptNumber = item.Value
+        }
 
         if (!checkoutRequestId) {
             return NextResponse.json({ error: "Missing ID" }, { status: 400 })
@@ -96,7 +110,7 @@ export async function POST(request: Request) {
                     payment_amount_paid: nextPaid,
                     payment_amount_due: nextDue,
                     payment_last_request_amount: null,
-                    mpesa_transaction_id: payload.mpesaReceiptNumber || "MOCK_TRX_" + Date.now()
+                    mpesa_transaction_id: mpesaReceiptNumber || payload.mpesaReceiptNumber || "MOCK_TRX_" + Date.now()
                 })
                 .eq("id", order.id)
 

@@ -1,8 +1,8 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
-import { revalidatePath } from "next/cache"
 import { isValidKenyaPhone, normalizeKenyaPhone } from "@/lib/phone"
+import { initiateDarajaStkPush } from "@/lib/mpesa-daraja"
 
 /**
  * Initiates an M-Pesa STK Push for an existing order using Lipana SDK.
@@ -31,7 +31,7 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
     // 2. Fetch Order Details (Secure Source of Truth for Amount)
     const { data: order, error: orderError } = await supabase
         .from("orders")
-        .select("phone, total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount")
+        .select("phone, friendly_id, total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount")
         .eq("id", orderId)
         .single()
 
@@ -66,9 +66,32 @@ export async function initiateMpesaSTK(orderId: string, phone: string) {
         return { success: false, error: "No balance due" }
     }
 
-    // Daraja integration will replace Lipana. For now, we return a clear message.
+    const orderRef = order.friendly_id || orderId
+    const stkResponse = await initiateDarajaStkPush({
+        orderRef,
+        phone: normalizedPhone,
+        amount: amountToCharge,
+    })
+
+    const nextStatus = order.payment_status === "deposit_paid" ? "deposit_paid" : "initiated"
+    const { error: updateError } = await supabase
+        .from("orders")
+        .update({
+            payment_status: nextStatus,
+            mpesa_checkout_request_id: stkResponse.CheckoutRequestID,
+            payment_last_request_amount: amountToCharge,
+            mpesa_phone: normalizedPhone,
+        })
+        .eq("id", orderId)
+
+    if (updateError) {
+        return { success: false, error: updateError.message }
+    }
+
     return {
-        success: false,
-        error: "M-Pesa is being migrated to Daraja. Please try again after the Daraja setup is complete."
+        success: true,
+        checkoutRequestId: stkResponse.CheckoutRequestID,
+        merchantRequestId: stkResponse.MerchantRequestID,
+        customerMessage: stkResponse.CustomerMessage,
     }
 }
