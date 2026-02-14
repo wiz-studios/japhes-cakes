@@ -36,7 +36,7 @@ export default async function AdminOrderDetailPage({
       <div className="flex items-center gap-4">
         <h2 className="text-2xl font-bold">Order Details</h2>
         <Badge variant="outline" className="font-mono">
-          {order.id}
+          {order.friendly_id || order.id}
         </Badge>
       </div>
 
