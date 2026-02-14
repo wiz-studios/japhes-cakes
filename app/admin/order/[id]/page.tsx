@@ -1,9 +1,12 @@
 import type React from "react"
+import Link from "next/link"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { notFound } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { AdminOrderActions } from "@/components/admin-order-actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 export default async function AdminOrderDetailPage({
   params,
@@ -33,7 +36,13 @@ export default async function AdminOrderDetailPage({
 
   return (
     <div className="max-w-none space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button asChild variant="outline" size="sm" className="gap-2">
+          <Link href="/admin/dashboard">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
         <h2 className="text-2xl font-bold">Order Details</h2>
         <Badge variant="outline" className="font-mono">
           {order.friendly_id || order.id}
@@ -70,7 +79,12 @@ export default async function AdminOrderDetailPage({
                       {item.quantity}x {item.item_name}
                     </span>
                   </div>
-                  {item.notes && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-wrap">{item.notes}</p>}
+                  {item.notes && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <span className="font-semibold uppercase tracking-wide text-[10px] text-muted-foreground/80">Notes:</span>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{item.notes}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Eye, Search, Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react"
+import { Eye, Search, Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 
@@ -99,6 +99,14 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
           />
         </div>
         <div className="flex gap-2 w-full md:w-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => router.refresh()}
+          >
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </Button>
           <Button variant="outline" size="sm" className="gap-2">
             <Filter className="h-4 w-4" /> Filter
           </Button>
