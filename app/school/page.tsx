@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { BadgeCheck, CalendarClock, GraduationCap, MapPin, Phone, Sparkles } from "lucide-react"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
@@ -77,6 +78,19 @@ const curriculum = [
       "Traditional African Pot Wedding Cake",
       "Company Logo",
     ],
+  },
+]
+
+const yoghurtCourseHighlights = [
+  {
+    title: "Cake Finishing Inspiration",
+    image: "/images/premium-cake.jpg",
+    alt: "Beautiful decorated cake display",
+  },
+  {
+    title: "Pizza Craft Session",
+    image: "/images/premium-pizza.jpg",
+    alt: "Freshly prepared gourmet pizza",
   },
 ]
 
@@ -301,8 +315,8 @@ export default async function SchoolPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="lux-card p-8 md:p-10">
+        <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="lux-card self-start p-6 md:p-8">
             <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Yoghurt & Milkshake</p>
             <h2 className="text-2xl font-serif font-semibold text-slate-900">2-day course</h2>
             <p className="text-sm text-slate-600">Duration: 2 days - Cost: Ksh 6,000</p>
@@ -311,6 +325,23 @@ export default async function SchoolPage() {
                 <div key={item} className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[var(--brand-magenta-deep)]" />
                   <span>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {yoghurtCourseHighlights.map((highlight) => (
+                <div key={highlight.title} className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 shadow-sm">
+                  <div className="relative h-32 w-full">
+                    <Image
+                      src={highlight.image}
+                      alt={highlight.alt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 280px"
+                    />
+                  </div>
+                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">{highlight.title}</p>
                 </div>
               ))}
             </div>

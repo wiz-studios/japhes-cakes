@@ -6,7 +6,7 @@ import Image from "next/image"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Loader2, Sparkles, Clock } from "lucide-react"
+import { Loader2, Clock } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -210,7 +210,7 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <section className={cn("overflow-hidden rounded-[26px] border bg-white/80 shadow-[0_22px_55px_-40px_rgba(15,20,40,0.4)]", theme.colors.border)}>
-                        <div className="relative h-52 w-full md:h-64">
+                        <div className="relative h-52 w-full md:h-60">
                             <Image
                                 src="/shop-pizza.jpg"
                                 alt="Japhe's pizza shop interior"
@@ -227,33 +227,8 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
                         </div>
                     </section>
 
-                    <div className={cn("rounded-[26px] border bg-white/80 p-6 md:p-7 shadow-[0_22px_55px_-40px_rgba(15,20,40,0.4)]", theme.colors.border)}>
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-3">
-                                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(58,78,216,0.12)] text-[var(--brand-blue-deep)]">
-                                    <Sparkles className="h-5 w-5" />
-                                </span>
-                                <div>
-                                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Pizza Offer Days</p>
-                                    <h3 className="text-lg font-semibold text-slate-900">2-for-1 Tuesdays & Thursdays</h3>
-                                    <p className="text-sm text-slate-600">Medium & Large only. Order two, pay for one.</p>
-                                </div>
-                            </div>
-                            <span className={cn(
-                                "rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap",
-                                offerActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                            )}>
-                                {offerActive ? "Offer Active Today" : "Next Tue/Thu"}
-                            </span>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.3em] text-slate-500">
-                            <span className="rounded-full bg-slate-100 px-3 py-1">Buy 1 Get 1</span>
-                            <span className="rounded-full bg-slate-100 px-3 py-1">Medium / Large</span>
-                        </div>
-                    </div>
-
                     {lateNightWarning && (
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 shadow-sm flex items-start gap-3">
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 shadow-sm flex items-start gap-3">
                             <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                                 <Clock className="h-4 w-4" />
                             </span>
@@ -264,15 +239,15 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
                         </div>
                     )}
                     {busyOrdersPaused && (
-                        <div className="rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-700 shadow-sm">
+                        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
                             <p className="font-semibold">Orders temporarily paused</p>
-                            <p className="text-xs mt-1">{storeSettings.busyModeMessage || "The kitchen is overloaded right now. Please try again shortly."}</p>
+                            <p className="mt-1 text-xs">{storeSettings.busyModeMessage || "The kitchen is overloaded right now. Please try again shortly."}</p>
                         </div>
                     )}
                     {busyEtaMode && (
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 shadow-sm">
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 shadow-sm">
                             <p className="font-semibold">High demand notice</p>
-                            <p className="text-xs mt-1">
+                            <p className="mt-1 text-xs">
                                 Expect around +{storeSettings.busyModeExtraMinutes} minutes on prep/delivery windows.
                             </p>
                         </div>
@@ -315,6 +290,26 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
                         ) : (
                             <p className="text-sm text-slate-500">Choose your pizza and size to see the estimate.</p>
                         )}
+
+                        <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Pizza Offer Days</p>
+                                    <p className="mt-1 text-sm font-semibold text-slate-900">2-for-1 Tuesdays & Thursdays</p>
+                                    <p className="text-xs text-slate-600">Medium & Large only. Order two, pay for one.</p>
+                                </div>
+                                <span className={cn(
+                                    "rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap",
+                                    offerActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                                )}>
+                                    {offerActive ? "Offer Active Today" : "Next Tue/Thu"}
+                                </span>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.3em] text-slate-500">
+                                <span className="rounded-full bg-slate-100 px-3 py-1">Buy 1 Get 1</span>
+                                <span className="rounded-full bg-slate-100 px-3 py-1">Medium / Large</span>
+                            </div>
+                        </div>
 
                         <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
                             Pizza pie from Ksh 350 - test item Ksh 10 available for STK checks
