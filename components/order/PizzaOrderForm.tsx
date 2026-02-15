@@ -151,6 +151,11 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
     const extrasTotal = extrasCount * 100
     const estimatedPrice = rawSubtotal - offerDetails.discount
 
+    // Always open at the top so the hero/title section is visible.
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: "auto" })
+    }, [])
+
     // Check for late night orders
     useEffect(() => {
         const now = new Date()
