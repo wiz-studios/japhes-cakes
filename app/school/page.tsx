@@ -185,7 +185,7 @@ export default async function SchoolPage() {
               <h1 className="text-4xl md:text-5xl font-serif font-semibold leading-tight">
                 Japhe&apos;s School of Cake
               </h1>
-              <p className="text-lg text-slate-700 max-w-xl">
+              <p className="max-w-xl text-lg text-slate-700">
                 Learn professional cake making, decoration, bread products, pastries, and desserts with hands-on guidance.
               </p>
               <div className="flex flex-wrap gap-3">
@@ -196,36 +196,59 @@ export default async function SchoolPage() {
                   <Phone className="h-4 w-4" />
                   Call to Enroll
                 </Link>
- 
-              <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white/75 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">What You&apos;ll Gain</p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {yoghurtCoursePerks.map((perk) => (
-                    <div key={perk.title} className="rounded-xl border border-slate-200/70 bg-white px-3 py-3">
-                      <p className="text-sm font-semibold text-slate-900">{perk.title}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{perk.description}</p>
-                    </div>
-                  ))}
-                </div>
+                <Link
+                  href="#fees"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  View Fees
+                </Link>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-900">
-                <p className="font-semibold">Bonus included: Free tasting + feedback session on the final day.</p>
-                <p className="mt-1 text-xs text-emerald-800/90">
-                  Bring your questions and we&apos;ll help you refine texture, sweetness, and presentation for market-ready products.
-                </p>
-              </div>
-                <div className="flex items-center gap-2">
+              <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+                <div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/70 px-4 py-3">
                   <CalendarClock className="h-4 w-4 text-slate-500" />
                   <span>Flexible intakes - start this month</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/70 px-4 py-3">
                   <GraduationCap className="h-4 w-4 text-slate-500" />
                   <span>Certificate issued on completion</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/70 px-4 py-3 sm:col-span-2">
                   <MapPin className="h-4 w-4 text-slate-500" />
                   <span>Witeithie Town, Thika Super Highway</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-[#9db0ff]/40 blur-2xl" />
+              <div className="lux-card relative overflow-hidden p-4 md:p-5">
+                <div className="relative h-64 overflow-hidden rounded-2xl">
+                  <Image src="/cake-hero.png" alt="Students practicing cake decoration" fill className="object-cover" priority />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between rounded-xl bg-white/85 px-3 py-2 backdrop-blur">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">Next intake</p>
+                      <p className="text-sm font-semibold text-slate-900">Limited slots available</p>
+                    </div>
+                    <BadgeCheck className="h-5 w-5 text-emerald-600" />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+                  <div className="rounded-xl border border-slate-200/70 bg-white/90 px-2 py-3">
+                    <p className="text-lg font-semibold text-slate-900">3</p>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Levels</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200/70 bg-white/90 px-2 py-3">
+                    <p className="text-lg font-semibold text-slate-900">5+</p>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Short courses</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200/70 bg-white/90 px-2 py-3">
+                    <p className="text-lg font-semibold text-slate-900">2-day</p>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Quick class</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -235,7 +258,7 @@ export default async function SchoolPage() {
 
       <SchoolGallerySection items={galleryItems} />
 
-      <section className="mx-auto max-w-6xl px-6 pb-10">
+      <section id="fees" className="mx-auto max-w-6xl px-6 pb-10">
         <div className="lux-card p-8 md:p-10">
           <div className="flex items-center justify-between gap-6 flex-wrap">
             <div>
