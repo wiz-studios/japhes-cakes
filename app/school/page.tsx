@@ -357,8 +357,6 @@ export default async function SchoolPage() {
                 </div>
               ))}
             </div>
-<<<<<<< ours
-=======
 
             <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white/75 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">What You&apos;ll Gain</p>
@@ -378,7 +376,6 @@ export default async function SchoolPage() {
                 Bring your questions and we&apos;ll help you refine texture, sweetness, and presentation for market-ready products.
               </p>
             </div>
->>>>>>> theirs
           </div>
 
           <div className="lux-card p-8 md:p-10">
