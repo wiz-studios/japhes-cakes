@@ -18,7 +18,8 @@ interface Order {
   customer_name: string
   status: string
   payment_status: string
-  total: number
+  total?: number
+  total_amount?: number
   order_type: "cake" | "pizza"
   fulfilment: string
   [key: string]: any

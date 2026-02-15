@@ -2,7 +2,14 @@
 
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
-import { DeliveryZone } from "@/types/types"
+import type { StoreSettings } from "@/lib/store-settings"
+
+type DeliveryZone = {
+    id: string
+    name: string
+    delivery_fee: number
+    allows_cake: boolean
+}
 
 const CakeOrderForm = dynamic(
     () => import("@/components/order/CakeOrderForm").then(mod => mod.CakeOrderForm),
@@ -16,6 +23,6 @@ const CakeOrderForm = dynamic(
     }
 )
 
-export default function CakeOrderClient({ zones }: { zones: DeliveryZone[] }) {
-    return <CakeOrderForm zones={zones} />
+export default function CakeOrderClient({ zones, storeSettings }: { zones: DeliveryZone[]; storeSettings: StoreSettings }) {
+    return <CakeOrderForm zones={zones} storeSettings={storeSettings} />
 }

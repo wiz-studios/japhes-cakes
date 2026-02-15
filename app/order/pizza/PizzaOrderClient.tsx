@@ -2,7 +2,14 @@
 
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
-import { DeliveryZone } from "@/types/types"
+import type { StoreSettings } from "@/lib/store-settings"
+
+type DeliveryZone = {
+    id: string
+    name: string
+    delivery_fee: number
+    allows_pizza: boolean
+}
 
 const PizzaOrderForm = dynamic(
     () => import("@/components/order/PizzaOrderForm").then(mod => mod.PizzaOrderForm),
@@ -16,6 +23,6 @@ const PizzaOrderForm = dynamic(
     }
 )
 
-export default function PizzaOrderClient({ zones }: { zones: DeliveryZone[] }) {
-    return <PizzaOrderForm zones={zones} />
+export default function PizzaOrderClient({ zones, storeSettings }: { zones: DeliveryZone[]; storeSettings: StoreSettings }) {
+    return <PizzaOrderForm zones={zones} storeSettings={storeSettings} />
 }

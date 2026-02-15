@@ -34,6 +34,7 @@ type CakeOrderItem = {
   flavor?: string
   notes?: string
   message?: string
+  designImageUrl?: string
   customerName?: string
 }
 type Order = {
@@ -196,6 +197,7 @@ function OrderReviewContent() {
           cakeFlavor: (order.items[0] as CakeOrderItem).flavor || "",
           designNotes: order.items[0].notes,
           cakeMessage: (order.items[0] as CakeOrderItem).message || "",
+          designImageUrl: (order.items[0] as CakeOrderItem).designImageUrl || "",
           fulfilment: order.fulfilment,
           deliveryZoneId: order.deliveryZoneId,
           deliveryLat: (order as any).deliveryLat,
@@ -355,6 +357,17 @@ function OrderReviewContent() {
                 <div className="mt-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Message</p>
                   <p className="mt-1 text-sm text-slate-700">{(item as CakeOrderItem).message}</p>
+                </div>
+              ) : null}
+
+              {order.type === "cake" && (item as CakeOrderItem).designImageUrl ? (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Reference Image</p>
+                  <img
+                    src={(item as CakeOrderItem).designImageUrl}
+                    alt="Cake design reference"
+                    className="mt-2 h-36 w-full rounded-xl border border-slate-200 bg-slate-50 object-cover"
+                  />
                 </div>
               ) : null}
 

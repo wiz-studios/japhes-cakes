@@ -6,7 +6,7 @@ import Image from "next/image"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { CalendarIcon, Loader2 } from "lucide-react"
+import { CalendarIcon, Loader2, UploadCloud, X } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,8 @@ import { OrderLayout } from "./OrderLayout"
 import { orderThemes } from "./themes"
 import { CAKE_FLAVORS, CAKE_SIZES, getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
+import type { StoreSettings } from "@/lib/store-settings"
+import { uploadCakeDesignImage } from "@/app/actions/orders"
 
 import dynamic from "next/dynamic"
 
@@ -37,6 +39,7 @@ const cakeSchema = z.object({
     cakeFlavor: z.string().min(1, "Please select a flavor"),
     designNotes: z.string().optional(),
     cakeMessage: z.string().optional(),
+    designImageUrl: z.string().optional(),
     fulfilment: z.enum(["pickup", "delivery"]),
     deliveryZoneId: z.string().optional(),
     deliveryLat: z.number().optional(),
@@ -67,12 +70,16 @@ interface DeliveryZone {
  * - Dynamic delivery fee calculation via GPSLocationPicker.
  * - Validates input using Zod before redirecting to review.
  */
-export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
+export function CakeOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]; storeSettings: StoreSettings }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const theme = orderThemes.cake
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [dateOpen, setDateOpen] = useState(false)
+    const [designImageUploading, setDesignImageUploading] = useState(false)
+    const [designImageError, setDesignImageError] = useState("")
+    const busyOrdersPaused = storeSettings.busyModeEnabled && storeSettings.busyModeAction === "disable_orders"
+    const busyEtaMode = storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta"
 
     // Retrieve existing order data from URL if editing an order
     const rawOrder = searchParams.get("order") ? JSON.parse(decodeURIComponent(searchParams.get("order")!)) : null
@@ -86,11 +93,12 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
         phone: rawOrder.phone || "",
         designNotes: rawOrder.items[0]?.notes || "",
         cakeMessage: rawOrder.items[0]?.message || "",
+        designImageUrl: rawOrder.items[0]?.designImageUrl || "",
         deliveryZoneId: rawOrder.deliveryZoneId || "", // Might be missing if not passed back, user selects again
         preferredDate: rawOrder.scheduledDate ? new Date(rawOrder.scheduledDate) : undefined,
     } : (rawOrder || {
         fulfilment: "pickup", cakeSize: "", cakeFlavor: "", customerName: "", phone: "",
-        designNotes: "", cakeMessage: "", deliveryZoneId: "",
+        designNotes: "", cakeMessage: "", designImageUrl: "", deliveryZoneId: "",
     })
 
     const form = useForm<z.infer<typeof cakeSchema>>({
@@ -103,6 +111,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
             phone: "",
             designNotes: "",
             cakeMessage: "",
+            designImageUrl: "",
             deliveryZoneId: "",
             ...defaultValues
         },
@@ -111,6 +120,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
     // Watch values for real-time pricing display
     const watchSize = form.watch("cakeSize")
     const watchFlavor = form.watch("cakeFlavor")
+    const watchDesignImageUrl = form.watch("designImageUrl")
 
     const estimatedTotal = watchSize && watchFlavor ? getCakePrice(watchFlavor, watchSize) : 0
 
@@ -119,6 +129,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
      * Constructs the order data object and redirects to the review page.
      */
     async function onSubmit(values: z.infer<typeof cakeSchema>) {
+        if (busyOrdersPaused) return
         setIsSubmitting(true)
         const orderData = {
             type: "cake",
@@ -129,6 +140,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                 flavor: values.cakeFlavor,
                 notes: values.designNotes,
                 message: values.cakeMessage,
+                designImageUrl: values.designImageUrl,
                 price: getCakePrice(values.cakeFlavor, values.cakeSize)
             }],
             total: getCakePrice(values.cakeFlavor, values.cakeSize),
@@ -146,6 +158,26 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
             phone: values.phone,
         }
         router.push(`/order/review?order=${encodeURIComponent(JSON.stringify(orderData))}`)
+    }
+
+    async function handleDesignImageChange(file: File | null) {
+        if (!file) return
+        setDesignImageError("")
+        setDesignImageUploading(true)
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
+            const result = await uploadCakeDesignImage(formData)
+            if (!result.success || !result.url) {
+                setDesignImageError(result.error || "Image upload failed.")
+                return
+            }
+            form.setValue("designImageUrl", result.url, { shouldDirty: true, shouldValidate: true })
+        } catch (error) {
+            setDesignImageError("Image upload failed.")
+        } finally {
+            setDesignImageUploading(false)
+        }
     }
 
     return (
@@ -169,6 +201,23 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                             </div>
                         </div>
                     </section>
+
+                    {busyOrdersPaused && (
+                        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+                            <p className="font-semibold">Orders temporarily paused</p>
+                            <p className="mt-1 text-xs">
+                                {storeSettings.busyModeMessage || "The kitchen is overloaded right now. Please try again shortly."}
+                            </p>
+                        </div>
+                    )}
+                    {busyEtaMode && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 shadow-sm">
+                            <p className="font-semibold">High demand notice</p>
+                            <p className="mt-1 text-xs">
+                                Expect around +{storeSettings.busyModeExtraMinutes} minutes on prep/delivery windows.
+                            </p>
+                        </div>
+                    )}
 
                     <div className="space-y-6">
                         <div className="flex justify-between items-center border-b pb-2">
@@ -225,6 +274,47 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                 <FormMessage />
                             </FormItem>
                         )} />
+                        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white/70 p-4">
+                            <FormLabel>Reference Image (Optional)</FormLabel>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                                    <UploadCloud className="h-4 w-4" />
+                                    {designImageUploading ? "Uploading..." : "Upload Design"}
+                                    <input
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        className="hidden"
+                                        disabled={designImageUploading}
+                                        onChange={(event) => {
+                                            const file = event.target.files?.[0] || null
+                                            void handleDesignImageChange(file)
+                                            event.currentTarget.value = ""
+                                        }}
+                                    />
+                                </label>
+                                {watchDesignImageUrl && (
+                                    <button
+                                        type="button"
+                                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                                        onClick={() => form.setValue("designImageUrl", "", { shouldDirty: true })}
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
+                            {designImageError && <p className="text-xs text-red-600">{designImageError}</p>}
+                            {watchDesignImageUrl && (
+                                <div className="relative h-40 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                    <img
+                                        src={watchDesignImageUrl}
+                                        alt="Uploaded cake design reference"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </div>
+                            )}
+                            <p className="text-xs text-slate-500">Upload a sample design if you want us to match a specific look.</p>
+                        </div>
                     </div>
 
                     <div className="space-y-6">
@@ -327,14 +417,14 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
                     <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:static md:bg-transparent md:border-0 md:p-0 z-50">
                         <Button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || designImageUploading || busyOrdersPaused}
                             className={cn(
                                 "w-full h-12 text-lg font-semibold rounded-full shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] transition-all",
                                 "hover:-translate-y-0.5 active:translate-y-0",
                                 theme.colors.primary
                             )}
                         >
-                            {isSubmitting ? <Loader2 className="animate-spin" /> : "Review Order"}
+                            {isSubmitting ? <Loader2 className="animate-spin" /> : busyOrdersPaused ? "Orders Paused" : "Review Order"}
                         </Button>
                     </div>
                     <div className="md:hidden h-16" />

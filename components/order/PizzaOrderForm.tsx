@@ -21,6 +21,7 @@ import { orderThemes } from "./themes"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails, isPizzaOfferDay } from "@/lib/pizza-offer"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
+import type { StoreSettings } from "@/lib/store-settings"
 
 import dynamic from "next/dynamic"
 
@@ -109,13 +110,15 @@ interface DeliveryZone {
  * - Late-night warning (after 9 PM).
  * - GPS Delivery support.
  */
-export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
+export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]; storeSettings: StoreSettings }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const theme = orderThemes.pizza
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [minError, setMinError] = useState<string | null>(null)
     const [lateNightWarning, setLateNightWarning] = useState(false)
+    const busyOrdersPaused = storeSettings.busyModeEnabled && storeSettings.busyModeAction === "disable_orders"
+    const busyEtaMode = storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta"
 
     // Load existing order from URL query if present (for editing from Review page)
     const initialOrder = searchParams.get("order") ? JSON.parse(decodeURIComponent(searchParams.get("order")!)) : null
@@ -160,6 +163,10 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
      * Packs data into standard order format and forwards to review page.
      */
     async function onSubmit(values: z.infer<typeof pizzaSchema>) {
+        if (busyOrdersPaused) {
+            setMinError(storeSettings.busyModeMessage || "Orders are temporarily paused due to high kitchen load.")
+            return
+        }
         setIsSubmitting(true); setMinError(null)
         try {
             // Nairobi/Min value check could be re-implemented here if we reverse-geocoded "Nairobi",
@@ -251,6 +258,20 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                                         <p className="font-semibold">Late night order notice</p>
                                         <p className="text-xs text-amber-700/80">We stop taking orders at 9 PM. Call us if you need a special exception.</p>
                                     </div>
+                                </div>
+                            )}
+                            {busyOrdersPaused && (
+                                <div className="rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-700 shadow-sm">
+                                    <p className="font-semibold">Orders temporarily paused</p>
+                                    <p className="text-xs mt-1">{storeSettings.busyModeMessage || "The kitchen is overloaded right now. Please try again shortly."}</p>
+                                </div>
+                            )}
+                            {busyEtaMode && (
+                                <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 shadow-sm">
+                                    <p className="font-semibold">High demand notice</p>
+                                    <p className="text-xs mt-1">
+                                        Expect around +{storeSettings.busyModeExtraMinutes} minutes on prep/delivery windows.
+                                    </p>
                                 </div>
                             )}
 
@@ -470,7 +491,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                             </div>
                         </div>
 
-                        <aside className="lg:sticky lg:top-24 lg:self-start">
+                        <aside>
                             <div className={cn("rounded-[26px] border bg-white/80 p-6 shadow-[0_24px_60px_-42px_rgba(15,20,40,0.45)]", theme.colors.border)}>
                                 <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Estimated Total</p>
                                 {baseUnitPrice > 0 ? (
@@ -517,14 +538,15 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
                     <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:static md:bg-transparent md:border-0 md:p-0 z-50">
                         <Button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || busyOrdersPaused}
+                            aria-disabled={isSubmitting || busyOrdersPaused}
                             className={cn(
                                 "w-full h-12 text-lg font-semibold rounded-full shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] transition-all",
                                 "hover:-translate-y-0.5 active:translate-y-0",
                                 theme.colors.primary
                             )}
                         >
-                            {isSubmitting ? <Loader2 className="animate-spin" /> : "Review Order"}
+                            {isSubmitting ? <Loader2 className="animate-spin" /> : busyOrdersPaused ? "Orders Paused" : "Review Order"}
                         </Button>
                     </div>
                     <div className="md:hidden h-16" />

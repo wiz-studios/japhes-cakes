@@ -1,6 +1,7 @@
 "use server"
 
 import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createClient } from "@supabase/supabase-js"
 import { addHours, isAfter, setHours, setMinutes } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
@@ -8,6 +9,7 @@ import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { getPizzaUnitPrice, PIZZA_BASE_PRICES, PIZZA_TYPE_PRICES } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakeDisplayName, getCakePrice, CAKE_FLAVORS, CAKE_SIZES } from "@/lib/cake-pricing"
+import { applyBusyEtaWindow, DEFAULT_STORE_SETTINGS, normalizeStoreSettings } from "@/lib/store-settings"
 import type { User } from "@supabase/supabase-js"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -26,6 +28,8 @@ const MAX_TEXT_LENGTHS = {
   cakeMessage: 120,
   deliveryAddress: 240,
 }
+const CAKE_DESIGN_MAX_BYTES = 4 * 1024 * 1024
+const CAKE_DESIGN_ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 
 function generateOrderNumber(prefix: "C" | "P") {
   const timePart = Date.now().toString(36).slice(-4).toUpperCase()
@@ -64,6 +68,84 @@ async function checkOrderRateLimit(supabase: any, phone: string) {
 function sanitizeText(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return ""
   return value.trim().slice(0, maxLength)
+}
+
+async function getStoreSettings(supabase: any) {
+  const { data } = await supabase
+    .from("store_settings")
+    .select("busy_mode_enabled, busy_mode_action, busy_mode_extra_minutes, busy_mode_message")
+    .eq("id", true)
+    .maybeSingle()
+
+  return normalizeStoreSettings(data || DEFAULT_STORE_SETTINGS)
+}
+
+function validateBusyModeBeforeOrder(settings: ReturnType<typeof normalizeStoreSettings>) {
+  if (!settings.busyModeEnabled) return null
+  if (settings.busyModeAction !== "disable_orders") return null
+  return settings.busyModeMessage || "Orders are temporarily paused due to high kitchen load. Please try again later."
+}
+
+function sanitizeUploadFileName(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+}
+
+function getAdminSupabaseForUpload() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return { client: null, error: "Missing Supabase admin credentials." }
+  }
+
+  return {
+    client: createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } }),
+    error: null,
+  }
+}
+
+export async function uploadCakeDesignImage(formData: FormData) {
+  const file = formData.get("file")
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: "Image file is required." }
+  }
+
+  if (!CAKE_DESIGN_ALLOWED_TYPES.has(file.type)) {
+    return { success: false, error: "Only JPG, PNG, and WEBP images are allowed." }
+  }
+
+  if (file.size > CAKE_DESIGN_MAX_BYTES) {
+    return { success: false, error: "Image must be 4MB or smaller." }
+  }
+
+  const { client: supabase, error: clientError } = getAdminSupabaseForUpload()
+  if (!supabase) {
+    return { success: false, error: clientError || "Failed to initialize upload service." }
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg"
+  const safeName = sanitizeUploadFileName(file.name || "cake-design")
+  const path = `orders/${new Date().getFullYear()}/${Date.now()}-${safeName}.${ext}`
+
+  const bytes = await file.arrayBuffer()
+  const { error: uploadError } = await supabase.storage
+    .from("cake-designs")
+    .upload(path, bytes, {
+      contentType: file.type,
+      upsert: false,
+    })
+
+  if (uploadError) {
+    return { success: false, error: uploadError.message }
+  }
+
+  const { data: urlData } = supabase.storage.from("cake-designs").getPublicUrl(path)
+  return { success: true, url: urlData.publicUrl }
 }
 
 export async function updateOrderStatus(orderId: string, newStatus: string) {
@@ -219,6 +301,11 @@ export async function submitCakeOrder(values: any) {
     }
     const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
     if (rateLimitError) return { success: false, error: rateLimitError }
+    const storeSettings = await getStoreSettings(supabase)
+    const busyModeBlock = validateBusyModeBeforeOrder(storeSettings)
+    if (busyModeBlock) {
+      return { success: false, error: busyModeBlock }
+    }
 
     if (!CAKE_FLAVORS.includes(values.cakeFlavor)) {
       return { success: false, error: "Invalid cake flavor selected." }
@@ -236,6 +323,7 @@ export async function submitCakeOrder(values: any) {
     const designNotes = sanitizeText(values.designNotes, MAX_TEXT_LENGTHS.notes)
     const cakeMessage = sanitizeText(values.cakeMessage, MAX_TEXT_LENGTHS.cakeMessage)
     const deliveryAddress = sanitizeText(values.deliveryAddress, MAX_TEXT_LENGTHS.deliveryAddress)
+    const designImageUrl = typeof values.designImageUrl === "string" ? values.designImageUrl.trim().slice(0, 1000) : ""
     const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
     if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
       return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
@@ -246,7 +334,7 @@ export async function submitCakeOrder(values: any) {
     }
     // 1. Get zone info for fee calculation
     let deliveryFee = 0
-    let deliveryWindow = "N/A"
+    let deliveryWindow = "As soon as possible"
 
     let safeDeliveryLat: number | null = null
     let safeDeliveryLng: number | null = null
@@ -283,6 +371,10 @@ export async function submitCakeOrder(values: any) {
       if (!deliveryAddress) {
         return { success: false, error: "Please provide a delivery address or landmark." }
       }
+    }
+
+    if (storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta") {
+      deliveryWindow = applyBusyEtaWindow(deliveryWindow, storeSettings.busyModeExtraMinutes)
     }
 
     // Calculate cake price from pricing table
@@ -353,6 +445,7 @@ export async function submitCakeOrder(values: any) {
       order_id: order.id,
       item_name: `${values.cakeSize} ${getCakeDisplayName(values.cakeFlavor)}`,
       notes: `Design: ${designNotes || "None"}. Message: ${cakeMessage || "None"}`,
+      design_image_url: designImageUrl || null,
     })
 
     if (itemError) throw itemError
@@ -378,6 +471,11 @@ export async function submitPizzaOrder(values: any) {
     }
     const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
     if (rateLimitError) return { success: false, error: rateLimitError }
+    const storeSettings = await getStoreSettings(supabase)
+    const busyModeBlock = validateBusyModeBeforeOrder(storeSettings)
+    if (busyModeBlock) {
+      return { success: false, error: busyModeBlock }
+    }
 
     if (!Object.keys(PIZZA_TYPE_PRICES).includes(values.pizzaType)) {
       return { success: false, error: "Invalid pizza type selected." }
@@ -471,6 +569,10 @@ export async function submitPizzaOrder(values: any) {
       if (!deliveryAddress) {
         return { success: false, error: "Please provide a delivery address or landmark." }
       }
+    }
+
+    if (storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta") {
+      deliveryWindow = applyBusyEtaWindow(deliveryWindow, storeSettings.busyModeExtraMinutes)
     }
 
     // Calculate pizza total with offer logic
