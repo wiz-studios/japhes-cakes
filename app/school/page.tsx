@@ -141,6 +141,21 @@ const yoghurtCourses = [
   "Any other flavour",
 ]
 
+const yoghurtCoursePerks = [
+  {
+    title: "Starter Kit Guidance",
+    description: "Learn exactly which affordable tools and ingredients to buy so you can start selling immediately.",
+  },
+  {
+    title: "Business Tips",
+    description: "Pricing, packaging, and customer service tips to help you turn your skill into daily income.",
+  },
+  {
+    title: "Practical Recipes",
+    description: "Step-by-step recipes for creamy yoghurt and rich milkshakes with consistent flavor every batch.",
+  },
+]
+
 export default async function SchoolPage() {
   const supabase = await createServerSupabaseClient()
   const { data: galleryRows } = await supabase
@@ -181,28 +196,25 @@ export default async function SchoolPage() {
                   <Phone className="h-4 w-4" />
                   Call to Enroll
                 </Link>
-                <Link
-                  href="https://wa.me/254708244764"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5"
-                >
-                  <Sparkles className="h-4 w-4 text-[var(--brand-magenta-deep)]" />
-                  WhatsApp Us
-                </Link>
+ 
+              <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white/75 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">What You&apos;ll Gain</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {yoghurtCoursePerks.map((perk) => (
+                    <div key={perk.title} className="rounded-xl border border-slate-200/70 bg-white px-3 py-3">
+                      <p className="text-sm font-semibold text-slate-900">{perk.title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{perk.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="lux-card p-8 md:p-10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Special Offer</p>
-                  <p className="text-3xl font-serif font-semibold text-slate-900 mt-2">20% off</p>
-                  <p className="text-sm text-slate-600">Applies to all courses</p>
-                </div>
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--brand-magenta),var(--brand-blue))] text-white">
-                  <BadgeCheck className="h-6 w-6" />
-                </div>
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-900">
+                <p className="font-semibold">Bonus included: Free tasting + feedback session on the final day.</p>
+                <p className="mt-1 text-xs text-emerald-800/90">
+                  Bring your questions and we&apos;ll help you refine texture, sweetness, and presentation for market-ready products.
+                </p>
               </div>
-              <div className="mt-6 space-y-3 text-sm text-slate-700">
                 <div className="flex items-center gap-2">
                   <CalendarClock className="h-4 w-4 text-slate-500" />
                   <span>Flexible intakes - start this month</span>
@@ -345,6 +357,28 @@ export default async function SchoolPage() {
                 </div>
               ))}
             </div>
+<<<<<<< ours
+=======
+
+            <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white/75 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">What You&apos;ll Gain</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {yoghurtCoursePerks.map((perk) => (
+                  <div key={perk.title} className="rounded-xl border border-slate-200/70 bg-white px-3 py-3">
+                    <p className="text-sm font-semibold text-slate-900">{perk.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600">{perk.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-900">
+              <p className="font-semibold">Bonus included: Free tasting + feedback session on the final day.</p>
+              <p className="mt-1 text-xs text-emerald-800/90">
+                Bring your questions and we&apos;ll help you refine texture, sweetness, and presentation for market-ready products.
+              </p>
+            </div>
+>>>>>>> theirs
           </div>
 
           <div className="lux-card p-8 md:p-10">
