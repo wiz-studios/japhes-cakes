@@ -36,7 +36,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f3f7] text-slate-900">
+    <div className="min-h-screen overflow-x-hidden bg-[#f6f3f7] text-slate-900">
       <div className="flex min-h-screen">
         <aside className="hidden w-72 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#0f1016_0%,#141626_100%)] px-6 py-8 text-white lg:flex">
           <div className="flex items-center gap-3">
@@ -73,12 +73,12 @@ export default function AdminLayout({
           </div>
         </aside>
 
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-10 border-b border-white/60 bg-white/85 px-6 py-4 backdrop-blur-xl">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Admin Console</p>
-                <h2 className="text-xl font-semibold text-slate-900 font-serif">Operational Dashboard</h2>
+                <h2 className="font-serif text-xl font-semibold text-slate-900">Operational Dashboard</h2>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <a
@@ -93,7 +93,7 @@ export default function AdminLayout({
                 </div>
               </div>
             </div>
-            <div className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+            <div className="mt-4 flex w-full max-w-full gap-2 overflow-x-auto pb-1 pr-1 lg:hidden">
               {navItems.map((item) => {
                 const isActive = pathname?.startsWith(item.href)
                 return (
@@ -114,7 +114,7 @@ export default function AdminLayout({
             </div>
           </header>
 
-          <main className="flex-1 px-6 py-8 lg:px-10">{children}</main>
+          <main className="flex-1 max-w-full overflow-x-hidden px-4 py-8 sm:px-6 lg:px-10">{children}</main>
         </div>
       </div>
     </div>

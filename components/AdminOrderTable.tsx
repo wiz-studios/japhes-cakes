@@ -89,7 +89,7 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
       className="space-y-4"
     >
       {/* Header Actions */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white/90 p-4 rounded-2xl shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] border border-white/60 backdrop-blur">
+      <div className="flex flex-col gap-4 rounded-2xl border border-white/60 bg-white/90 p-4 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)] backdrop-blur md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -99,19 +99,19 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
             onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap">
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 flex-1 md:flex-none"
             onClick={() => router.refresh()}
           >
             <RefreshCw className="h-4 w-4" /> Refresh
           </Button>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2 flex-1 md:flex-none">
             <Filter className="h-4 w-4" /> Filter
           </Button>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2 flex-1 md:flex-none">
             <CalendarIcon className="h-4 w-4" /> Date
           </Button>
         </div>
