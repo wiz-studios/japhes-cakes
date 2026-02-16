@@ -7,25 +7,20 @@ import { sendSmtpMail } from "@/lib/smtp"
 import { checkRateLimit } from "@/lib/rate-limit"
 >>>>>>> theirs
 
+
+import { NextResponse } from "next/server"
+import { z } from "zod"
+import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
+import { sendSmtpMail } from "@/lib/smtp"
+import { checkRateLimit } from "@/lib/rate-limit"
+>>>>>>> theirs
 const inquirySchema = z.object({
   name: z.string().trim().min(2, "Name is required"),
   phone: z.string().trim(),
   course: z.string().trim().min(2, "Course interest is required"),
   message: z.string().trim().max(1000).optional().default(""),
-<<<<<<< ours
-=======
   captchaToken: z.string().optional(),
->>>>>>> theirs
 })
-
-function getTransportConfig() {
-  const host = process.env.EMAIL_HOST
-  const port = Number(process.env.EMAIL_PORT || "")
-  const secure = `${process.env.EMAIL_SECURE}`.toLowerCase() === "true"
-  const user = process.env.EMAIL_USER
-  const pass = process.env.EMAIL_PASS
-  const from = process.env.EMAIL_FROM
-  const to = process.env.EMAIL_TO || user
 
   if (!host || !port || !user || !pass || !from || !to) {
     return null
@@ -38,6 +33,11 @@ function getTransportConfig() {
 export async function POST(request: Request) {
   try {
 =======
+async function verifyCaptcha(token?: string) {
+  const secret = process.env.TURNSTILE_SECRET_KEY
+  if (!secret) return true
+  if (!token) return false
+
 async function verifyCaptcha(token?: string) {
   const secret = process.env.TURNSTILE_SECRET_KEY
   if (!secret) return true
@@ -56,16 +56,15 @@ async function verifyCaptcha(token?: string) {
   const payload = (await result.json()) as { success?: boolean }
   return payload.success === true
 }
-
-export async function POST(request: Request) {
-  try {
+  const formData = new URLSearchParams()
+  formData.set("secret", secret)
+  formData.set("response", token)
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
     const limit = checkRateLimit(`school-inquiry:${ip}`, 5, 10 * 60 * 1000)
     if (!limit.allowed) {
       return NextResponse.json({ ok: false, message: "Too many inquiries. Please try again shortly." }, { status: 429 })
     }
 
->>>>>>> theirs
     const body = await request.json()
     const parsed = inquirySchema.safeParse(body)
 
@@ -74,14 +73,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message }, { status: 400 })
     }
 
-<<<<<<< ours
-=======
     const captchaOk = await verifyCaptcha(parsed.data.captchaToken)
     if (!captchaOk) {
       return NextResponse.json({ ok: false, message: "Captcha verification failed." }, { status: 400 })
     }
 
->>>>>>> theirs
     const normalizedPhone = normalizeKenyaPhone(parsed.data.phone)
     if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
       return NextResponse.json({ ok: false, message: "Enter a valid phone number (07/01 format)." }, { status: 400 })
@@ -106,12 +102,21 @@ export async function POST(request: Request) {
       text: [
         "New School Inquiry",
         `Submitted: ${submittedAt}`,
-<<<<<<< ours
-=======
         `IP: ${ip}`,
->>>>>>> theirs
         "",
         `Name: ${parsed.data.name}`,
+        `Phone: ${normalizedPhone}`,
+        `Course Interest: ${parsed.data.course}`,
+        `Message: ${parsed.data.message || "N/A"}`,
+      ].join("\n"),
+    })
+
+    return NextResponse.json({ ok: true, message: "Inquiry sent successfully." })
+  } catch (error) {
+    console.error("[school-inquiry] Failed to send email", error)
+    return NextResponse.json({ ok: false, message: "Unable to send inquiry right now. Please try again shortly." }, { status: 500 })
+  }
+}
         `Phone: ${normalizedPhone}`,
         `Course Interest: ${parsed.data.course}`,
         `Message: ${parsed.data.message || "N/A"}`,

@@ -84,6 +84,7 @@ export function AdminOrderActions({
       .replaceAll("{time}", payload.time)
       .replaceAll("{day}", payload.day)
 
+
   const orderReadyMessage = applyTemplate(orderReadyTemplate, {
     name: customerName,
     orderType,
@@ -178,9 +179,7 @@ export function AdminOrderActions({
       ? [currentStatus, ...baseStates]
       : baseStates
 
-  const orderReadyMessage = `Hi ${customerName}, your ${orderType} order is ready for pickup at ${readyTime}. Thank you for choosing Japhe's Cakes & Pizza.`
-  const classReminderMessage = `Hi ${customerName}, friendly reminder: your Japhe's School of Cake class is ${classReminderDay}. See you in class!`
-  const pickupReadyMessage = `Hi ${customerName}, your order is packed and pickup-ready. You can collect it at ${readyTime}.`
+
 
   return (
     <div className="space-y-6">
