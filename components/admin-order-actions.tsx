@@ -84,7 +84,6 @@ export function AdminOrderActions({
       .replaceAll("{time}", payload.time)
       .replaceAll("{day}", payload.day)
 
-
   const orderReadyMessage = applyTemplate(orderReadyTemplate, {
     name: customerName,
     orderType,

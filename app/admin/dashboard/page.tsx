@@ -173,6 +173,23 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <section className="rounded-2xl border border-white/60 bg-white/90 p-4 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Attention Queue</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-rose-700">Overdue orders</p>
+            <p className="mt-1 text-2xl font-semibold text-rose-800">{overdueOrders.length}</p>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-amber-700">Pending payment &gt; 30m</p>
+            <p className="mt-1 text-2xl font-semibold text-amber-800">{pendingOver30m.length}</p>
+          </div>
+        </div>
+      </section>
+      <AdminOrderTable orders={activeOrders} />
+
+      <BusyModePanel initial={settings} />
+
       <AdminAnalyticsOverview
         metrics={{
           todayOrders: todayOrders.length,
