@@ -20,6 +20,17 @@ type SmtpResponse = {
   raw: string
 }
 
+function extractEmailAddress(value: string) {
+  const trimmed = value.trim()
+  const angleMatch = trimmed.match(/<([^<>\s]+@[^<>\s]+)>/)
+  if (angleMatch?.[1]) return angleMatch[1]
+
+  const plainMatch = trimmed.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)
+  if (plainMatch?.[0]) return plainMatch[0]
+
+  return trimmed.replace(/^"|"$/g, "")
+}
+
 function buildMessage({ from, to, subject, text }: Pick<SendMailInput, "from" | "to" | "subject" | "text">) {
   const cleanSubject = subject.replace(/\r?\n/g, " ")
   const body = text.replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..")
@@ -136,8 +147,11 @@ export async function sendSmtpMail(input: SendMailInput) {
     await sendCommand(socket, "AUTH LOGIN", [334])
     await sendCommand(socket, Buffer.from(input.user).toString("base64"), [334])
     await sendCommand(socket, Buffer.from(input.pass).toString("base64"), [235])
-    await sendCommand(socket, `MAIL FROM:<${input.from}>`, [250])
-    await sendCommand(socket, `RCPT TO:<${input.to}>`, [250, 251])
+    const envelopeFrom = extractEmailAddress(input.from)
+    const envelopeTo = extractEmailAddress(input.to)
+
+    await sendCommand(socket, `MAIL FROM:<${envelopeFrom}>`, [250])
+    await sendCommand(socket, `RCPT TO:<${envelopeTo}>`, [250, 251])
     await sendCommand(socket, "DATA", [354])
 
     const message = buildMessage(input)
