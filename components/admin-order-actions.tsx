@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { updateOrderStatus, markOrderAsPaid } from "@/app/actions/orders"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, MessageCircle } from "lucide-react"
 
 export function AdminOrderActions({
   orderId,
@@ -18,6 +18,8 @@ export function AdminOrderActions({
   fulfilment,
   totalAmount,
   depositAmount,
+  customerName,
+  customerPhone,
 }: {
   orderId: string
   currentStatus: string
@@ -26,12 +28,27 @@ export function AdminOrderActions({
   fulfilment: string
   totalAmount: number
   depositAmount?: number | null
+  customerName: string
+  customerPhone: string
 }) {
   const [status, setStatus] = useState(currentStatus)
   const [payment, setPayment] = useState(currentPayment)
   const [loading, setLoading] = useState(false)
   const [transactionId, setTransactionId] = useState("")
+  const [readyTime, setReadyTime] = useState("3:00 PM")
+  const [classReminderDay, setClassReminderDay] = useState("tomorrow")
   const router = useRouter()
+
+  const phoneForWhatsApp = useMemo(() => customerPhone.replace(/\D/g, ""), [customerPhone])
+
+  const openWhatsApp = (message: string) => {
+    if (!phoneForWhatsApp) {
+      alert("Customer phone number is missing.")
+      return
+    }
+
+    window.open(`https://wa.me/${phoneForWhatsApp}?text=${encodeURIComponent(message)}`, "_blank")
+  }
 
   const handleUpdate = async () => {
     setLoading(true)
@@ -74,6 +91,10 @@ export function AdminOrderActions({
       ? [currentStatus, ...baseStates]
       : baseStates
 
+  const orderReadyMessage = `Hi ${customerName}, your ${orderType} order is ready for pickup at ${readyTime}. Thank you for choosing Japhe's Cakes & Pizza.`
+  const classReminderMessage = `Hi ${customerName}, friendly reminder: your Japhe's School of Cake class is ${classReminderDay}. See you in class!`
+  const pickupReadyMessage = `Hi ${customerName}, your order is packed and pickup-ready. You can collect it at ${readyTime}.`
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -111,6 +132,30 @@ export function AdminOrderActions({
       <Button className="w-full" onClick={handleUpdate} disabled={loading}>
         Update Order
       </Button>
+
+      <div className="rounded-xl border p-4 space-y-3 bg-muted/20">
+        <Label>WhatsApp Automation</Label>
+        <Input value={readyTime} onChange={(e) => setReadyTime(e.target.value)} placeholder="Pickup time (e.g. 3:00 PM)" />
+        <Input
+          value={classReminderDay}
+          onChange={(e) => setClassReminderDay(e.target.value)}
+          placeholder="Class reminder timing (e.g. tomorrow at 9 AM)"
+        />
+        <div className="grid gap-2">
+          <Button variant="outline" className="justify-start" onClick={() => openWhatsApp(orderReadyMessage)}>
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Send order ready message
+          </Button>
+          <Button variant="outline" className="justify-start" onClick={() => openWhatsApp(classReminderMessage)}>
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Send class reminder
+          </Button>
+          <Button variant="outline" className="justify-start" onClick={() => openWhatsApp(pickupReadyMessage)}>
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Send pickup ready
+          </Button>
+        </div>
+      </div>
 
       {/* Mark as Paid Button (for pending M-Pesa orders) */}
       {currentPayment === "pending" && (

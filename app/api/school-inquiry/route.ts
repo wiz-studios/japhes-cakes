@@ -69,7 +69,8 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ ok: true, message: "Inquiry sent successfully." })
-  } catch {
+  } catch (error) {
+    console.error("[school-inquiry] Failed to send email", error)
     return NextResponse.json({ ok: false, message: "Unable to send inquiry right now. Please try again shortly." }, { status: 500 })
   }
 }

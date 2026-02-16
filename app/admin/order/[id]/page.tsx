@@ -123,6 +123,8 @@ export default async function AdminOrderDetailPage({
               fulfilment={order.fulfilment}
               totalAmount={order.total_amount || 0}
               depositAmount={order.payment_deposit_amount}
+              customerName={order.customer_name || "Customer"}
+              customerPhone={order.phone || ""}
             />
           </CardContent>
         </Card>

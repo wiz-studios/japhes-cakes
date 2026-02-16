@@ -14,7 +14,10 @@ type SendMailInput = {
 }
 
 type SmtpSocket = net.Socket | tls.TLSSocket
-
+type SmtpResponse = {
+  code: number
+  raw: string
+}
 function buildMessage({ from, to, subject, text }: Pick<SendMailInput, "from" | "to" | "subject" | "text">) {
   const cleanSubject = subject.replace(/\r?\n/g, " ")
   const body = text.replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..")
@@ -58,7 +61,7 @@ function onceData(socket: SmtpSocket): Promise<string> {
   })
 }
 
-async function readResponse(socket: SmtpSocket) {
+async function readResponse(socket: SmtpSocket): Promise<SmtpResponse> {
   let full = ""
 
   while (true) {
@@ -74,21 +77,42 @@ async function readResponse(socket: SmtpSocket) {
   }
 }
 
-async function sendCommand(socket: SmtpSocket, command: string, expectedCodes: number[]) {
+async function sendCommand(socket: SmtpSocket, command: string, expectedCodes: number[]): Promise<SmtpResponse> {
   socket.write(`${command}\r\n`)
   const response = await readResponse(socket)
   if (!expectedCodes.includes(response.code)) {
     throw new Error(`SMTP command failed (${command}): ${response.raw}`)
   }
+  return response
+}
+
+function supportsStartTls(response: SmtpResponse) {
+  return /(?:^|\n)250[- ]STARTTLS(?:\r?$)/im.test(response.raw)
+}
+
+async function upgradeToTls(socket: SmtpSocket, host: string) {
+  const tlsSocket = tls.connect({
+    socket,
+    host,
+    servername: host,
+  })
+
+  await new Promise<void>((resolve, reject) => {
+    tlsSocket.once("secureConnect", () => resolve())
+    tlsSocket.once("error", reject)
+  })
+
+  return tlsSocket
 }
 
 export async function sendSmtpMail(input: SendMailInput) {
-  const socket: SmtpSocket = input.secure
-    ? tls.connect({ host: input.host, port: input.port })
+  let socket: SmtpSocket = input.secure
+    ? tls.connect({ host: input.host, port: input.port, servername: input.host })
     : net.createConnection({ host: input.host, port: input.port })
 
   await new Promise<void>((resolve, reject) => {
-    socket.once("connect", () => resolve())
+    const readyEvent = input.secure ? "secureConnect" : "connect"
+    socket.once(readyEvent, () => resolve())
     socket.once("error", reject)
   })
 
@@ -98,7 +122,14 @@ export async function sendSmtpMail(input: SendMailInput) {
       throw new Error(`SMTP greeting failed: ${greeting.raw}`)
     }
 
-    await sendCommand(socket, "EHLO localhost", [250])
+    let ehlo = await sendCommand(socket, "EHLO localhost", [250])
+
+    if (!input.secure && supportsStartTls(ehlo)) {
+      await sendCommand(socket, "STARTTLS", [220])
+      socket = await upgradeToTls(socket, input.host)
+      ehlo = await sendCommand(socket, "EHLO localhost", [250])
+    }
+
     await sendCommand(socket, "AUTH LOGIN", [334])
     await sendCommand(socket, Buffer.from(input.user).toString("base64"), [334])
     await sendCommand(socket, Buffer.from(input.pass).toString("base64"), [235])
