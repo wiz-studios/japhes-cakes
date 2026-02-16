@@ -54,6 +54,21 @@ const getBadgeStyle = (status: string) => {
   }
 }
 
+function getRiskBadges(order: Order) {
+  const badges: Array<{ label: string; className: string }> = []
+  const ageHours = (Date.now() - new Date(order.created_at).getTime()) / (1000 * 60 * 60)
+
+  if (order.status !== "cancelled" && order.status !== "delivered" && order.status !== "collected" && ageHours >= 2) {
+    badges.push({ label: "Late", className: "bg-rose-100 text-rose-700 border-rose-200" })
+  }
+
+  if (order.payment_status === "pending" && ageHours >= 0.5) {
+    badges.push({ label: "Pending >30m", className: "bg-amber-100 text-amber-700 border-amber-200" })
+  }
+
+  return badges
+}
+
 export default function AdminOrderTable({ orders }: { orders: Order[] }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
@@ -254,6 +269,11 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                 }`}>
                   {order.payment_status?.replace(/_/g, " ") || "unknown"}
                 </Badge>
+                {getRiskBadges(order).map((risk) => (
+                  <Badge key={risk.label} className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${risk.className}`}>
+                    {risk.label}
+                  </Badge>
+                ))}
               </div>
               <div className="mt-3 text-sm font-semibold text-slate-900">
                 {(order.total_amount || 0).toLocaleString()} KES

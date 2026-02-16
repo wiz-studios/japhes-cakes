@@ -161,12 +161,18 @@ export default async function AdminDashboard() {
 
   const settings = normalizeStoreSettings(settingsRow)
 
+  const nowTs = Date.now()
+  const overdueOrders = activeOrders.filter((order) => {
+    const ageHours = (nowTs - new Date(order.created_at).getTime()) / (1000 * 60 * 60)
+    return order.status !== "cancelled" && order.status !== "delivered" && order.status !== "collected" && ageHours >= 2
+  })
+  const pendingOver30m = activeOrders.filter((order) => {
+    const ageMinutes = (nowTs - new Date(order.created_at).getTime()) / (1000 * 60)
+    return order.payment_status === "pending" && ageMinutes >= 30
+  })
+
   return (
     <div className="space-y-6">
-      <AdminOrderTable orders={activeOrders} />
-
-      <BusyModePanel initial={settings} />
-
       <AdminAnalyticsOverview
         metrics={{
           todayOrders: todayOrders.length,

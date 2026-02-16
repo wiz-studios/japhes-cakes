@@ -34,6 +34,12 @@ export default async function AdminOrderDetailPage({
     (attempt: any) => attempt.result_code === 0 && attempt.mpesa_receipt
   )
 
+  const communicationTimeline = [
+    { label: "Order placed", at: order.created_at },
+    ...(order.status ? [{ label: `Status: ${String(order.status).replace(/_/g, " ")}`, at: order.updated_at || order.created_at }] : []),
+    ...(order.payment_status ? [{ label: `Payment: ${String(order.payment_status).replace(/_/g, " ")}`, at: order.updated_at || order.created_at }] : []),
+  ]
+
   return (
     <div className="max-w-none space-y-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -115,6 +121,19 @@ export default async function AdminOrderDetailPage({
             <CardTitle>Management</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <Button asChild variant="outline" className="w-full"><Link href={`/admin/order/${order.id}`}>Open Printable Receipt View</Link></Button>
+            <div className="rounded-xl border p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Communication Timeline</p>
+              <div className="mt-2 space-y-2">
+                {communicationTimeline.map((event, idx) => (
+                  <div key={`${event.label}-${idx}`} className="text-sm">
+                    <p className="font-medium text-slate-800">{event.label}</p>
+                    <p className="text-xs text-slate-500">{new Date(event.at).toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <AdminOrderActions
               orderId={order.id}
               currentStatus={order.status}
