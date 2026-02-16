@@ -226,7 +226,11 @@ export default async function SchoolPage() {
               <div className="lux-card relative overflow-hidden p-4 md:p-5">
                 <div className="relative h-64 overflow-hidden rounded-2xl">
 <<<<<<< ours
+<<<<<<< ours
                   <Image src="/cake-hero.png" alt="Students practicing cake decoration" fill className="object-cover" priority />
+=======
+                  <Image src="/shop-cake.jpg" alt="Students practicing cake decoration" fill className="object-cover" priority />
+>>>>>>> theirs
 =======
                   <Image src="/shop-cake.jpg" alt="Students practicing cake decoration" fill className="object-cover" priority />
 >>>>>>> theirs
