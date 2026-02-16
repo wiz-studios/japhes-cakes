@@ -397,6 +397,7 @@ export default async function SchoolPage() {
               <p className="font-semibold">Bonus included: Free tasting + feedback session on the final day.</p>
               <p className="mt-1 text-xs text-emerald-800/90">
                 Bring your questions and we&apos;ll help you refine texture, sweetness, and presentation for market-ready products.
+                You keep the final cakes and pizzas you make during practical sessions.
               </p>
             </div>
           </div>
