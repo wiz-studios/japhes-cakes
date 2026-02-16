@@ -225,15 +225,7 @@ export default async function SchoolPage() {
               <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-[#9db0ff]/40 blur-2xl" />
               <div className="lux-card relative overflow-hidden p-4 md:p-5">
                 <div className="relative h-64 overflow-hidden rounded-2xl">
-<<<<<<< ours
-<<<<<<< ours
-                  <Image src="/cake-hero.png" alt="Students practicing cake decoration" fill className="object-cover" priority />
-=======
                   <Image src="/shop-cake.jpg" alt="Students practicing cake decoration" fill className="object-cover" priority />
->>>>>>> theirs
-=======
-                  <Image src="/shop-cake.jpg" alt="Students practicing cake decoration" fill className="object-cover" priority />
->>>>>>> theirs
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between rounded-xl bg-white/85 px-3 py-2 backdrop-blur">
                     <div>
