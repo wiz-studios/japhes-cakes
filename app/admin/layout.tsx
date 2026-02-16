@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { CalendarDays, Images, LayoutDashboard, MapPin, ShieldCheck } from "lucide-react"
@@ -28,6 +29,11 @@ export default function AdminLayout({
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Admin Access</p>
             <h1 className="text-2xl font-semibold text-slate-900 font-serif">Japhe's Admin Console</h1>
             <p className="mt-2 text-sm text-slate-600">Secure sign-in for order management.</p>
+          </div>
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-2xl border border-white/60 bg-white/70 p-3 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.45)] backdrop-blur">
+              <Image src="/logo.png" alt="Japhe's Cakes & Pizza logo" width={180} height={56} className="h-auto w-[180px]" priority />
+            </div>
           </div>
           {children}
         </div>
