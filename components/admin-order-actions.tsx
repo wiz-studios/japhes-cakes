@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { updateOrderStatus, markOrderAsPaid } from "@/app/actions/orders"
+import { toKenyaMsisdn } from "@/lib/phone"
 import { CheckCircle2, MessageCircle } from "lucide-react"
 
 export function AdminOrderActions({
@@ -39,11 +40,11 @@ export function AdminOrderActions({
   const [classReminderDay, setClassReminderDay] = useState("tomorrow")
   const router = useRouter()
 
-  const phoneForWhatsApp = useMemo(() => customerPhone.replace(/\D/g, ""), [customerPhone])
+  const phoneForWhatsApp = useMemo(() => toKenyaMsisdn(customerPhone), [customerPhone])
 
   const openWhatsApp = (message: string) => {
     if (!phoneForWhatsApp) {
-      alert("Customer phone number is missing.")
+      alert("Customer phone number is missing or invalid. Use 07/01 or +254 format.")
       return
     }
 
