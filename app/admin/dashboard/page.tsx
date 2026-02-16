@@ -163,6 +163,10 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <AdminOrderTable orders={activeOrders} />
+
+      <BusyModePanel initial={settings} />
+
       <AdminAnalyticsOverview
         metrics={{
           todayOrders: todayOrders.length,
@@ -180,10 +184,6 @@ export default async function AdminDashboard() {
           peakHour,
         }}
       />
-
-      <BusyModePanel initial={settings} />
-
-      <AdminOrderTable orders={activeOrders} />
     </div>
   )
 }
