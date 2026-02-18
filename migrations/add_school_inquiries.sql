@@ -21,3 +21,13 @@ CREATE INDEX IF NOT EXISTS idx_school_inquiries_created_at
 ON school_inquiries(created_at DESC);
 
 ALTER TABLE school_inquiries ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "school_inquiries_public_insert" ON school_inquiries;
+CREATE POLICY "school_inquiries_public_insert"
+ON school_inquiries
+FOR INSERT
+TO anon, authenticated
+WITH CHECK (
+  status = 'new'
+  AND email_sent = false
+);

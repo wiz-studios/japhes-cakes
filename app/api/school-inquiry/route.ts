@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { sendSmtpMail } from "@/lib/smtp"
@@ -59,16 +59,29 @@ function getAdminSupabase() {
   return createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
 }
 
-async function saveInquiryLead(input: {
+function getAnonSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !anonKey) return null
+  return createClient(supabaseUrl, anonKey, { auth: { persistSession: false } })
+}
+
+function getInquiryInsertClient(): SupabaseClient | null {
+  return getAdminSupabase() || getAnonSupabase()
+}
+
+async function createInquiryLead(input: {
   name: string
   phone: string
   course: string
   message: string
   source: string
-  emailSent: boolean
 }) {
-  const supabase = getAdminSupabase()
-  if (!supabase) return
+  const supabase = getInquiryInsertClient()
+  if (!supabase) {
+    console.error("[school-inquiry] No Supabase credentials available for inquiry persistence")
+    return null
+  }
 
   const payload = {
     name: input.name,
@@ -77,13 +90,30 @@ async function saveInquiryLead(input: {
     message: input.message,
     source: input.source,
     status: "new",
-    email_sent: input.emailSent,
+    email_sent: false,
     updated_at: new Date().toISOString(),
   }
 
-  const { error } = await supabase.from("school_inquiries").insert(payload)
+  const { data, error } = await supabase.from("school_inquiries").insert(payload).select("id").single()
   if (error) {
     console.error("[school-inquiry] Failed to persist inquiry", error)
+    return null
+  }
+
+  return data?.id || null
+}
+
+async function markInquiryEmailSent(id: string) {
+  const supabase = getAdminSupabase()
+  if (!supabase) return
+
+  const { error } = await supabase
+    .from("school_inquiries")
+    .update({ email_sent: true, updated_at: new Date().toISOString() })
+    .eq("id", id)
+
+  if (error) {
+    console.error("[school-inquiry] Failed to mark inquiry email_sent", error)
   }
 }
 
@@ -142,16 +172,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "Enter a valid phone number (07/01 format)." }, { status: 400 })
     }
 
+    const inquiryId = await createInquiryLead({
+      name: parsed.data.name,
+      phone: normalizedPhone,
+      course: parsed.data.course,
+      message: parsed.data.message || "",
+      source: "website",
+    })
+
     const config = getTransportConfig()
     if (!config) {
-      await saveInquiryLead({
-        name: parsed.data.name,
-        phone: normalizedPhone,
-        course: parsed.data.course,
-        message: parsed.data.message || "",
-        source: "website",
-        emailSent: false,
-      })
       return NextResponse.json({ ok: false, message: "Email is not configured. Please contact support." }, { status: 500 })
     }
 
@@ -176,14 +206,7 @@ export async function POST(request: Request) {
       }),
     })
 
-    await saveInquiryLead({
-      name: parsed.data.name,
-      phone: normalizedPhone,
-      course: parsed.data.course,
-      message: parsed.data.message || "",
-      source: "website",
-      emailSent: true,
-    })
+    if (inquiryId) await markInquiryEmailSent(inquiryId)
 
     return NextResponse.json({ ok: true, message: "Inquiry sent successfully." })
   } catch (error) {
