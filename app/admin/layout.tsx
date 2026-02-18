@@ -5,12 +5,13 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase"
-import { CalendarDays, Images, LayoutDashboard, MapPin, Moon, Search, ShieldCheck, Sun } from "lucide-react"
+import { BookOpenCheck, CalendarDays, Images, LayoutDashboard, MapPin, Moon, Search, ShieldCheck, Sun } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Scheduled Pizza", href: "/admin/recent-scheduled-pizza", icon: CalendarDays },
+  { label: "School Inquiries", href: "/admin/school-inquiries", icon: BookOpenCheck },
   { label: "School Gallery", href: "/admin/school-gallery", icon: Images },
   { label: "Delivery Zones", href: "/admin/zones", icon: MapPin },
 ]
@@ -215,6 +216,7 @@ export default function AdminLayout({
             <div className="mt-3 grid gap-2">
               <Link href="/admin/dashboard" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={() => setShowPalette(false)}>Go to Dashboard</Link>
               <Link href="/admin/recent-scheduled-pizza" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={() => setShowPalette(false)}>Scheduled Pizza</Link>
+              <Link href="/admin/school-inquiries" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={() => setShowPalette(false)}>School Inquiries</Link>
               <Link href="/admin/school-gallery" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={() => setShowPalette(false)}>School Gallery</Link>
               <Link href="/admin/zones" className="rounded-xl border px-3 py-2 text-sm hover:bg-slate-50" onClick={() => setShowPalette(false)}>Delivery Zones</Link>
             </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { sendSmtpMail } from "@/lib/smtp"
@@ -47,6 +48,45 @@ async function verifyCaptcha(token?: string) {
   return payload.success === true
 }
 
+function getAdminSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
+}
+
+async function saveInquiryLead(input: {
+  name: string
+  phone: string
+  course: string
+  message: string
+  source: string
+  emailSent: boolean
+}) {
+  const supabase = getAdminSupabase()
+  if (!supabase) return
+
+  const payload = {
+    name: input.name,
+    phone: input.phone,
+    course: input.course,
+    message: input.message,
+    source: input.source,
+    status: "new",
+    email_sent: input.emailSent,
+    updated_at: new Date().toISOString(),
+  }
+
+  const { error } = await supabase.from("school_inquiries").insert(payload)
+  if (error) {
+    console.error("[school-inquiry] Failed to persist inquiry", error)
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
@@ -75,6 +115,14 @@ export async function POST(request: Request) {
 
     const config = getTransportConfig()
     if (!config) {
+      await saveInquiryLead({
+        name: parsed.data.name,
+        phone: normalizedPhone,
+        course: parsed.data.course,
+        message: parsed.data.message || "",
+        source: "website",
+        emailSent: false,
+      })
       return NextResponse.json({ ok: false, message: "Email is not configured. Please contact support." }, { status: 500 })
     }
 
@@ -99,6 +147,15 @@ export async function POST(request: Request) {
         `Course Interest: ${parsed.data.course}`,
         `Message: ${parsed.data.message || "N/A"}`,
       ].join("\n"),
+    })
+
+    await saveInquiryLead({
+      name: parsed.data.name,
+      phone: normalizedPhone,
+      course: parsed.data.course,
+      message: parsed.data.message || "",
+      source: "website",
+      emailSent: true,
     })
 
     return NextResponse.json({ ok: true, message: "Inquiry sent successfully." })
