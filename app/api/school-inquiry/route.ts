@@ -87,6 +87,35 @@ async function saveInquiryLead(input: {
   }
 }
 
+function buildInquiryEmailText(input: {
+  submittedAt: string
+  ip: string
+  name: string
+  phone: string
+  course: string
+  message: string
+}) {
+  return [
+    "🎓 NEW SCHOOL INQUIRY",
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    "",
+    "Lead Details",
+    `• Name: ${input.name}`,
+    `• Phone: ${input.phone}`,
+    `• Course Interest: ${input.course}`,
+    `• Message: ${input.message || "No message provided"}`,
+    "",
+    "Submission Info",
+    `• Submitted: ${input.submittedAt}`,
+    `• Source IP: ${input.ip}`,
+    "",
+    "Suggested Next Step",
+    "• Contact this lead on phone/WhatsApp and update status in Admin → School Inquiries.",
+    "",
+    "— Japhe's Cakes & Pizza",
+  ].join("\n")
+}
+
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
@@ -137,16 +166,14 @@ export async function POST(request: Request) {
       from: config.from,
       to: config.to,
       subject: `School Inquiry: ${parsed.data.course} - ${parsed.data.name}`,
-      text: [
-        "New School Inquiry",
-        `Submitted: ${submittedAt}`,
-        `IP: ${ip}`,
-        "",
-        `Name: ${parsed.data.name}`,
-        `Phone: ${normalizedPhone}`,
-        `Course Interest: ${parsed.data.course}`,
-        `Message: ${parsed.data.message || "N/A"}`,
-      ].join("\n"),
+      text: buildInquiryEmailText({
+        submittedAt,
+        ip,
+        name: parsed.data.name,
+        phone: normalizedPhone,
+        course: parsed.data.course,
+        message: parsed.data.message || "",
+      }),
     })
 
     await saveInquiryLead({
