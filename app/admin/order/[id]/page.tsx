@@ -20,7 +20,7 @@ export default async function AdminOrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "id, friendly_id, created_at, updated_at, status, payment_status, order_type, fulfilment, customer_name, phone, total_amount, payment_deposit_amount, delivery_window, order_items(id, item_name, quantity, notes), delivery_zones(name)"
+      "id, friendly_id, created_at, status, payment_status, order_type, fulfilment, customer_name, phone, total_amount, payment_deposit_amount, delivery_window, order_items(id, item_name, quantity, notes), delivery_zones(name)"
     )
     .eq("id", id)
     .single()
@@ -42,8 +42,8 @@ export default async function AdminOrderDetailPage({
 
   const communicationTimeline = [
     { label: "Order placed", at: order.created_at },
-    ...(order.status ? [{ label: `Status: ${String(order.status).replace(/_/g, " ")}`, at: order.updated_at || order.created_at }] : []),
-    ...(order.payment_status ? [{ label: `Payment: ${String(order.payment_status).replace(/_/g, " ")}`, at: order.updated_at || order.created_at }] : []),
+    ...(order.status ? [{ label: `Status: ${String(order.status).replace(/_/g, " ")}`, at: order.created_at }] : []),
+    ...(order.payment_status ? [{ label: `Payment: ${String(order.payment_status).replace(/_/g, " ")}`, at: order.created_at }] : []),
   ]
 
   return (
