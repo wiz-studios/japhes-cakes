@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "start": "next start",
     "check:conflicts": "node scripts/check-conflicts.mjs",
-    "prebuild": "npm run check:conflicts"
+    "prebuild": "npm run check:conflicts",
+    "load:test": "k6 run load-tests/k6-basic.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

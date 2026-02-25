@@ -10,6 +10,9 @@ import { getPizzaUnitPrice, PIZZA_BASE_PRICES, PIZZA_TYPE_PRICES } from "@/lib/p
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakeDisplayName, getCakePrice, CAKE_FLAVORS, CAKE_SIZES } from "@/lib/cake-pricing"
 import { applyBusyEtaWindow, DEFAULT_STORE_SETTINGS, normalizeStoreSettings } from "@/lib/store-settings"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { runIdempotent } from "@/lib/idempotency"
+import { getDeliveryZoneByIdCached } from "@/lib/delivery-zones-cache"
 import type { User } from "@supabase/supabase-js"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -65,6 +68,16 @@ async function checkOrderRateLimit(supabase: any, phone: string) {
   return null
 }
 
+function checkOrderBurstRateLimit(phone: string) {
+  const maxAttempts = Number(process.env.ORDER_SUBMIT_RATE_LIMIT_PER_MINUTE || 3)
+  const windowMs = 60 * 1000
+  return checkRateLimit(`order-submit:${phone}`, maxAttempts, windowMs)
+}
+
+function createOrderCorrelationId() {
+  return `order-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
 function sanitizeText(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return ""
   return value.trim().slice(0, maxLength)
@@ -109,6 +122,14 @@ function getAdminSupabaseForUpload() {
   }
 }
 
+function getServiceSupabase() {
+  const { client, error } = getAdminSupabaseForUpload()
+  if (!client) {
+    throw new Error(error || "Missing Supabase admin credentials.")
+  }
+  return client
+}
+
 export async function uploadCakeDesignImage(formData: FormData) {
   const file = formData.get("file")
   if (!(file instanceof File) || file.size === 0) {
@@ -149,7 +170,8 @@ export async function uploadCakeDesignImage(formData: FormData) {
 }
 
 export async function updateOrderStatus(orderId: string, newStatus: string) {
-  const supabase = await createServerSupabaseClient()
+  const sessionClient = await createServerSupabaseClient()
+  const supabase = getServiceSupabase()
 
   // Get current order with payment info
   const { data: order } = await supabase
@@ -166,7 +188,7 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
   }
 
   // Get current user and enforce admin-only access
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) {
     return { success: false, error: "Unauthorized: Please sign in" }
   }
@@ -192,9 +214,10 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
  * Allows admins to manually confirm payment for M-Pesa orders
  */
 export async function markOrderAsPaid(orderId: string, transactionId?: string) {
-  const supabase = await createServerSupabaseClient()
+  const sessionClient = await createServerSupabaseClient()
+  const supabase = getServiceSupabase()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) {
     return { success: false, error: "Unauthorized: Please sign in" }
   }
@@ -227,14 +250,52 @@ export async function markOrderAsPaid(orderId: string, transactionId?: string) {
   return { success: error === null, error: error?.message }
 }
 
+export async function updateOrderPaymentStatus(input: {
+  orderId: string
+  paymentStatus: "pending" | "deposit_paid" | "paid" | "expired" | "failed"
+  totalAmount: number
+  depositAmount?: number | null
+}) {
+  const sessionClient = await createServerSupabaseClient()
+  const supabase = getServiceSupabase()
+
+  const { data: { user } } = await sessionClient.auth.getUser()
+  if (!user) {
+    return { success: false, error: "Unauthorized: Please sign in" }
+  }
+
+  if (!isAdminUser(user)) {
+    return { success: false, error: "Unauthorized: Admin access required" }
+  }
+
+  const paymentStatus = input.paymentStatus
+  const updateData: Record<string, unknown> = { payment_status: paymentStatus }
+
+  if (paymentStatus === "paid") {
+    updateData.payment_amount_paid = input.totalAmount
+    updateData.payment_amount_due = 0
+  } else if (paymentStatus === "deposit_paid") {
+    const deposit = input.depositAmount ?? Math.ceil(input.totalAmount * 0.5)
+    updateData.payment_amount_paid = deposit
+    updateData.payment_amount_due = Math.max(input.totalAmount - deposit, 0)
+  } else if (paymentStatus === "pending" || paymentStatus === "failed" || paymentStatus === "expired") {
+    updateData.payment_amount_paid = 0
+    updateData.payment_amount_due = input.totalAmount
+  }
+
+  const { error } = await supabase.from("orders").update(updateData).eq("id", input.orderId)
+  return { success: error === null, error: error?.message }
+}
+
 /**
  * STRICT DELIVERY ACTION: Complete Delivery & (Optional) Collect Cash
  */
 export async function completeDelivery(orderId: string, collectedCash: boolean = false) {
-  const supabase = await createServerSupabaseClient()
+  const sessionClient = await createServerSupabaseClient()
+  const supabase = getServiceSupabase()
 
   // 1. Role Check (Admin only)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) {
     return { success: false, error: "Unauthorized: Please sign in" }
   }
@@ -288,379 +349,401 @@ export async function completeDelivery(orderId: string, collectedCash: boolean =
 }
 
 export async function submitCakeOrder(values: any) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = getServiceSupabase()
+  const correlationId = createOrderCorrelationId()
+  const idempotencyKey = typeof values?.idempotencyKey === "string" ? values.idempotencyKey : undefined
 
   try {
-    if (!values || typeof values !== "object") {
-      return { success: false, error: "Invalid request payload." }
-    }
-
-    const normalizedPhone = normalizeKenyaPhone(values.phone || "")
-    if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
-      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
-    }
-    const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
-    if (rateLimitError) return { success: false, error: rateLimitError }
-    const storeSettings = await getStoreSettings(supabase)
-    const busyModeBlock = validateBusyModeBeforeOrder(storeSettings)
-    if (busyModeBlock) {
-      return { success: false, error: busyModeBlock }
-    }
-
-    if (!CAKE_FLAVORS.includes(values.cakeFlavor)) {
-      return { success: false, error: "Invalid cake flavor selected." }
-    }
-    if (!CAKE_SIZES.includes(values.cakeSize)) {
-      return { success: false, error: "Invalid cake size selected." }
-    }
-    if (values.fulfilment !== "pickup" && values.fulfilment !== "delivery") {
-      return { success: false, error: "Invalid fulfilment method." }
-    }
-    const customerName = sanitizeText(values.customerName, MAX_TEXT_LENGTHS.customerName)
-    if (!customerName || customerName.length < 2) {
-      return { success: false, error: "Please enter a valid customer name." }
-    }
-    const designNotes = sanitizeText(values.designNotes, MAX_TEXT_LENGTHS.notes)
-    const cakeMessage = sanitizeText(values.cakeMessage, MAX_TEXT_LENGTHS.cakeMessage)
-    const deliveryAddress = sanitizeText(values.deliveryAddress, MAX_TEXT_LENGTHS.deliveryAddress)
-    const designImageUrl = typeof values.designImageUrl === "string" ? values.designImageUrl.trim().slice(0, 1000) : ""
-    const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
-    if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
-      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
-    }
-
-    if (values.paymentMethod !== "mpesa") {
-      return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
-    }
-    // 1. Get zone info for fee calculation
-    let deliveryFee = 0
-    let deliveryWindow = "As soon as possible"
-
-    let safeDeliveryLat: number | null = null
-    let safeDeliveryLng: number | null = null
-
-    if (values.fulfilment === "delivery") {
-      // 1. GPS DELIVERY (Priority)
-      if (values.deliveryLat && values.deliveryLng) {
-        const lat = Number(values.deliveryLat)
-        const lng = Number(values.deliveryLng)
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          return { success: false, error: "Invalid delivery coordinates." }
+    const guarded = await runIdempotent<{ success: boolean; error?: string; orderId?: string }>({
+      scope: "order-submit:cake",
+      idempotencyKey,
+      ttlSeconds: 15 * 60,
+      run: async () => {
+        if (!values || typeof values !== "object") {
+          return { success: false, error: "Invalid request payload." }
         }
-        safeDeliveryLat = lat
-        safeDeliveryLng = lng
-        const check = validateDeliveryRequest(lat, lng)
-        if (!check.allowed) {
-          return { success: false, error: check.error || "Delivery location unavailable" }
+
+        const normalizedPhone = normalizeKenyaPhone(values.phone || "")
+        if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
+          return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
         }
-        deliveryFee = check.fee!
-        // We can set default window or calculate it based on distance/traffic later
-        deliveryWindow = `${check.distance}km (${Math.ceil(check.distance! * 3 + 30)} mins)`
-      }
-      // 2. LEGACY ZONES
-      else if (values.deliveryZoneId) {
-        const { data: zone } = await supabase.from("delivery_zones").select("*").eq("id", values.deliveryZoneId).single()
-
-        if (zone) {
-          deliveryFee = zone.delivery_fee
-          deliveryWindow = zone.delivery_window
+        const burstLimit = checkOrderBurstRateLimit(normalizedPhone)
+        if (!burstLimit.allowed) {
+          return { success: false, error: "Too many rapid submissions. Please wait and try again." }
         }
-      } else {
-        return { success: false, error: "Please select a delivery location" }
-      }
-      if (!deliveryAddress) {
-        return { success: false, error: "Please provide a delivery address or landmark." }
-      }
-    }
+        const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
+        if (rateLimitError) return { success: false, error: rateLimitError }
+        const storeSettings = await getStoreSettings(supabase)
+        const busyModeBlock = validateBusyModeBeforeOrder(storeSettings)
+        if (busyModeBlock) {
+          return { success: false, error: busyModeBlock }
+        }
 
-    if (storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta") {
-      deliveryWindow = applyBusyEtaWindow(deliveryWindow, storeSettings.busyModeExtraMinutes)
-    }
+        if (!CAKE_FLAVORS.includes(values.cakeFlavor)) {
+          return { success: false, error: "Invalid cake flavor selected." }
+        }
+        if (!CAKE_SIZES.includes(values.cakeSize)) {
+          return { success: false, error: "Invalid cake size selected." }
+        }
+        if (values.fulfilment !== "pickup" && values.fulfilment !== "delivery") {
+          return { success: false, error: "Invalid fulfilment method." }
+        }
+        const customerName = sanitizeText(values.customerName, MAX_TEXT_LENGTHS.customerName)
+        if (!customerName || customerName.length < 2) {
+          return { success: false, error: "Please enter a valid customer name." }
+        }
+        const designNotes = sanitizeText(values.designNotes, MAX_TEXT_LENGTHS.notes)
+        const cakeMessage = sanitizeText(values.cakeMessage, MAX_TEXT_LENGTHS.cakeMessage)
+        const deliveryAddress = sanitizeText(values.deliveryAddress, MAX_TEXT_LENGTHS.deliveryAddress)
+        const designImageUrl = typeof values.designImageUrl === "string" ? values.designImageUrl.trim().slice(0, 1000) : ""
+        const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
+        if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
+          return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
+        }
 
-    // Calculate cake price from pricing table
-    const itemTotal = getCakePrice(values.cakeFlavor, values.cakeSize)
-    const total = itemTotal + deliveryFee
-    const paymentPlanRaw = values.paymentPlan || "full"
-    if (paymentPlanRaw !== "full" && paymentPlanRaw !== "deposit") {
-      return { success: false, error: "Invalid payment plan." }
-    }
-    const paymentPlan = paymentPlanRaw as "full" | "deposit"
-    const depositAmount = Math.ceil(total * 0.5)
+        if (values.paymentMethod !== "mpesa") {
+          return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
+        }
+        let deliveryFee = 0
+        let deliveryWindow = "As soon as possible"
 
-    // 2. Insert order (retry on friendly_id collision)
-    let order = null
-    let orderError = null
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const friendlyId = generateOrderNumber("C")
-      const { data, error } = await supabase
-        .from("orders")
-        .insert({
-          friendly_id: friendlyId,
-          order_type: "cake",
-          fulfilment: values.fulfilment,
-          customer_name: customerName,
-          phone: normalizedPhone,
-          delivery_zone_id: values.deliveryZoneId || null,
-          delivery_window: deliveryWindow,
-          delivery_fee: deliveryFee,
-          delivery_lat: safeDeliveryLat,
-          delivery_lng: safeDeliveryLng,
-          delivery_address: deliveryAddress || null,
-          delivery_distance_km: safeDeliveryLat !== null && safeDeliveryLng !== null
-            ? validateDeliveryRequest(safeDeliveryLat, safeDeliveryLng).distance
-            : null,
-          total_amount: total,
-          preferred_date: values.preferredDate,
-          expires_at: addHours(new Date(), 2).toISOString(),
-          status: "order_received",
-          payment_method: values.paymentMethod || "mpesa",
-          payment_status: getInitialPaymentStatus(
-            values.paymentMethod || "mpesa",
-            values.fulfilment,
-            paymentPlan
-          ),
-          payment_plan: paymentPlan,
-          payment_amount_paid: 0,
-          payment_amount_due: total,
-          payment_deposit_amount: depositAmount,
-          mpesa_phone: values.paymentMethod === "mpesa" ? normalizedMpesaPhone : null,
+        let safeDeliveryLat: number | null = null
+        let safeDeliveryLng: number | null = null
+
+        if (values.fulfilment === "delivery") {
+          if (values.deliveryLat && values.deliveryLng) {
+            const lat = Number(values.deliveryLat)
+            const lng = Number(values.deliveryLng)
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+              return { success: false, error: "Invalid delivery coordinates." }
+            }
+            safeDeliveryLat = lat
+            safeDeliveryLng = lng
+            const check = validateDeliveryRequest(lat, lng)
+            if (!check.allowed) {
+              return { success: false, error: check.error || "Delivery location unavailable" }
+            }
+            deliveryFee = check.fee!
+            deliveryWindow = `${check.distance}km (${Math.ceil(check.distance! * 3 + 30)} mins)`
+          } else if (values.deliveryZoneId) {
+            const zone = await getDeliveryZoneByIdCached(supabase, values.deliveryZoneId)
+            if (zone) {
+              deliveryFee = zone.delivery_fee
+              deliveryWindow = zone.delivery_window
+            }
+          } else {
+            return { success: false, error: "Please select a delivery location" }
+          }
+          if (!deliveryAddress) {
+            return { success: false, error: "Please provide a delivery address or landmark." }
+          }
+        }
+
+        if (storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta") {
+          deliveryWindow = applyBusyEtaWindow(deliveryWindow, storeSettings.busyModeExtraMinutes)
+        }
+
+        const itemTotal = getCakePrice(values.cakeFlavor, values.cakeSize)
+        const total = itemTotal + deliveryFee
+        const paymentPlanRaw = values.paymentPlan || "full"
+        if (paymentPlanRaw !== "full" && paymentPlanRaw !== "deposit") {
+          return { success: false, error: "Invalid payment plan." }
+        }
+        const paymentPlan = paymentPlanRaw as "full" | "deposit"
+        const depositAmount = Math.ceil(total * 0.5)
+
+        let order = null
+        let orderError = null
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const friendlyId = generateOrderNumber("C")
+          const { data, error } = await supabase
+            .from("orders")
+            .insert({
+              friendly_id: friendlyId,
+              order_type: "cake",
+              fulfilment: values.fulfilment,
+              customer_name: customerName,
+              phone: normalizedPhone,
+              delivery_zone_id: values.deliveryZoneId || null,
+              delivery_window: deliveryWindow,
+              delivery_fee: deliveryFee,
+              delivery_lat: safeDeliveryLat,
+              delivery_lng: safeDeliveryLng,
+              delivery_address: deliveryAddress || null,
+              delivery_distance_km:
+                safeDeliveryLat !== null && safeDeliveryLng !== null
+                  ? validateDeliveryRequest(safeDeliveryLat, safeDeliveryLng).distance
+                  : null,
+              total_amount: total,
+              preferred_date: values.preferredDate,
+              expires_at: addHours(new Date(), 2).toISOString(),
+              status: "order_received",
+              payment_method: values.paymentMethod || "mpesa",
+              payment_status: getInitialPaymentStatus(values.paymentMethod || "mpesa", values.fulfilment, paymentPlan),
+              payment_plan: paymentPlan,
+              payment_amount_paid: 0,
+              payment_amount_due: total,
+              payment_deposit_amount: depositAmount,
+              mpesa_phone: values.paymentMethod === "mpesa" ? normalizedMpesaPhone : null,
+            })
+            .select("id")
+            .single()
+
+          if (!error) {
+            order = data
+            orderError = null
+            break
+          }
+
+          orderError = error
+          if (error.code !== "23505") break
+        }
+
+        if (orderError || !order) throw orderError || new Error("Failed to create order")
+
+        const { error: itemError } = await supabase.from("order_items").insert({
+          order_id: order.id,
+          item_name: `${values.cakeSize} ${getCakeDisplayName(values.cakeFlavor)}`,
+          notes: `Design: ${designNotes || "None"}. Message: ${cakeMessage || "None"}`,
+          design_image_url: designImageUrl || null,
         })
-        .select()
-        .single()
 
-      if (!error) {
-        order = data
-        orderError = null
-        break
-      }
+        if (itemError) throw itemError
 
-      orderError = error
-      if (error.code !== "23505") break
-    }
+        console.log(`[ORDER-CREATE][${correlationId}] Cake order created`, {
+          orderId: order.id,
+          phone: normalizedPhone,
+          total,
+          paymentPlan,
+        })
 
-    if (orderError || !order) throw orderError || new Error("Failed to create order")
-
-    // 3. Insert order item
-    const { error: itemError } = await supabase.from("order_items").insert({
-      order_id: order.id,
-      item_name: `${values.cakeSize} ${getCakeDisplayName(values.cakeFlavor)}`,
-      notes: `Design: ${designNotes || "None"}. Message: ${cakeMessage || "None"}`,
-      design_image_url: designImageUrl || null,
+        return { success: true, orderId: order.id }
+      },
     })
 
-    if (itemError) throw itemError
+    if (guarded.state === "in_progress") {
+      return { success: false, error: "Duplicate request in progress. Please wait a few seconds." }
+    }
 
-    return { success: true, orderId: order.id }
+    return guarded.result
   } catch (error) {
-    console.error("[v0] Error submitting cake order:", error)
+    console.error(`[ORDER-CREATE][${correlationId}] Error submitting cake order:`, error)
     return { success: false, error: "Database error. Please try again." }
   }
 }
 
 export async function submitPizzaOrder(values: any) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = getServiceSupabase()
+  const correlationId = createOrderCorrelationId()
+  const idempotencyKey = typeof values?.idempotencyKey === "string" ? values.idempotencyKey : undefined
 
   try {
-    if (!values || typeof values !== "object") {
-      return { success: false, error: "Invalid request payload." }
-    }
-
-    const normalizedPhone = normalizeKenyaPhone(values.phone || "")
-    if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
-      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
-    }
-    const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
-    if (rateLimitError) return { success: false, error: rateLimitError }
-    const storeSettings = await getStoreSettings(supabase)
-    const busyModeBlock = validateBusyModeBeforeOrder(storeSettings)
-    if (busyModeBlock) {
-      return { success: false, error: busyModeBlock }
-    }
-
-    if (!Object.keys(PIZZA_TYPE_PRICES).includes(values.pizzaType)) {
-      return { success: false, error: "Invalid pizza type selected." }
-    }
-    if (!Object.keys(PIZZA_BASE_PRICES).includes(values.pizzaSize)) {
-      return { success: false, error: "Invalid pizza size selected." }
-    }
-    if (values.fulfilment !== "pickup" && values.fulfilment !== "delivery") {
-      return { success: false, error: "Invalid fulfilment method." }
-    }
-    const safeQuantity = Number(values.quantity)
-    if (!Number.isFinite(safeQuantity) || safeQuantity < 1 || safeQuantity > 20) {
-      return { success: false, error: "Invalid pizza quantity." }
-    }
-    const customerName = sanitizeText(values.customerName, MAX_TEXT_LENGTHS.customerName)
-    if (!customerName || customerName.length < 2) {
-      return { success: false, error: "Please enter a valid customer name." }
-    }
-    const notes = sanitizeText(values.notes, MAX_TEXT_LENGTHS.notes)
-    const deliveryAddress = sanitizeText(values.deliveryAddress, MAX_TEXT_LENGTHS.deliveryAddress)
-
-    const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
-    if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
-      return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
-    }
-
-    if (values.paymentMethod !== "mpesa") {
-      return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
-    }
-    const now = new Date()
-    const cutoff = setMinutes(setHours(new Date(), 21), 0)
-    let preferredDate = values.preferredDate || now
-
-    if (isAfter(now, cutoff)) {
-      // Shift to tomorrow
-      preferredDate = addHours(now, 24)
-    }
-
-    let deliveryFee = 0
-    let deliveryWindow = "As soon as possible"
-
-    const toppings: string[] = Array.isArray(values.toppings) ? values.toppings : []
-    if (toppings.length > 2 || toppings.some((entry) => !ALLOWED_PIZZA_TOPPINGS.has(entry))) {
-      return { success: false, error: "Invalid pizza extras selected." }
-    }
-    const toppingsCount = toppings.length
-    let safeDeliveryLat: number | null = null
-    let safeDeliveryLng: number | null = null
-
-    if (values.fulfilment === "delivery") {
-      // 1. GPS DELIVERY (Priority)
-      if (values.deliveryLat && values.deliveryLng) {
-        const lat = Number(values.deliveryLat)
-        const lng = Number(values.deliveryLng)
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          return { success: false, error: "Invalid delivery coordinates." }
+    const guarded = await runIdempotent<{ success: boolean; error?: string; orderId?: string }>({
+      scope: "order-submit:pizza",
+      idempotencyKey,
+      ttlSeconds: 15 * 60,
+      run: async () => {
+        if (!values || typeof values !== "object") {
+          return { success: false, error: "Invalid request payload." }
         }
-        safeDeliveryLat = lat
-        safeDeliveryLng = lng
-        const check = validateDeliveryRequest(lat, lng)
-        if (!check.allowed) {
-          return { success: false, error: check.error || "Delivery location unavailable" }
+
+        const normalizedPhone = normalizeKenyaPhone(values.phone || "")
+        if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
+          return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for phone number." }
         }
-        deliveryFee = check.fee!
-        deliveryWindow = `${check.distance}km (~${Math.ceil(check.distance! * 3 + 25)} mins)`
+        const burstLimit = checkOrderBurstRateLimit(normalizedPhone)
+        if (!burstLimit.allowed) {
+          return { success: false, error: "Too many rapid submissions. Please wait and try again." }
+        }
+        const rateLimitError = await checkOrderRateLimit(supabase, normalizedPhone)
+        if (rateLimitError) return { success: false, error: rateLimitError }
+        const storeSettings = await getStoreSettings(supabase)
+        const busyModeBlock = validateBusyModeBeforeOrder(storeSettings)
+        if (busyModeBlock) {
+          return { success: false, error: busyModeBlock }
+        }
 
-        // Nairobi check (approximate coords for Nairobi if needed, but strict radius handles most)
-        // For now, removing specific Nairobi minimum unless we geo-fence Nairobi specifically.
-        // Assuming strict radius from Thika covers strict area.
-      }
-      // 2. LEGACY ZONES 
-      else if (values.deliveryZoneId) {
-        const { data: zone } = await supabase.from("delivery_zones").select("*").eq("id", values.deliveryZoneId).single()
+        if (!Object.keys(PIZZA_TYPE_PRICES).includes(values.pizzaType)) {
+          return { success: false, error: "Invalid pizza type selected." }
+        }
+        if (!Object.keys(PIZZA_BASE_PRICES).includes(values.pizzaSize)) {
+          return { success: false, error: "Invalid pizza size selected." }
+        }
+        if (values.fulfilment !== "pickup" && values.fulfilment !== "delivery") {
+          return { success: false, error: "Invalid fulfilment method." }
+        }
+        const safeQuantity = Number(values.quantity)
+        if (!Number.isFinite(safeQuantity) || safeQuantity < 1 || safeQuantity > 20) {
+          return { success: false, error: "Invalid pizza quantity." }
+        }
+        const customerName = sanitizeText(values.customerName, MAX_TEXT_LENGTHS.customerName)
+        if (!customerName || customerName.length < 2) {
+          return { success: false, error: "Please enter a valid customer name." }
+        }
+        const notes = sanitizeText(values.notes, MAX_TEXT_LENGTHS.notes)
+        const deliveryAddress = sanitizeText(values.deliveryAddress, MAX_TEXT_LENGTHS.deliveryAddress)
 
-        if (zone) {
-          const isNairobi = zone.name.toLowerCase().includes("nairobi")
-          const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
-          // Minimum value check uses pre-offer subtotal to avoid blocking valid offer orders
-          const totalItemsValue = unitPrice * safeQuantity
+        const normalizedMpesaPhone = normalizeKenyaPhone(values.mpesaPhone || normalizedPhone)
+        if (values.paymentMethod === "mpesa" && !KENYA_PHONE_REGEX.test(normalizedMpesaPhone)) {
+          return { success: false, error: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa number." }
+        }
 
-          if (isNairobi && totalItemsValue < 2000) {
-            return { success: false, error: "Nairobi pizza orders require a minimum value of KES 2,000" }
+        if (values.paymentMethod !== "mpesa") {
+          return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
+        }
+        const now = new Date()
+        const cutoff = setMinutes(setHours(new Date(), 21), 0)
+        let preferredDate = values.preferredDate || now
+
+        if (isAfter(now, cutoff)) {
+          preferredDate = addHours(now, 24)
+        }
+
+        let deliveryFee = 0
+        let deliveryWindow = "As soon as possible"
+
+        const toppings: string[] = Array.isArray(values.toppings) ? values.toppings : []
+        if (toppings.length > 2 || toppings.some((entry) => !ALLOWED_PIZZA_TOPPINGS.has(entry))) {
+          return { success: false, error: "Invalid pizza extras selected." }
+        }
+        const toppingsCount = toppings.length
+        let safeDeliveryLat: number | null = null
+        let safeDeliveryLng: number | null = null
+
+        if (values.fulfilment === "delivery") {
+          if (values.deliveryLat && values.deliveryLng) {
+            const lat = Number(values.deliveryLat)
+            const lng = Number(values.deliveryLng)
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+              return { success: false, error: "Invalid delivery coordinates." }
+            }
+            safeDeliveryLat = lat
+            safeDeliveryLng = lng
+            const check = validateDeliveryRequest(lat, lng)
+            if (!check.allowed) {
+              return { success: false, error: check.error || "Delivery location unavailable" }
+            }
+            deliveryFee = check.fee!
+            deliveryWindow = `${check.distance}km (~${Math.ceil(check.distance! * 3 + 25)} mins)`
+          } else if (values.deliveryZoneId) {
+            const zone = await getDeliveryZoneByIdCached(supabase, values.deliveryZoneId)
+            if (zone) {
+              const isNairobi = zone.name.toLowerCase().includes("nairobi")
+              const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
+              const totalItemsValue = unitPrice * safeQuantity
+
+              if (isNairobi && totalItemsValue < 2000) {
+                return { success: false, error: "Nairobi pizza orders require a minimum value of KES 2,000" }
+              }
+
+              deliveryFee = zone.delivery_fee
+              deliveryWindow = zone.delivery_window
+            }
+          } else {
+            return { success: false, error: "Please select a delivery location" }
+          }
+          if (!deliveryAddress) {
+            return { success: false, error: "Please provide a delivery address or landmark." }
+          }
+        }
+
+        if (storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta") {
+          deliveryWindow = applyBusyEtaWindow(deliveryWindow, storeSettings.busyModeExtraMinutes)
+        }
+
+        const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
+        const quantity = safeQuantity || 1
+        const rawSubtotal = unitPrice * quantity
+        const offer = getPizzaOfferDetails({
+          size: values.pizzaSize,
+          quantity,
+          unitPrice,
+        })
+        const itemTotal = rawSubtotal - offer.discount
+        const total = itemTotal + deliveryFee
+        const paymentPlanRaw = values.paymentPlan || "full"
+        if (paymentPlanRaw !== "full" && paymentPlanRaw !== "deposit") {
+          return { success: false, error: "Invalid payment plan." }
+        }
+        const paymentPlan = paymentPlanRaw as "full" | "deposit"
+        const depositAmount = Math.ceil(total * 0.5)
+
+        let order = null
+        let orderError = null
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const friendlyId = generateOrderNumber("P")
+          const { data, error } = await supabase
+            .from("orders")
+            .insert({
+              friendly_id: friendlyId,
+              order_type: "pizza",
+              fulfilment: values.fulfilment,
+              customer_name: customerName,
+              phone: normalizedPhone,
+              delivery_zone_id: values.deliveryZoneId || null,
+              delivery_window: deliveryWindow,
+              delivery_fee: deliveryFee,
+              delivery_lat: safeDeliveryLat,
+              delivery_lng: safeDeliveryLng,
+              delivery_address: deliveryAddress || null,
+              total_amount: total,
+              preferred_date: preferredDate,
+              status: "order_received",
+              payment_method: values.paymentMethod || "mpesa",
+              payment_status: getInitialPaymentStatus(values.paymentMethod || "mpesa", values.fulfilment, paymentPlan),
+              payment_plan: paymentPlan,
+              payment_amount_paid: 0,
+              payment_amount_due: total,
+              payment_deposit_amount: depositAmount,
+              mpesa_phone: values.paymentMethod === "mpesa" ? normalizedMpesaPhone : null,
+            })
+            .select("id")
+            .single()
+
+          if (!error) {
+            order = data
+            orderError = null
+            break
           }
 
-          deliveryFee = zone.delivery_fee
-          deliveryWindow = zone.delivery_window
+          orderError = error
+          if (error.code !== "23505") break
         }
-      } else {
-        return { success: false, error: "Please select a delivery location" }
-      }
-      if (!deliveryAddress) {
-        return { success: false, error: "Please provide a delivery address or landmark." }
-      }
-    }
 
-    if (storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta") {
-      deliveryWindow = applyBusyEtaWindow(deliveryWindow, storeSettings.busyModeExtraMinutes)
-    }
+        if (orderError || !order) throw orderError || new Error("Failed to create order")
 
-    // Calculate pizza total with offer logic
-    const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
-    const quantity = safeQuantity || 1
-    const rawSubtotal = unitPrice * quantity
-    const offer = getPizzaOfferDetails({
-      size: values.pizzaSize,
-      quantity,
-      unitPrice,
-    })
-    const itemTotal = rawSubtotal - offer.discount
-    const total = itemTotal + deliveryFee
-    const paymentPlanRaw = values.paymentPlan || "full"
-    if (paymentPlanRaw !== "full" && paymentPlanRaw !== "deposit") {
-      return { success: false, error: "Invalid payment plan." }
-    }
-    const paymentPlan = paymentPlanRaw as "full" | "deposit"
-    const depositAmount = Math.ceil(total * 0.5)
+        const extrasNote =
+          toppingsCount > 0 ? `Extras: ${toppings.join(", ")} (+${(toppingsCount * 100).toLocaleString()} KES)` : ""
+        const offerNote = offer.discount > 0 ? `Offer: 2-for-1 applied (${offer.freeQuantity} free)` : ""
+        const combinedNotes = [notes, extrasNote, offerNote].filter(Boolean).join(" | ")
 
-    let order = null
-    let orderError = null
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const friendlyId = generateOrderNumber("P")
-      const { data, error } = await supabase
-        .from("orders")
-        .insert({
-          friendly_id: friendlyId,
-          order_type: "pizza",
-          fulfilment: values.fulfilment,
-          customer_name: customerName,
-          phone: normalizedPhone,
-          delivery_zone_id: values.deliveryZoneId || null,
-          delivery_window: deliveryWindow,
-          delivery_fee: deliveryFee,
-          delivery_lat: safeDeliveryLat,
-          delivery_lng: safeDeliveryLng,
-          delivery_address: deliveryAddress || null,
-          total_amount: total,
-          preferred_date: preferredDate, // use calculated date
-          status: "order_received",
-          payment_method: values.paymentMethod || "mpesa",
-          payment_status: getInitialPaymentStatus(
-            values.paymentMethod || "mpesa",
-            values.fulfilment,
-            paymentPlan
-          ),
-          payment_plan: paymentPlan,
-          payment_amount_paid: 0,
-          payment_amount_due: total,
-          payment_deposit_amount: depositAmount,
-          mpesa_phone: values.paymentMethod === "mpesa" ? normalizedMpesaPhone : null,
+        const { error: itemError } = await supabase.from("order_items").insert({
+          order_id: order.id,
+          item_name: `${values.pizzaSize} ${values.pizzaType} Pizza`,
+          quantity: safeQuantity,
+          notes: combinedNotes,
         })
-        .select()
-        .single()
 
-      if (!error) {
-        order = data
-        orderError = null
-        break
-      }
+        if (itemError) throw itemError
 
-      orderError = error
-      if (error.code !== "23505") break
-    }
+        console.log(`[ORDER-CREATE][${correlationId}] Pizza order created`, {
+          orderId: order.id,
+          phone: normalizedPhone,
+          total,
+          paymentPlan,
+        })
 
-    if (orderError || !order) throw orderError || new Error("Failed to create order")
-
-    const extrasNote = toppingsCount > 0
-      ? `Extras: ${toppings.join(", ")} (+${(toppingsCount * 100).toLocaleString()} KES)`
-      : ""
-    const offerNote = offer.discount > 0
-      ? `Offer: 2-for-1 applied (${offer.freeQuantity} free)`
-      : ""
-    const combinedNotes = [notes, extrasNote, offerNote].filter(Boolean).join(" | ")
-
-    const { error: itemError } = await supabase.from("order_items").insert({
-      order_id: order.id,
-      item_name: `${values.pizzaSize} ${values.pizzaType} Pizza`,
-      quantity: safeQuantity,
-      notes: combinedNotes,
+        return { success: true, orderId: order.id }
+      },
     })
 
-    if (itemError) throw itemError
+    if (guarded.state === "in_progress") {
+      return { success: false, error: "Duplicate request in progress. Please wait a few seconds." }
+    }
 
-    return { success: true, orderId: order.id }
+    return guarded.result
   } catch (error) {
-    console.error("[v0] Error submitting pizza order:", error)
+    console.error(`[ORDER-CREATE][${correlationId}] Error submitting pizza order:`, error)
     return { success: false, error: "Database error. Please try again." }
   }
 }

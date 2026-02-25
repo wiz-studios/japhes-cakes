@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { updateOrderStatus, markOrderAsPaid } from "@/app/actions/orders"
+import { updateOrderStatus, markOrderAsPaid, updateOrderPaymentStatus } from "@/app/actions/orders"
 import { toKenyaMsisdn } from "@/lib/phone"
 import { CheckCircle2, MessageCircle } from "lucide-react"
 
@@ -147,17 +146,17 @@ export function AdminOrderActions({
 
     // Payment status update (direct allowed)
     if (payment !== currentPayment) {
-      const supabase = createClient()
-      const paymentUpdate: any = { payment_status: payment }
-      if (payment === "paid") {
-        paymentUpdate.payment_amount_paid = totalAmount
-        paymentUpdate.payment_amount_due = 0
-      } else if (payment === "deposit_paid") {
-        const deposit = depositAmount ?? Math.ceil(totalAmount * 0.5)
-        paymentUpdate.payment_amount_paid = deposit
-        paymentUpdate.payment_amount_due = Math.max(totalAmount - deposit, 0)
+      const paymentResult = await updateOrderPaymentStatus({
+        orderId,
+        paymentStatus: payment as "pending" | "deposit_paid" | "paid" | "expired" | "failed",
+        totalAmount,
+        depositAmount,
+      })
+      if (!paymentResult.success) {
+        alert(paymentResult.error || "Failed to update payment status")
+        setLoading(false)
+        return
       }
-      await supabase.from("orders").update(paymentUpdate).eq("id", orderId)
       await fetch("/api/admin/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -6,11 +6,26 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { updateOrderStatus, completeDelivery } from "@/app/actions/orders" // We will add completeDelivery
 import { useState } from "react"
-import type { Order } from "@/lib/types/payment"
 import { maskPhoneNumber } from "@/lib/phone"
 
+type OrderCardOrder = {
+    id: string
+    friendly_id?: string | null
+    created_at: string
+    order_type: "cake" | "pizza"
+    status: string
+    fulfilment: string
+    customer_name: string | null
+    phone: string | null
+    payment_method: string | null
+    payment_status: string | null
+    payment_amount_due: number | null
+    total_amount: number | null
+    delivery_zones?: { name: string }[] | { name: string } | null
+}
+
 interface DeliveryOrderCardProps {
-    order: Order
+    order: OrderCardOrder
 }
 
 export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
@@ -48,6 +63,9 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
     // Status Colors
     const isReady = order.status === "ready_for_pickup" // In delivery context this means "Ready for Dispatch"
     const isOut = order.status === "out_for_delivery"
+    const deliveryZoneName = Array.isArray(order.delivery_zones)
+        ? order.delivery_zones[0]?.name
+        : order.delivery_zones?.name
 
     return (
         <div className="bg-white/90 rounded-2xl shadow-[0_18px_50px_-40px_rgba(15,20,40,0.5)] border-l-4 border-l-blue-600 border-y border-r border-white/60 overflow-hidden backdrop-blur">
@@ -80,7 +98,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                         <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
                         <div>
                             <div className="font-bold text-gray-900 leading-tight">
-                                {order.delivery_zones?.name || "Delivery Zone"}
+                                {deliveryZoneName || "Delivery Zone"}
                             </div>
                             <div className="text-xs text-gray-500 uppercase font-semibold mt-1">
                                 {order.fulfilment}

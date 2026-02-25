@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import Image from "next/image"
 import OrderSummary from "@/components/OrderSummary"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -65,6 +66,7 @@ function OrderReviewContent() {
   const [error, setError] = useState("")
   const [progress, setProgress] = useState(80) // 80%: review step
   const [discountTotal, setDiscountTotal] = useState(0)
+  const [submitIdempotencyKey] = useState(() => crypto.randomUUID())
 
   // Payment state
   const paymentMethod: PaymentMethod = "mpesa"
@@ -188,6 +190,7 @@ function OrderReviewContent() {
           paymentMethod,
           paymentPlan,
           mpesaPhone: normalizedMpesaPhone,
+          idempotencyKey: `order-submit:${submitIdempotencyKey}`,
         }
         result = await submitPizzaOrder(pizzaData)
       } else if (order.type === "cake") {
@@ -210,14 +213,23 @@ function OrderReviewContent() {
           paymentMethod,
           paymentPlan,
           mpesaPhone: normalizedMpesaPhone,
+          idempotencyKey: `order-submit:${submitIdempotencyKey}`,
         }
         result = await submitCakeOrder(cakeData)
       }
       if (result && result.success) {
+        if (!result.orderId) {
+          setError("Order created but missing reference. Please contact support.")
+          setSubmitting(false)
+          return
+        }
+
         // STK Push: wait for initiation so prompt shows before redirect
         if (normalizedMpesaPhone) {
           console.log("Triggering STK Push for:", result.orderId)
-          const stkResult = await initiateMpesaSTK(result.orderId, normalizedMpesaPhone)
+          const stkResult = await initiateMpesaSTK(result.orderId, normalizedMpesaPhone, {
+            idempotencyKey: `stk-init:${submitIdempotencyKey}`,
+          })
           if (!stkResult.success) {
             setError(stkResult.error || "Failed to initiate M-Pesa prompt")
             setSubmitting(false)
@@ -363,10 +375,13 @@ function OrderReviewContent() {
               {order.type === "cake" && (item as CakeOrderItem).designImageUrl ? (
                 <div className="mt-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Reference Image</p>
-                  <img
-                    src={(item as CakeOrderItem).designImageUrl}
+                  <Image
+                    src={(item as CakeOrderItem).designImageUrl as string}
                     alt="Cake design reference"
+                    width={640}
+                    height={320}
                     className="mt-2 h-36 w-full rounded-xl border border-slate-200 bg-slate-50 object-cover"
+                    sizes="(max-width: 768px) 100vw, 640px"
                   />
                 </div>
               ) : null}

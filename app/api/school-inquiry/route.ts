@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { sendSmtpMail } from "@/lib/smtp"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { fetchWithTimeout } from "@/lib/http"
+import { getClientIp, getRequestId, logWithRequestId } from "@/lib/request-meta"
 
 const inquirySchema = z.object({
   name: z.string().trim().min(2, "Name is required"),
@@ -38,9 +40,10 @@ async function verifyCaptcha(token?: string) {
   formData.set("secret", secret)
   formData.set("response", token)
 
-  const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+  const result = await fetchWithTimeout("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",
     body: formData,
+    timeoutMs: Number(process.env.TURNSTILE_TIMEOUT_MS || 4000),
   })
 
   if (!result.ok) return false
@@ -124,34 +127,41 @@ function buildInquiryEmailText(input: {
   phone: string
   course: string
   message: string
+  requestId: string
 }) {
   return [
-    "🎓 NEW SCHOOL INQUIRY",
-    "━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    "NEW SCHOOL INQUIRY",
+    "-------------------",
     "",
     "Lead Details",
-    `• Name: ${input.name}`,
-    `• Phone: ${input.phone}`,
-    `• Course Interest: ${input.course}`,
-    `• Message: ${input.message || "No message provided"}`,
+    `- Name: ${input.name}`,
+    `- Phone: ${input.phone}`,
+    `- Course Interest: ${input.course}`,
+    `- Message: ${input.message || "No message provided"}`,
     "",
     "Submission Info",
-    `• Submitted: ${input.submittedAt}`,
-    `• Source IP: ${input.ip}`,
+    `- Submitted: ${input.submittedAt}`,
+    `- Source IP: ${input.ip}`,
+    `- Request ID: ${input.requestId}`,
     "",
     "Suggested Next Step",
-    "• Contact this lead on phone/WhatsApp and update status in Admin → School Inquiries.",
+    "- Contact this lead on phone/WhatsApp and update status in Admin > School Inquiries.",
     "",
-    "— Japhe's Cakes & Pizza",
+    "- Japhe's Cakes & Pizza",
   ].join("\n")
 }
 
 export async function POST(request: Request) {
+  const requestId = getRequestId(request)
+  const ip = getClientIp(request)
+
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
     const limit = checkRateLimit(`school-inquiry:${ip}`, 5, 10 * 60 * 1000)
     if (!limit.allowed) {
-      return NextResponse.json({ ok: false, message: "Too many inquiries. Please try again shortly." }, { status: 429 })
+      return NextResponse.json(
+        { ok: false, message: "Too many inquiries. Please try again shortly.", requestId },
+        { status: 429 }
+      )
     }
 
     const body = await request.json()
@@ -159,17 +169,20 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message || "Invalid inquiry details"
-      return NextResponse.json({ ok: false, message }, { status: 400 })
+      return NextResponse.json({ ok: false, message, requestId }, { status: 400 })
     }
 
     const captchaOk = await verifyCaptcha(parsed.data.captchaToken)
     if (!captchaOk) {
-      return NextResponse.json({ ok: false, message: "Captcha verification failed." }, { status: 400 })
+      return NextResponse.json({ ok: false, message: "Captcha verification failed.", requestId }, { status: 400 })
     }
 
     const normalizedPhone = normalizeKenyaPhone(parsed.data.phone)
     if (!KENYA_PHONE_REGEX.test(normalizedPhone)) {
-      return NextResponse.json({ ok: false, message: "Enter a valid phone number (07/01 format)." }, { status: 400 })
+      return NextResponse.json(
+        { ok: false, message: "Enter a valid phone number (07/01 format).", requestId },
+        { status: 400 }
+      )
     }
 
     const inquiryId = await createInquiryLead({
@@ -181,36 +194,47 @@ export async function POST(request: Request) {
     })
 
     const config = getTransportConfig()
-    if (!config) {
-      return NextResponse.json({ ok: false, message: "Email is not configured. Please contact support." }, { status: 500 })
-    }
-
-    const submittedAt = new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })
-
-    await sendSmtpMail({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      user: config.user,
-      pass: config.pass,
-      from: config.from,
-      to: config.to,
-      subject: `School Inquiry: ${parsed.data.course} - ${parsed.data.name}`,
-      text: buildInquiryEmailText({
+    if (config) {
+      const submittedAt = new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })
+      const message = buildInquiryEmailText({
         submittedAt,
         ip,
         name: parsed.data.name,
         phone: normalizedPhone,
         course: parsed.data.course,
         message: parsed.data.message || "",
-      }),
-    })
+        requestId,
+      })
 
-    if (inquiryId) await markInquiryEmailSent(inquiryId)
+      after(async () => {
+        try {
+          await sendSmtpMail({
+            host: config.host,
+            port: config.port,
+            secure: config.secure,
+            user: config.user,
+            pass: config.pass,
+            from: config.from,
+            to: config.to,
+            subject: `School Inquiry: ${parsed.data.course} - ${parsed.data.name}`,
+            text: message,
+          })
+          if (inquiryId) await markInquiryEmailSent(inquiryId)
+          logWithRequestId(requestId, "[school-inquiry] Email delivered", { inquiryId: inquiryId || undefined })
+        } catch (emailError) {
+          console.error(`[${requestId}] [school-inquiry] Email delivery failed`, emailError)
+        }
+      })
+    } else {
+      logWithRequestId(requestId, "[school-inquiry] Email transport not configured; lead saved only")
+    }
 
-    return NextResponse.json({ ok: true, message: "Inquiry sent successfully." })
+    return NextResponse.json({ ok: true, message: "Inquiry sent successfully.", requestId })
   } catch (error) {
-    console.error("[school-inquiry] Failed to send email", error)
-    return NextResponse.json({ ok: false, message: "Unable to send inquiry right now. Please try again shortly." }, { status: 500 })
+    console.error(`[${requestId}] [school-inquiry] Failed to process inquiry`, error)
+    return NextResponse.json(
+      { ok: false, message: "Unable to send inquiry right now. Please try again shortly.", requestId },
+      { status: 500 }
+    )
   }
 }

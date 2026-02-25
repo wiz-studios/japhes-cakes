@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import dynamic from "next/dynamic"
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServiceSupabaseClient } from "@/lib/supabase-service"
 import { notFound } from "next/navigation"
 import { formatFriendlyId } from "@/lib/order-helpers"
 
@@ -15,7 +15,7 @@ export async function generateMetadata({
   if (!id) return { title: "Receipt" }
 
   try {
-    const supabase = await createServerSupabaseClient()
+    const supabase = createServiceSupabaseClient()
     const { data: order } = await supabase
       .from("orders")
       .select("id, friendly_id, created_at, order_type")
@@ -38,14 +38,16 @@ export default async function OrderSubmittedPage({
   searchParams: Promise<{ id?: string }>
 }) {
   const { id } = await searchParams
-  const supabase = await createServerSupabaseClient()
+  const supabase = createServiceSupabaseClient()
 
   if (!id) return notFound()
 
   // Fetch full order details
   const { data: order, error } = await supabase
     .from("orders")
-    .select("*, order_items(*), delivery_zones(name)")
+    .select(
+      "id, friendly_id, created_at, order_type, fulfilment, customer_name, phone, mpesa_phone, delivery_fee, delivery_window, total_amount, payment_status, payment_method, payment_plan, payment_amount_paid, payment_amount_due, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
+    )
     .eq("id", id)
     .single()
 

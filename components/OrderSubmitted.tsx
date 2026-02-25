@@ -63,6 +63,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
   const [retryCooldown, setRetryCooldown] = useState(0)
   const [isDownloading, setIsDownloading] = useState(false)
   const receiptRef = useRef<HTMLDivElement | null>(null)
+  const retryIdempotencyRef = useRef<string | null>(null)
 
   // Keep route title aligned with receipt so print/PDF engines can pick a useful filename.
   useEffect(() => {
@@ -118,7 +119,12 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
     if (!liveOrder.mpesa_phone) return
     setIsRetrying(true)
     try {
-      const res = await initiateMpesaSTK(liveOrder.id, liveOrder.mpesa_phone)
+      if (!retryIdempotencyRef.current || retryCooldown === 0) {
+        retryIdempotencyRef.current = crypto.randomUUID()
+      }
+      const res = await initiateMpesaSTK(liveOrder.id, liveOrder.mpesa_phone, {
+        idempotencyKey: `stk-retry:${liveOrder.id}:${retryIdempotencyRef.current}`,
+      })
       if (res.success) {
         // Optimistic update
         setLiveOrder((prev: any) => ({ ...prev, payment_status: "initiated" }))

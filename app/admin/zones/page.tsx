@@ -4,7 +4,10 @@ import { ZoneForm } from "@/components/zone-form"
 
 export default async function ZonesManagerPage() {
   const supabase = await createServerSupabaseClient()
-  const { data: zones } = await supabase.from("delivery_zones").select("*").order("name")
+  const { data: zones } = await supabase
+    .from("delivery_zones")
+    .select("id, name, delivery_fee, delivery_window, allows_cake, allows_pizza, scheduled_only")
+    .order("name")
 
   return (
     <div className="max-w-none space-y-8">

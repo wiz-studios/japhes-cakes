@@ -20,6 +20,12 @@ type SmtpResponse = {
   raw: string
 }
 
+function getSmtpTimeoutMs(): number {
+  const parsed = Number(process.env.SMTP_TIMEOUT_MS || 8000)
+  if (!Number.isFinite(parsed)) return 8000
+  return Math.min(Math.max(parsed, 3000), 20000)
+}
+
 function extractEmailAddress(value: string) {
   const trimmed = value.trim()
   const angleMatch = trimmed.match(/<([^<>\s]+@[^<>\s]+)>/)
@@ -123,6 +129,11 @@ export async function sendSmtpMail(input: SendMailInput) {
   let socket: SmtpSocket = input.secure
     ? tls.connect({ host: input.host, port: input.port, servername: input.host })
     : net.createConnection({ host: input.host, port: input.port })
+  const timeoutMs = getSmtpTimeoutMs()
+  socket.setTimeout(timeoutMs)
+  socket.on("timeout", () => {
+    socket.destroy(new Error(`SMTP timeout after ${timeoutMs}ms`))
+  })
 
   await new Promise<void>((resolve, reject) => {
     const readyEvent = input.secure ? "secureConnect" : "connect"
@@ -141,6 +152,10 @@ export async function sendSmtpMail(input: SendMailInput) {
     if (!input.secure && supportsStartTls(ehlo)) {
       await sendCommand(socket, "STARTTLS", [220])
       socket = await upgradeToTls(socket, input.host)
+      socket.setTimeout(timeoutMs)
+      socket.on("timeout", () => {
+        socket.destroy(new Error(`SMTP timeout after ${timeoutMs}ms`))
+      })
       ehlo = await sendCommand(socket, "EHLO localhost", [250])
     }
 

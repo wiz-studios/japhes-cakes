@@ -19,7 +19,9 @@ export default async function AdminOrderDetailPage({
 
   const { data: order } = await supabase
     .from("orders")
-    .select("*, order_items(*), delivery_zones(*)")
+    .select(
+      "id, friendly_id, created_at, updated_at, status, payment_status, order_type, fulfilment, customer_name, phone, total_amount, payment_deposit_amount, delivery_window, order_items(id, item_name, quantity, notes), delivery_zones(name)"
+    )
     .eq("id", id)
     .single()
 
@@ -34,6 +36,9 @@ export default async function AdminOrderDetailPage({
   const successfulAttempts = (paymentAttempts || []).filter(
     (attempt: any) => attempt.result_code === 0 && attempt.mpesa_receipt
   )
+  const deliveryZoneName = Array.isArray((order as any).delivery_zones)
+    ? (order as any).delivery_zones[0]?.name
+    : (order as any).delivery_zones?.name
 
   const communicationTimeline = [
     { label: "Order placed", at: order.created_at },
@@ -71,7 +76,7 @@ export default async function AdminOrderDetailPage({
               <div>
                 <Label className="text-muted-foreground">Fulfilment</Label>
                 <div className="font-bold capitalize">
-                  {order.fulfilment} ({order.delivery_zones?.name || "Pickup"})
+                  {order.fulfilment} ({deliveryZoneName || "Pickup"})
                 </div>
                 <div className="text-sm">{order.delivery_window}</div>
               </div>

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server"
+import { createServiceSupabaseClient } from "@/lib/supabase-service"
 import dynamic from "next/dynamic"
 import { OrderStatusSearch } from "@/components/order-status-search"
 import OrderStatusTimeline from "@/components/OrderStatusTimeline"
@@ -7,13 +7,16 @@ import { formatFriendlyId, getDeliveryEstimate } from "@/lib/order-helpers"
 import { normalizeKenyaPhone } from "@/lib/phone"
 import { Package, Clock } from "lucide-react"
 
+const ORDER_STATUS_SELECT =
+  "id, friendly_id, created_at, order_type, fulfilment, status, total_amount, delivery_window, payment_status, payment_method, payment_amount_paid, payment_amount_due, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
+
 export default async function OrderStatusPage({
   searchParams,
 }: {
   searchParams: Promise<{ id?: string; phone?: string }>
 }) {
   const { id, phone } = await searchParams
-  const supabase = await createServerSupabaseClient()
+  const supabase = createServiceSupabaseClient()
 
   let order = null
   let error = null
@@ -32,7 +35,7 @@ export default async function OrderStatusPage({
     } else if (trimmedId) {
       let query = supabase
         .from("orders")
-        .select("*, order_items(*), delivery_zones(name)")
+        .select(ORDER_STATUS_SELECT)
 
       if (isUuid) {
         query = query.or(`id.eq.${trimmedId},friendly_id.eq.${normalizedId}`)
@@ -54,7 +57,7 @@ export default async function OrderStatusPage({
     if (!order && normalizedPhone && !trimmedId && !error) {
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
-        .select("*, order_items(*), delivery_zones(name)")
+        .select(ORDER_STATUS_SELECT)
         .eq("phone", normalizedPhone)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -67,7 +70,7 @@ export default async function OrderStatusPage({
     if (!order && normalizedPhone && trimmedId && !error) {
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
-        .select("*, order_items(*), delivery_zones(name)")
+        .select(ORDER_STATUS_SELECT)
         .eq("phone", normalizedPhone)
         .order("created_at", { ascending: false })
         .limit(5)
@@ -90,9 +93,12 @@ export default async function OrderStatusPage({
   }
 
   const isDelivery = order?.fulfilment === "delivery"
+  const deliveryZoneName = Array.isArray((order as any)?.delivery_zones)
+    ? (order as any)?.delivery_zones?.[0]?.name
+    : (order as any)?.delivery_zones?.name
   const locationLabel = isDelivery ? "Delivery Location" : "Pickup Branch"
   const locationValue = isDelivery
-    ? (order?.delivery_zones?.name || "Nairobi Region")
+    ? (deliveryZoneName || "Nairobi Region")
     : "Thika Branch"
   const statusLabel = order?.status ? order.status.replace(/_/g, " ") : ""
   const statusToneMap: Record<string, string> = {
@@ -195,7 +201,7 @@ export default async function OrderStatusPage({
             <div className={`${cardClass} p-6`}>
               <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-4">Items</h3>
               <div className="divide-y divide-slate-100">
-                {order.order_items.map((item: any, idx: number) => (
+                {(order.order_items || []).map((item: any, idx: number) => (
                   <div key={idx} className="py-4 flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-900">{item.item_name}</p>

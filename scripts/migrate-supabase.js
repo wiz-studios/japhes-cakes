@@ -55,11 +55,16 @@ async function main() {
     const schemaFiles = [
       "scripts/01-init-schema.sql",
       "migrations/add_payment_fields.sql",
+      "migrations/add_partial_payment.sql",
       "migrations/add_mpesa_checkout_id.sql",
+      "migrations/add_payment_attempts.sql",
+      "migrations/harden_payment_uniqueness.sql",
       "migrations/add_gps_delivery.sql",
       "migrations/add_friendly_id.sql",
       "migrations/update_payment_status_constraint.sql",
       "migrations/add_school_gallery.sql",
+      "migrations/add_resilience_indexes_and_idempotency.sql",
+      "migrations/rls_production_cutover.sql",
       "scripts/06-get-recent-scheduled-pizza-orders.sql",
     ]
 

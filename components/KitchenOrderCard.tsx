@@ -6,10 +6,22 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { updateOrderStatus } from "@/app/actions/orders"
 import { useState } from "react"
-import type { Order } from "@/lib/types/payment"
+
+type KitchenOrder = {
+    id: string
+    friendly_id?: string | null
+    created_at: string
+    order_type: "cake" | "pizza"
+    status: string
+    fulfilment: string
+    customer_name: string | null
+    payment_method: string | null
+    payment_status: string | null
+    order_items?: Array<{ id?: string; item_name: string; quantity?: number; notes?: string | null }>
+}
 
 interface KitchenOrderCardProps {
-    order: Order
+    order: KitchenOrder
 }
 
 export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
@@ -19,7 +31,7 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
     const isUnpaidMpesaDelivery =
         order.fulfilment === "delivery" &&
         order.payment_method === "mpesa" &&
-        !["paid", "deposit_paid"].includes(order.payment_status)
+        !["paid", "deposit_paid"].includes(order.payment_status || "")
 
     const handleStatusUpdate = async (newStatus: string) => {
         if (loading) return
@@ -76,7 +88,7 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
                     </div>
 
                     <div className="text-right">
-                        <div className="font-semibold text-gray-900">{order.customer_name.split(" ")[0]}</div>
+                        <div className="font-semibold text-gray-900">{(order.customer_name || "Guest").split(" ")[0]}</div>
                         <div className="text-xs uppercase font-bold tracking-wider text-muted-foreground">{order.fulfilment}</div>
                     </div>
                 </div>
