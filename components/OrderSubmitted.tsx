@@ -246,10 +246,25 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         {/* Initiated Waiting Message (Hardened Copy) */}
         {liveOrder.payment_status === "initiated" && (
           <div className="mt-4 bg-white/80 p-3 rounded-2xl border border-white/60">
+            <div className="mb-2 flex items-center justify-center gap-2" aria-hidden="true">
+              {[0, 1, 2].map((dot) => (
+                <motion.span
+                  key={dot}
+                  className="h-2.5 w-2.5 rounded-full bg-amber-500"
+                  animate={{ y: [0, -6, 0], opacity: [0.45, 1, 0.45], scale: [0.9, 1.1, 0.9] }}
+                  transition={{
+                    duration: 0.9,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: dot * 0.15,
+                  }}
+                />
+              ))}
+            </div>
             <p className="text-sm text-amber-800 font-medium">
               Waiting for M-Pesa confirmation...
             </p>
-            <p className="text-sm text-amber-700 mt-1 animate-pulse">
+            <p className="text-sm text-amber-700 mt-1">
               Please check your phone ({liveOrder.mpesa_phone}) and enter your PIN.
             </p>
           </div>
