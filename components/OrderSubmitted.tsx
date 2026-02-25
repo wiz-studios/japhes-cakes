@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Check, ArrowRight, Download } from "lucide-react"
@@ -57,12 +57,12 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
     secondaryBtn: "text-orange-600 hover:bg-orange-50"
   }
 
-  const handlePrint = () => window.print()
-
   // State for order and polling
   const [liveOrder, setLiveOrder] = useState(order)
   const [isRetrying, setIsRetrying] = useState(false)
   const [retryCooldown, setRetryCooldown] = useState(0)
+  const [isDownloading, setIsDownloading] = useState(false)
+  const receiptRef = useRef<HTMLDivElement | null>(null)
 
   // Keep route title aligned with receipt so print/PDF engines can pick a useful filename.
   useEffect(() => {
@@ -140,7 +140,62 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
     }
   }
 
-  
+  const handleDownloadReceipt = async () => {
+    if (isDownloading) return
+    const receiptEl = receiptRef.current
+
+    if (!receiptEl) {
+      window.print()
+      return
+    }
+
+    setIsDownloading(true)
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ])
+
+      const canvas = await html2canvas(receiptEl, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      })
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      })
+
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = 8
+      const maxWidth = pageWidth - margin * 2
+      const maxHeight = pageHeight - margin * 2
+
+      let renderWidth = maxWidth
+      let renderHeight = (canvas.height * renderWidth) / canvas.width
+
+      if (renderHeight > maxHeight) {
+        renderHeight = maxHeight
+        renderWidth = (canvas.width * renderHeight) / canvas.height
+      }
+
+      const x = (pageWidth - renderWidth) / 2
+      const y = margin
+
+      const imageData = canvas.toDataURL("image/png")
+      pdf.addImage(imageData, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST")
+      pdf.save(`Receipt-${friendlyId}.pdf`)
+    } catch (error) {
+      console.error("[receipt-download] Failed to generate PDF:", error)
+      window.print()
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-2xl mx-auto print:min-h-0 print:justify-start print:pt-2 print:px-0">
@@ -286,7 +341,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         transition={{ delay: 0.5 }}
         className="w-full mb-8 break-inside-avoid page-break-inside-avoid print:mb-0"
       >
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)] print:shadow-none print:border-2 print:p-4">
+        <div ref={receiptRef} className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)] print:shadow-none print:border-2 print:p-4">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
               <p className="text-xs uppercase tracking-[0.32em] text-slate-400 font-semibold">Receipt</p>
@@ -393,7 +448,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
               </div>
             )}
           </div>
-          <p className="hidden print:block mt-4 text-center text-[10px] text-slate-500">
+          <p className="mt-4 text-center text-[10px] text-slate-500">
             <a href="mailto:wiz.dev.studios@gmail.com" className="underline underline-offset-2 text-slate-600">
               Built by Wiz Dev Studios
             </a>
@@ -416,9 +471,10 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         <Button
           variant="ghost"
           className={`w-full h-12 rounded-xl ${theme.secondaryBtn}`}
-          onClick={handlePrint}
+          onClick={handleDownloadReceipt}
+          disabled={isDownloading}
         >
-          <Download className="mr-2 w-4 h-4" /> Download Receipt
+          <Download className="mr-2 w-4 h-4" /> {isDownloading ? "Generating PDF..." : "Download Receipt"}
         </Button>
       </motion.div>
     </div>
