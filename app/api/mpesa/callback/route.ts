@@ -168,11 +168,6 @@ async function processStkCallback(payload: any, requestId: string) {
     const depositAmount = Number(order.payment_deposit_amount || Math.ceil(totalAmount * 0.5))
     const requestAmount = Number(order.payment_last_request_amount || 0)
 
-    if (order.payment_status === "deposit_paid" && requestAmount <= depositAmount) {
-      await markAttemptProcessed(supabase, callback)
-      return
-    }
-
     const increment =
       requestAmount || (order.payment_plan === "deposit" && paidAmount < totalAmount ? depositAmount : totalAmount)
     const nextPaid = Math.min(totalAmount, paidAmount + increment)
