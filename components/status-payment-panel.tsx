@@ -54,7 +54,7 @@ export function StatusPaymentPanel({
   const [feedback, setFeedback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const loadSnapshot = useCallback(async () => {
+  const loadSnapshot = useCallback(async (trackedCheckoutOverride?: string | null) => {
     const response = await getOrderPaymentSnapshot(orderId, normalizeKenyaPhone(initialPhone || ""))
     if (!response.success) {
       setError(response.error)
@@ -73,7 +73,8 @@ export function StatusPaymentPanel({
     })
     setLatestPayment(response.latestPayment)
 
-    const trackedCheckoutId = activeCheckoutRequestId || response.order.lastCheckoutRequestId || null
+    const trackedCheckoutId =
+      trackedCheckoutOverride ?? activeCheckoutRequestId ?? response.order.lastCheckoutRequestId ?? null
     const latestMatchesTracked = trackedCheckoutId
       ? response.latestPayment?.checkoutRequestId === trackedCheckoutId
       : false
@@ -132,9 +133,10 @@ export function StatusPaymentPanel({
 
       setDialogOpen(false)
       setFeedback("STK sent, check your phone to complete payment.")
-      setActiveCheckoutRequestId(response.checkoutRequestId || null)
+      const checkoutForTracking = response.checkoutRequestId || activeCheckoutRequestId || null
+      setActiveCheckoutRequestId(checkoutForTracking)
       setIsPolling(true)
-      await loadSnapshot()
+      await loadSnapshot(checkoutForTracking)
     } catch (actionError) {
       console.error("[status-payment] Failed to initiate STK:", actionError)
       setError("Failed to initiate payment. Please try again.")
