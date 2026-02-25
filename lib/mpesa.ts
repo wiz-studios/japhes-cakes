@@ -65,7 +65,7 @@ export async function initiateMpesaSTK(
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select(
-        "id, phone, friendly_id, total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount, mpesa_checkout_request_id, updated_at"
+        "id, phone, friendly_id, total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount, mpesa_checkout_request_id"
       )
       .eq("id", orderId)
       .single()
@@ -80,10 +80,10 @@ export async function initiateMpesaSTK(
       return { success: false, error: "Phone does not match this order." }
     }
 
-    const recentlyUpdated =
-      order.updated_at && Date.now() - new Date(order.updated_at).getTime() <= 45 * 1000
     const hasInFlightRequest =
-      Number(order.payment_last_request_amount || 0) > 0 && !!order.mpesa_checkout_request_id && recentlyUpdated
+      order.payment_status === "initiated" &&
+      Number(order.payment_last_request_amount || 0) > 0 &&
+      !!order.mpesa_checkout_request_id
 
     if (hasInFlightRequest) {
       return {
@@ -129,7 +129,6 @@ export async function initiateMpesaSTK(
         mpesa_checkout_request_id: stkResponse.CheckoutRequestID,
         payment_last_request_amount: amountToCharge,
         mpesa_phone: normalizedPhone,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", order.id)
 

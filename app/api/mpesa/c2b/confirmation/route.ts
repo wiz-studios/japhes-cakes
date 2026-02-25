@@ -125,7 +125,6 @@ async function processConfirmation(payload: C2BConfirmationPayload, requestId: s
     payment_amount_due: nextDue,
     payment_last_request_amount: null,
     mpesa_transaction_id: transId,
-    updated_at: new Date().toISOString(),
   }
 
   if (hasValidPhone) {

@@ -188,7 +188,6 @@ async function processStkCallback(payload: any, requestId: string) {
         payment_last_request_amount: null,
         mpesa_transaction_id:
           callback.mpesaReceiptNumber || order.mpesa_transaction_id || `STK_${Date.now().toString(36)}`,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", order.id)
 
@@ -208,7 +207,7 @@ async function processStkCallback(payload: any, requestId: string) {
       .from("orders")
       .update({
         payment_status: "failed",
-        updated_at: new Date().toISOString(),
+        payment_last_request_amount: null,
       })
       .eq("id", order.id)
 
