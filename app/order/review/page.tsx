@@ -453,11 +453,11 @@ function OrderReviewContent() {
           </AnimatePresence>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 gap-4">
+          <div className="mt-8 flex items-center gap-4 px-1">
             <Button
               type="button"
               variant="outline"
-              className="w-1/2 h-12 rounded-full shadow-[0_16px_40px_-28px_rgba(15,20,40,0.35)]"
+              className="h-12 min-w-0 flex-1 rounded-full shadow-[0_16px_40px_-28px_rgba(15,20,40,0.35)]"
               onClick={handleBack}
             >
               Back
@@ -465,7 +465,7 @@ function OrderReviewContent() {
             <Button
               type="button"
               onClick={handleSubmit}
-              className={`w-1/2 h-12 rounded-full text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] ${submitButtonColor}`}
+              className={`h-12 min-w-0 flex-1 rounded-full text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] ${submitButtonColor}`}
               disabled={submitting}
             >
               {submitting ? (
