@@ -135,7 +135,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
   
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-2xl mx-auto print:min-h-0 print:justify-start print:pt-8">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-2xl mx-auto print:min-h-0 print:justify-start print:pt-4 print:px-0">
       
 
       {showSandboxBadge && (
@@ -200,7 +200,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.45 }}
-        className="w-full mb-6"
+        className="w-full mb-6 print:hidden"
       >
         <OrderPaymentStatusCard
           paymentStatus={liveOrder.payment_status}
@@ -276,7 +276,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="w-full mb-8"
+        className="w-full mb-8 break-inside-avoid page-break-inside-avoid"
       >
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)] print:shadow-none print:border-2">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-200 pb-4">

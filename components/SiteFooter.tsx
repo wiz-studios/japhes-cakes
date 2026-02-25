@@ -35,7 +35,7 @@ export default function SiteFooter() {
   ]
 
   return (
-    <footer className="bg-[#0b0c12] text-slate-300 border-t border-white/5 relative overflow-hidden">
+    <footer className="bg-[#0b0c12] text-slate-300 border-t border-white/5 relative overflow-hidden print:hidden">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
       <div className="absolute -top-32 -right-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(80,98,210,0.35),transparent_65%)] blur-3xl opacity-70" />
       <div className="absolute -bottom-40 -left-20 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(216,47,125,0.32),transparent_65%)] blur-3xl opacity-70" />
