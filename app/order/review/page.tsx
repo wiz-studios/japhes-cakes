@@ -15,7 +15,7 @@ import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakePrice } from "@/lib/cake-pricing"
-import { isValidKenyaPhone, normalizeKenyaPhone } from "@/lib/phone"
+import { isValidKenyaPhone, maskPhoneNumber, normalizeKenyaPhone } from "@/lib/phone"
 
 // Main review page component
 // Types for order and item
@@ -398,7 +398,7 @@ function OrderReviewContent() {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold">Phone:</span>
-              <span className="text-gray-700">{order.phone}</span>
+              <span className="text-gray-700">{maskPhoneNumber(order.phone || "")}</span>
             </div>
           </div>
 

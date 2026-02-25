@@ -27,3 +27,24 @@ export function toKenyaMsisdn(input: string): string | null {
   if (!isValidKenyaPhone(normalized)) return null
   return `254${normalized.slice(1)}`
 }
+
+export function maskPhoneNumber(input: string): string {
+  const raw = String(input || "")
+  const normalized = normalizeKenyaPhone(raw)
+  const digits = isValidKenyaPhone(normalized) ? normalized : raw.replace(/\D/g, "")
+
+  if (!digits) return ""
+
+  if (digits.length <= 3) {
+    return `${digits[0]}${"*".repeat(Math.max(digits.length - 1, 0))}`
+  }
+
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 2)}${"*".repeat(Math.max(digits.length - 3, 1))}${digits.slice(-1)}`
+  }
+
+  const visibleStart = digits.slice(0, 4)
+  const visibleEnd = digits.slice(-2)
+  const hiddenCount = Math.max(digits.length - 6, 1)
+  return `${visibleStart}${"*".repeat(hiddenCount)}${visibleEnd}`
+}

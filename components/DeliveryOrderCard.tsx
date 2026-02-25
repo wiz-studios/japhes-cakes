@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { updateOrderStatus, completeDelivery } from "@/app/actions/orders" // We will add completeDelivery
 import { useState } from "react"
 import type { Order } from "@/lib/types/payment"
+import { maskPhoneNumber } from "@/lib/phone"
 
 interface DeliveryOrderCardProps {
     order: Order
@@ -89,7 +90,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                     <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-gray-400" />
                         <a href={`tel:${order.phone}`} className="font-mono font-bold text-blue-600 underline">
-                            {order.phone}
+                            {maskPhoneNumber(order.phone || "")}
                         </a>
                     </div>
                     <div className="pl-8 text-sm text-gray-700 font-medium">

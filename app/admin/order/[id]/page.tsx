@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { AdminOrderActions } from "@/components/admin-order-actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { maskPhoneNumber } from "@/lib/phone"
 
 export default async function AdminOrderDetailPage({
   params,
@@ -65,7 +66,7 @@ export default async function AdminOrderDetailPage({
               <div>
                 <Label className="text-muted-foreground">Customer</Label>
                 <div className="font-bold text-lg">{order.customer_name}</div>
-                <div className="text-primary font-medium">{order.phone}</div>
+                <div className="text-primary font-medium">{maskPhoneNumber(order.phone || "")}</div>
               </div>
               <div>
                 <Label className="text-muted-foreground">Fulfilment</Label>

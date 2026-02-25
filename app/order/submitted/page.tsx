@@ -1,13 +1,41 @@
+import type { Metadata } from "next"
 import dynamic from "next/dynamic"
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { notFound } from "next/navigation"
+import { formatFriendlyId } from "@/lib/order-helpers"
 
 const OrderSubmitted = dynamic(() => import("@/components/OrderSubmitted"))
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>
+}): Promise<Metadata> {
+  const { id } = await searchParams
+  if (!id) return { title: "Receipt" }
+
+  try {
+    const supabase = await createServerSupabaseClient()
+    const { data: order } = await supabase
+      .from("orders")
+      .select("id, friendly_id, created_at, order_type")
+      .eq("id", id)
+      .maybeSingle()
+
+    const orderRef = order
+      ? formatFriendlyId(order as { id: string; created_at: string | Date; order_type: string; friendly_id?: string | null })
+      : id.slice(0, 8).toUpperCase()
+
+    return { title: `Receipt-${orderRef}` }
+  } catch {
+    return { title: `Receipt-${id.slice(0, 8).toUpperCase()}` }
+  }
+}
 
 export default async function OrderSubmittedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ id: string }>
+  searchParams: Promise<{ id?: string }>
 }) {
   const { id } = await searchParams
   const supabase = await createServerSupabaseClient()

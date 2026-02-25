@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import BrandLogo from "@/components/BrandLogo"
+import { maskPhoneNumber } from "@/lib/phone"
 
 type PaymentAttempt = {
   id?: string
@@ -56,28 +57,21 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
     secondaryBtn: "text-orange-600 hover:bg-orange-50"
   }
 
-  const handlePrint = () => {
-    const originalTitle = document.title
-    const printableTitle = `Receipt-${friendlyId}`
-    let restored = false
-
-    const restoreTitle = () => {
-      if (restored) return
-      restored = true
-      document.title = originalTitle
-      window.removeEventListener("afterprint", restoreTitle)
-    }
-
-    document.title = printableTitle
-    window.addEventListener("afterprint", restoreTitle)
-    window.print()
-    window.setTimeout(restoreTitle, 1500)
-  }
+  const handlePrint = () => window.print()
 
   // State for order and polling
   const [liveOrder, setLiveOrder] = useState(order)
   const [isRetrying, setIsRetrying] = useState(false)
   const [retryCooldown, setRetryCooldown] = useState(0)
+
+  // Keep route title aligned with receipt so print/PDF engines can pick a useful filename.
+  useEffect(() => {
+    const previousTitle = document.title
+    document.title = `Receipt-${friendlyId}`
+    return () => {
+      document.title = previousTitle
+    }
+  }, [friendlyId])
 
   // Polling logic (v0 Prompt: 5-8 seconds)
   useEffect(() => {
@@ -279,7 +273,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
               Waiting for M-Pesa confirmation...
             </p>
             <p className="text-sm text-amber-700 mt-1">
-              Please check your phone ({liveOrder.mpesa_phone}) and enter your PIN.
+              Please check your phone ({maskPhoneNumber(liveOrder.mpesa_phone || "")}) and enter your PIN.
             </p>
           </div>
         )}
@@ -310,7 +304,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold">Customer</p>
               <p className="mt-1 font-semibold text-slate-900">{liveOrder.customer_name || "Guest"}</p>
-              <p className="text-slate-600">{liveOrder.phone}</p>
+              <p className="text-slate-600">{maskPhoneNumber(liveOrder.phone || "")}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold">Fulfilment</p>

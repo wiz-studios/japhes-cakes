@@ -7,6 +7,7 @@ import {
   type SchoolInquiry,
   type SchoolInquiryStatus,
 } from "@/lib/school-inquiries"
+import { maskPhoneNumber } from "@/lib/phone"
 
 type Props = {
   initialInquiries: SchoolInquiry[]
@@ -114,7 +115,7 @@ export default function SchoolInquiryBoard({ initialInquiries }: Props) {
               <tr key={item.id} className="border-b border-slate-100 align-top">
                 <td className="px-4 py-3">
                   <p className="font-semibold text-slate-900">{item.name}</p>
-                  <p className="text-xs text-slate-600">{item.phone}</p>
+                  <p className="text-xs text-slate-600">{maskPhoneNumber(item.phone || "")}</p>
                 </td>
                 <td className="px-4 py-3 text-slate-700">{item.course}</td>
                 <td className="px-4 py-3 text-slate-600">{item.message || "—"}</td>
