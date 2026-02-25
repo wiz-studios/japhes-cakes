@@ -1,14 +1,13 @@
 import { createServiceSupabaseClient } from "@/lib/supabase-service"
-import dynamic from "next/dynamic"
 import { OrderStatusSearch } from "@/components/order-status-search"
 import OrderStatusTimeline from "@/components/OrderStatusTimeline"
-import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
+import { StatusPaymentPanel } from "@/components/status-payment-panel"
 import { formatFriendlyId, getDeliveryEstimate } from "@/lib/order-helpers"
 import { normalizeKenyaPhone } from "@/lib/phone"
-import { Package, Clock } from "lucide-react"
+import { Clock } from "lucide-react"
 
 const ORDER_STATUS_SELECT =
-  "id, friendly_id, created_at, order_type, fulfilment, status, total_amount, delivery_window, payment_status, payment_method, payment_amount_paid, payment_amount_due, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
+  "id, friendly_id, created_at, order_type, fulfilment, status, phone, mpesa_phone, total_amount, delivery_window, payment_status, payment_method, payment_plan, payment_amount_paid, payment_amount_due, mpesa_checkout_request_id, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
 
 export default async function OrderStatusPage({
   searchParams,
@@ -188,14 +187,20 @@ export default async function OrderStatusPage({
               </div>
             </div>
 
-            <OrderPaymentStatusCard
-              paymentStatus={order.payment_status}
-              paymentMethod={order.payment_method}
+            <StatusPaymentPanel
+              orderId={order.id}
               fulfilment={order.fulfilment}
-              mpesaTransactionId={order.mpesa_transaction_id}
-              totalAmount={order.total_amount || 0}
-              amountPaid={order.payment_amount_paid || 0}
-              amountDue={order.payment_amount_due || 0}
+              initialPhone={order.mpesa_phone || order.phone || ""}
+              initialState={{
+                orderStatus: order.status,
+                paymentStatus: order.payment_status || "pending",
+                paymentMethod: order.payment_method || "mpesa",
+                totalAmount: Number(order.total_amount || 0),
+                amountPaid: Number(order.payment_amount_paid || 0),
+                balanceDue: Number(order.payment_amount_due || 0),
+                mpesaTransactionId: order.mpesa_transaction_id || null,
+                lastCheckoutRequestId: order.mpesa_checkout_request_id || null,
+              }}
             />
 
             <div className={`${cardClass} p-6`}>

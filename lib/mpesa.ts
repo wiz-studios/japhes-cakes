@@ -1,5 +1,6 @@
 "use server"
 
+import crypto from "node:crypto"
 import { createClient } from "@supabase/supabase-js"
 import { isValidKenyaPhone, normalizeKenyaPhone } from "@/lib/phone"
 import { initiateDarajaStkPush } from "@/lib/mpesa-daraja"
@@ -29,6 +30,34 @@ function logStk(correlationId: string, message: string, meta?: Record<string, un
     return
   }
   console.log(`[STK-INIT][${correlationId}] ${message}`)
+}
+
+function isMissingPaymentsTable(error: any) {
+  return error?.code === "42P01" || error?.message?.toLowerCase?.().includes("relation \"payments\" does not exist")
+}
+
+async function recordInitiatedPayment(params: {
+  supabase: any
+  orderId: string
+  amount: number
+  checkoutRequestId: string
+}) {
+  const { supabase, orderId, amount, checkoutRequestId } = params
+  const { error } = await supabase.from("payments").upsert(
+    {
+      order_id: orderId,
+      amount,
+      method: "mpesa",
+      status: "initiated",
+      lipana_checkout_request_id: checkoutRequestId,
+      lipana_transaction_id: null,
+    },
+    { onConflict: "lipana_checkout_request_id" }
+  )
+
+  if (error && !isMissingPaymentsTable(error)) {
+    console.warn("[STK-INIT] Failed to record initiated payment", error)
+  }
 }
 
 /**
@@ -86,6 +115,14 @@ export async function initiateMpesaSTK(
       !!order.mpesa_checkout_request_id
 
     if (hasInFlightRequest) {
+      if (order.mpesa_checkout_request_id) {
+        await recordInitiatedPayment({
+          supabase,
+          orderId: order.id,
+          amount: Number(order.payment_last_request_amount || 0),
+          checkoutRequestId: order.mpesa_checkout_request_id,
+        })
+      }
       return {
         success: true,
         checkoutRequestId: order.mpesa_checkout_request_id || undefined,
@@ -136,6 +173,13 @@ export async function initiateMpesaSTK(
       logStk(correlationId, "Order update failed", { orderId, error: updateError.message })
       return { success: false, error: updateError.message }
     }
+
+    await recordInitiatedPayment({
+      supabase,
+      orderId: order.id,
+      amount: amountToCharge,
+      checkoutRequestId: stkResponse.CheckoutRequestID,
+    })
 
     logStk(correlationId, "STK initiated", {
       orderId,

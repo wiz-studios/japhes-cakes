@@ -86,6 +86,72 @@ async function markAttemptProcessed(
     .eq("checkout_request_id", callback.checkoutRequestId)
 }
 
+function isMissingPaymentsTable(error: any) {
+  return error?.code === "42P01" || error?.message?.toLowerCase?.().includes("relation \"payments\" does not exist")
+}
+
+async function syncPaymentsLedger(params: {
+  supabase: ReturnType<typeof createMpesaServiceClient>
+  callback: ParsedStkCallback
+  orderId: string | null
+  fallbackAmount: number | null
+  requestId: string
+}) {
+  const { supabase, callback, orderId, fallbackAmount, requestId } = params
+  const normalizedStatus: "success" | "failed" = callback.resultCode === 0 ? "success" : "failed"
+
+  const { data: existing, error: existingError } = await supabase
+    .from("payments")
+    .select("id, status, amount, lipana_transaction_id")
+    .eq("lipana_checkout_request_id", callback.checkoutRequestId)
+    .maybeSingle()
+
+  if (existingError) {
+    if (!isMissingPaymentsTable(existingError)) {
+      console.error(`[${requestId}] [STK-CALLBACK] Payments ledger lookup failed`, existingError)
+    }
+    return {
+      alreadySuccessful: false,
+      amount: callback.callbackAmount ?? fallbackAmount,
+    }
+  }
+
+  if (existing?.status === "success") {
+    return {
+      alreadySuccessful: true,
+      amount: Number(existing.amount ?? callback.callbackAmount ?? fallbackAmount ?? 0),
+    }
+  }
+
+  const derivedAmount = callback.callbackAmount ?? Number(existing?.amount ?? fallbackAmount ?? 0)
+  const amount = Number.isFinite(derivedAmount) && derivedAmount > 0 ? derivedAmount : null
+  const payload = {
+    order_id: orderId,
+    amount,
+    method: "mpesa",
+    status: normalizedStatus,
+    lipana_transaction_id: callback.mpesaReceiptNumber || existing?.lipana_transaction_id || null,
+    lipana_checkout_request_id: callback.checkoutRequestId,
+  }
+
+  if (existing?.id) {
+    const { error: updateError } = await supabase.from("payments").update(payload).eq("id", existing.id)
+    if (updateError && !isMissingPaymentsTable(updateError)) {
+      console.error(`[${requestId}] [STK-CALLBACK] Payments ledger update failed`, updateError)
+    }
+  } else {
+    const { error: insertError } = await supabase.from("payments").insert(payload)
+    if (insertError && !isMissingPaymentsTable(insertError)) {
+      console.error(`[${requestId}] [STK-CALLBACK] Payments ledger insert failed`, insertError)
+    }
+  }
+
+  return {
+    alreadySuccessful: false,
+    amount: amount == null ? null : Number(amount),
+  }
+}
+
 async function processStkCallback(payload: any, requestId: string) {
   const callback = parseStkCallback(payload)
   if (!callback) {
@@ -139,13 +205,33 @@ async function processStkCallback(payload: any, requestId: string) {
       .maybeSingle()
 
     if (existingAttempt?.processed_at) {
-      logWithRequestId(requestId, "[STK-CALLBACK] Duplicate checkout callback ignored", {
-        checkoutRequestId: callback.checkoutRequestId,
-      })
-      return
+      const alreadySettled = order?.payment_status === "paid" || callback.resultCode !== 0
+      if (alreadySettled) {
+        logWithRequestId(requestId, "[STK-CALLBACK] Duplicate checkout callback ignored", {
+          checkoutRequestId: callback.checkoutRequestId,
+        })
+        return
+      }
     }
   } else if (attemptError) {
     console.error(`[${requestId}] [STK-CALLBACK] Failed to log attempt`, attemptError)
+  }
+
+  const ledger = await syncPaymentsLedger({
+    supabase,
+    callback,
+    orderId: order?.id ?? null,
+    fallbackAmount: Number(order?.payment_last_request_amount || 0) || null,
+    requestId,
+  })
+
+  if (ledger.alreadySuccessful && order?.payment_status === "paid") {
+    logWithRequestId(requestId, "[STK-CALLBACK] Duplicate successful payment ignored", {
+      orderId: order.id,
+      checkoutRequestId: callback.checkoutRequestId,
+    })
+    await markAttemptProcessed(supabase, callback)
+    return
   }
 
   if (findError || !order) {
@@ -168,8 +254,9 @@ async function processStkCallback(payload: any, requestId: string) {
     const depositAmount = Number(order.payment_deposit_amount || Math.ceil(totalAmount * 0.5))
     const requestAmount = Number(order.payment_last_request_amount || 0)
 
+    const ledgerAmount = Number(ledger.amount || 0)
     const increment =
-      requestAmount || (order.payment_plan === "deposit" && paidAmount < totalAmount ? depositAmount : totalAmount)
+      ledgerAmount || requestAmount || (order.payment_plan === "deposit" && paidAmount < totalAmount ? depositAmount : totalAmount)
     const nextPaid = Math.min(totalAmount, paidAmount + increment)
     const nextDue = Math.max(totalAmount - nextPaid, 0)
     const nextStatus: "paid" | "deposit_paid" = nextPaid >= totalAmount ? "paid" : "deposit_paid"
