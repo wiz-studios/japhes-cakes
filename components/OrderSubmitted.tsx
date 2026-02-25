@@ -57,7 +57,21 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
   }
 
   const handlePrint = () => {
+    const originalTitle = document.title
+    const printableTitle = `Receipt-${friendlyId}`
+    let restored = false
+
+    const restoreTitle = () => {
+      if (restored) return
+      restored = true
+      document.title = originalTitle
+      window.removeEventListener("afterprint", restoreTitle)
+    }
+
+    document.title = printableTitle
+    window.addEventListener("afterprint", restoreTitle)
     window.print()
+    window.setTimeout(restoreTitle, 1500)
   }
 
   // State for order and polling
@@ -386,7 +400,9 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
             )}
           </div>
           <p className="hidden print:block mt-4 text-center text-[10px] text-slate-500">
-            Built by Wiz Dev Studios
+            <a href="mailto:wiz.dev.studios@gmail.com" className="underline underline-offset-2 text-slate-600">
+              Built by Wiz Dev Studios
+            </a>
           </p>
         </div>
       </motion.div>
