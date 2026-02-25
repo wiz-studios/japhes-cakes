@@ -49,10 +49,10 @@ async function recordInitiatedPayment(params: {
       amount,
       method: "mpesa",
       status: "initiated",
-      lipana_checkout_request_id: checkoutRequestId,
-      lipana_transaction_id: null,
+      mpesa_checkout_request_id: checkoutRequestId,
+      mpesa_transaction_id: null,
     },
-    { onConflict: "lipana_checkout_request_id" }
+    { onConflict: "mpesa_checkout_request_id" }
   )
 
   if (error && !isMissingPaymentsTable(error)) {

@@ -63,7 +63,7 @@ async function getLatestPayment(
 ): Promise<LatestPaymentSnapshot | null> {
   const paymentsQuery = await supabase
     .from("payments")
-    .select("id, amount, status, lipana_checkout_request_id, lipana_transaction_id, created_at")
+    .select("id, amount, status, mpesa_checkout_request_id, mpesa_transaction_id, created_at")
     .eq("order_id", orderId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -74,8 +74,8 @@ async function getLatestPayment(
       id: paymentsQuery.data.id,
       amount: paymentsQuery.data.amount != null ? Number(paymentsQuery.data.amount) : null,
       status: paymentsQuery.data.status as "initiated" | "success" | "failed",
-      checkoutRequestId: paymentsQuery.data.lipana_checkout_request_id || null,
-      transactionId: paymentsQuery.data.lipana_transaction_id || null,
+      checkoutRequestId: paymentsQuery.data.mpesa_checkout_request_id || null,
+      transactionId: paymentsQuery.data.mpesa_transaction_id || null,
       createdAt: paymentsQuery.data.created_at,
     }
   }
@@ -121,9 +121,9 @@ async function recordInitiatedPayment(params: {
       amount,
       method: "mpesa",
       status: "initiated",
-      lipana_checkout_request_id: checkoutRequestId,
+      mpesa_checkout_request_id: checkoutRequestId,
     },
-    { onConflict: "lipana_checkout_request_id" }
+    { onConflict: "mpesa_checkout_request_id" }
   )
 
   if (error && !isMissingPaymentsTable(error)) {

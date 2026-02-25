@@ -102,8 +102,8 @@ async function syncPaymentsLedger(params: {
 
   const { data: existing, error: existingError } = await supabase
     .from("payments")
-    .select("id, status, amount, lipana_transaction_id")
-    .eq("lipana_checkout_request_id", callback.checkoutRequestId)
+    .select("id, status, amount, mpesa_transaction_id")
+    .eq("mpesa_checkout_request_id", callback.checkoutRequestId)
     .maybeSingle()
 
   if (existingError) {
@@ -130,8 +130,8 @@ async function syncPaymentsLedger(params: {
     amount,
     method: "mpesa",
     status: normalizedStatus,
-    lipana_transaction_id: callback.mpesaReceiptNumber || existing?.lipana_transaction_id || null,
-    lipana_checkout_request_id: callback.checkoutRequestId,
+    mpesa_transaction_id: callback.mpesaReceiptNumber || existing?.mpesa_transaction_id || null,
+    mpesa_checkout_request_id: callback.checkoutRequestId,
   }
 
   if (existing?.id) {
