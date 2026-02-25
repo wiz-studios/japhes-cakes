@@ -135,7 +135,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
   
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-2xl mx-auto print:min-h-0 print:justify-start print:pt-4 print:px-0">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center max-w-2xl mx-auto print:min-h-0 print:justify-start print:pt-2 print:px-0">
       
 
       {showSandboxBadge && (
@@ -157,7 +157,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className={`text-3xl font-serif font-bold ${theme.title} mb-2`}
+        className={`text-3xl font-serif font-bold ${theme.title} mb-2 print:text-2xl print:mb-1`}
       >
         {liveOrder.payment_status === "paid"
           ? "Payment Confirmed"
@@ -172,7 +172,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="text-muted-foreground text-lg mb-8"
+        className="text-muted-foreground text-lg mb-8 print:text-sm print:mb-4"
       >
         Thank you, {liveOrder.customer_name?.split(' ')[0] || "Guest"}.<br />
         {isDelivery
@@ -185,7 +185,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="lux-card p-6 w-full mb-8 print:border-2 print:shadow-none"
+        className="lux-card p-6 w-full mb-8 print:border-2 print:shadow-none print:p-4 print:mb-4"
       >
         <div className="text-sm text-muted-foreground uppercase tracking-wider font-semibold mb-1">
           Order Number
@@ -276,9 +276,9 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="w-full mb-8 break-inside-avoid page-break-inside-avoid"
+        className="w-full mb-8 break-inside-avoid page-break-inside-avoid print:mb-0"
       >
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)] print:shadow-none print:border-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)] print:shadow-none print:border-2 print:p-4">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
               <p className="text-xs uppercase tracking-[0.32em] text-slate-400 font-semibold">Receipt</p>
@@ -385,6 +385,9 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
               </div>
             )}
           </div>
+          <p className="hidden print:block mt-4 text-center text-[10px] text-slate-500">
+            Built by Wiz Dev Studios
+          </p>
         </div>
       </motion.div>
 
