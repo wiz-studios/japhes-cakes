@@ -94,7 +94,7 @@ export async function initiateMpesaSTK(
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select(
-        "id, phone, friendly_id, total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount, mpesa_checkout_request_id"
+        "id, friendly_id, total_amount, payment_plan, payment_amount_paid, payment_deposit_amount, payment_status, payment_last_request_amount, mpesa_checkout_request_id"
       )
       .eq("id", orderId)
       .single()
@@ -102,11 +102,6 @@ export async function initiateMpesaSTK(
     if (orderError || !order) {
       logStk(correlationId, "Order lookup failed", { orderId, error: orderError?.message })
       return { success: false, error: "Order not found" }
-    }
-
-    const orderPhone = normalizeKenyaPhone(order.phone || "")
-    if (!orderPhone || orderPhone !== normalizedPhone) {
-      return { success: false, error: "Phone does not match this order." }
     }
 
     const hasInFlightRequest =

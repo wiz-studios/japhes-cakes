@@ -192,7 +192,7 @@ export async function initiateMpesaBalanceSTK(orderId: string, phone: string): P
   const { data: order, error } = await supabase
     .from("orders")
     .select(
-      "id, status, phone, payment_method, payment_status, total_amount, payment_amount_paid, payment_amount_due, mpesa_checkout_request_id"
+      "id, status, payment_method, payment_status, total_amount, payment_amount_paid, payment_amount_due, mpesa_checkout_request_id"
     )
     .eq("id", trimmedOrderId)
     .maybeSingle()
@@ -207,11 +207,6 @@ export async function initiateMpesaBalanceSTK(orderId: string, phone: string): P
 
   if ((order.payment_method || "mpesa") !== "mpesa") {
     return { success: false, error: "This order is not configured for M-Pesa payments." }
-  }
-
-  const orderPhone = normalizeKenyaPhone(order.phone || "")
-  if (!orderPhone || orderPhone !== normalizedPhone) {
-    return { success: false, error: "Phone number does not match this order." }
   }
 
   const balance = computeBalance(order)
