@@ -76,3 +76,12 @@ node scripts/simulate-c2b-confirmation.js <ORDER_REF> <AMOUNT>
 - `GET /api/cron/payment-reconcile`
 - Query params (optional): `batch`, `lookbackMinutes`
 - Auth: send `x-cron-secret: <CRON_SECRET>` or `Authorization: Bearer <CRON_SECRET>`
+
+## Scheduler note for Vercel Hobby
+
+Vercel Hobby only supports cron schedules that run once per day.  
+For frequent reconciliation, this project uses GitHub Actions scheduler:
+
+- Workflow: `.github/workflows/payment-reconcile-cron.yml`
+- Repository secret required: `CRON_SECRET`
+- Optional repository variable: `CRON_BASE_URL` (defaults to production domain)

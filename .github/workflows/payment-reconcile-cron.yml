@@ -1,0 +1,44 @@
+name: Payment Reconcile Cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      CRON_BASE_URL: ${{ vars.CRON_BASE_URL }}
+    steps:
+      - name: Validate configuration
+        shell: bash
+        run: |
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "Missing GitHub secret: CRON_SECRET"
+            exit 1
+          fi
+          BASE_URL="${CRON_BASE_URL:-https://japhes-cakes.vercel.app}"
+          echo "BASE_URL=${BASE_URL}" >> "${GITHUB_ENV}"
+          echo "Using cron base URL: ${BASE_URL}"
+
+      - name: Reconcile stuck M-Pesa payments
+        shell: bash
+        run: |
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE_URL}/api/cron/payment-reconcile"
+
+      - name: Expire stale initiated payments (every 10 mins)
+        shell: bash
+        run: |
+          minute="$(date -u +%M)"
+          if [ $((10#${minute} % 10)) -eq 0 ]; then
+            curl --fail --silent --show-error \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              "${BASE_URL}/api/cron/payment-expiry"
+          else
+            echo "Skipping payment-expiry this run; it executes every 10 minutes."
+          fi
+

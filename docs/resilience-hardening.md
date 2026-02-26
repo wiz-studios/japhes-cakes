@@ -96,10 +96,17 @@ MPESA_RECONCILE_BATCH_SIZE=25
 MPESA_RECONCILE_LOOKBACK_MINUTES=360
 ```
 
-## Recommended cron schedules (Vercel)
+## Scheduler setup
 
-- `/api/cron/payment-reconcile` every 3 minutes
-- `/api/cron/payment-expiry` every 10 minutes
+Vercel Hobby does not support minute-level cron schedules, so deployments fail if `vercel.json` includes `*/N` cron expressions.
+
+- Hobby plan: use GitHub Actions scheduler (`.github/workflows/payment-reconcile-cron.yml`)
+- Pro/Enterprise: you can use Vercel Cron with minute-level schedules
+
+Required GitHub config for Hobby scheduler:
+
+- Repository secret: `CRON_SECRET` (same value as your app env `CRON_SECRET`)
+- Optional repository variable: `CRON_BASE_URL` (defaults to `https://japhes-cakes.vercel.app`)
 
 ## k6 usage
 
