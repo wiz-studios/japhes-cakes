@@ -7,7 +7,6 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-
 import { Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import BrandLogo from "@/components/BrandLogo"
-import SystemStatusBanner from "@/components/SystemStatusBanner"
 
 export default function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -92,7 +91,6 @@ export default function SiteHeader() {
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
-        <SystemStatusBanner compact />
       </motion.header>
 
       <AnimatePresence>

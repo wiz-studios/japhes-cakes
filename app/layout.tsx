@@ -7,7 +7,6 @@ import SiteHeader from "@/components/SiteHeader"
 import SiteFooter from "@/components/SiteFooter"
 import FloatingWhatsApp from "@/components/FloatingWhatsApp"
 import SupportDrawer from "@/components/SupportDrawer"
-import SystemStatusBanner from "@/components/SystemStatusBanner"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
@@ -55,7 +54,6 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${manrope.variable} ${cormorant.variable} font-sans antialiased min-h-screen bg-background flex flex-col`}>
         <SiteHeader />
-        <SystemStatusBanner onlyOrderPages compact />
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <FloatingWhatsApp />
