@@ -111,6 +111,8 @@ export default async function OrderStatusPage({
   const statusTone = order ? statusToneMap[order.status] || "bg-slate-50 text-slate-700 border-slate-200" : ""
   const cardClass =
     "rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)]"
+  const metaLabelClass =
+    "text-[10px] uppercase tracking-[0.16em] leading-tight text-slate-400 sm:text-[11px] sm:tracking-[0.24em]"
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
@@ -153,13 +155,13 @@ export default async function OrderStatusPage({
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Fulfilment</p>
-                  <p className="mt-2 text-base font-semibold text-slate-900">{isDelivery ? "Delivery" : "Pickup"}</p>
+                <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className={metaLabelClass}>Fulfilment</p>
+                  <p className="mt-2 text-base font-semibold text-slate-900 break-words">{isDelivery ? "Delivery" : "Pickup"}</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">{locationLabel}</p>
-                  <p className="mt-2 text-base font-semibold text-slate-900">{locationValue}</p>
+                <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className={metaLabelClass}>{locationLabel}</p>
+                  <p className="mt-2 text-base font-semibold text-slate-900 break-words">{locationValue}</p>
                   {order.delivery_window && (
                     <p className="text-xs text-slate-500 mt-1">
                       {isDelivery ? "Window: " : "Time: "}
@@ -167,8 +169,8 @@ export default async function OrderStatusPage({
                     </p>
                   )}
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Total</p>
+                <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className={metaLabelClass}>Total</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">
                     {(order.total_amount || 0).toLocaleString()} KES
                   </p>
