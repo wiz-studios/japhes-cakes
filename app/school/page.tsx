@@ -156,6 +156,21 @@ const yoghurtCoursePerks = [
   },
 ]
 
+const enrollmentSteps = [
+  {
+    title: "Choose a Course",
+    detail: "Pick a full course, short intensive, or 2-day yoghurt class based on your goal.",
+  },
+  {
+    title: "Pay Enrollment Fee",
+    detail: "Pay registration and minimum required amount to secure your slot.",
+  },
+  {
+    title: "Start Practical Training",
+    detail: "Attend hands-on sessions and graduate with real market-ready skills.",
+  },
+]
+
 export default async function SchoolPage() {
   const supabase = await createServerSupabaseClient()
   const { data: galleryRows } = await supabase
@@ -168,6 +183,15 @@ export default async function SchoolPage() {
   const galleryItems = ((galleryRows || []) as SchoolGalleryItem[]).filter(
     (item) => item.title !== "Pizza Shop Interior" && item.title !== "Cake Shop Front"
   )
+  const inquiryCourseOptions = [
+    "Basic Cake Making & Decoration",
+    "Intermediate Cake Making & Decoration",
+    "Advanced Cake Making & Decoration",
+    "Short Course: Basic Cake Making & Decorations",
+    "Short Course: Pies, Pastries & Desserts",
+    "Short Course: Bread & Bread Products",
+    "Yoghurt & Milkshake (2-day)",
+  ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(140deg,#f6f2f7_0%,#eef1f8_55%,#eaeef7_100%)] text-slate-900">
@@ -256,6 +280,56 @@ export default async function SchoolPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 pb-8">
+        <div className="rounded-2xl border border-white/60 bg-white/85 p-4 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Plan Your Enrollment</p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="#fees"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:border-slate-300"
+              >
+                Fees
+              </Link>
+              <Link
+                href="#curriculum"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:border-slate-300"
+              >
+                Full Courses
+              </Link>
+              <Link
+                href="#short-courses"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:border-slate-300"
+              >
+                Short Courses
+              </Link>
+              <Link
+                href="#yoghurt-course"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700 transition hover:border-slate-300"
+              >
+                2-day Class
+              </Link>
+              <Link
+                href="#enroll"
+                className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-slate-800"
+              >
+                Enroll
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {enrollmentSteps.map((step, index) => (
+              <div key={step.title} className="rounded-xl border border-slate-200/80 bg-white px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Step {index + 1}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">{step.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-600">{step.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <SchoolGallerySection items={galleryItems} />
 
       <section id="fees" className="mx-auto max-w-6xl px-6 pb-10">
@@ -287,7 +361,7 @@ export default async function SchoolPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-10">
+      <section id="curriculum" className="mx-auto max-w-6xl px-6 pb-10">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Curriculum</p>
@@ -318,7 +392,7 @@ export default async function SchoolPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-10">
+      <section id="short-courses" className="mx-auto max-w-6xl px-6 pb-10">
         <div className="lux-card p-8 md:p-10">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -349,7 +423,7 @@ export default async function SchoolPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-16">
+      <section id="yoghurt-course" className="mx-auto max-w-6xl px-6 pb-16">
         <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="lux-card self-start p-6 md:p-8">
             <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Yoghurt & Milkshake</p>
@@ -402,7 +476,7 @@ export default async function SchoolPage() {
             </div>
           </div>
 
-          <div className="lux-card p-8 md:p-10">
+          <div id="enroll" className="lux-card p-8 md:p-10">
             <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Booking & Enquiries</p>
             <h3 className="text-xl font-serif font-semibold text-slate-900">Let&apos;s get you enrolled</h3>
             <div className="mt-5 space-y-3 text-sm text-slate-600">
@@ -415,7 +489,7 @@ export default async function SchoolPage() {
                 <span>Witeithie Town along Thika Super Highway</span>
               </div>
             </div>
-            <SchoolInquiryForm />
+            <SchoolInquiryForm courseOptions={inquiryCourseOptions} />
             <div className="mt-6 flex flex-col gap-3">
               <Link
                 href="tel:+254708244764"
