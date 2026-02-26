@@ -52,6 +52,12 @@ function readEnv(key) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function isTruthyEnv(key, defaultValue = false) {
+  const raw = readEnv(key)
+  if (!raw) return defaultValue
+  return !["false", "0", "off", "no"].includes(raw.toLowerCase())
+}
+
 function validateHttpsUrl(key, expectedPath) {
   const raw = readEnv(key)
   if (!raw) return
@@ -133,6 +139,17 @@ if (!hasValue("MPESA_RECONCILE_BATCH_SIZE")) {
 }
 if (!hasValue("MPESA_RECONCILE_LOOKBACK_MINUTES")) {
   warnings.push("Optional env not set: MPESA_RECONCILE_LOOKBACK_MINUTES (default 360)")
+}
+if (isTruthyEnv("ENABLE_ADMIN_PAYMENT_ALERTS", true)) {
+  if (!hasValue("ADMIN_PAYMENT_ALERT_WHATSAPP_TO")) {
+    warnings.push("Optional env not set: ADMIN_PAYMENT_ALERT_WHATSAPP_TO (WhatsApp admin alert recipient)")
+  }
+  if (!hasValue("WHATSAPP_ALERT_ACCESS_TOKEN")) {
+    warnings.push("Optional env not set: WHATSAPP_ALERT_ACCESS_TOKEN (WhatsApp Cloud API token)")
+  }
+  if (!hasValue("WHATSAPP_ALERT_PHONE_NUMBER_ID")) {
+    warnings.push("Optional env not set: WHATSAPP_ALERT_PHONE_NUMBER_ID (WhatsApp sender number ID)")
+  }
 }
 
 // Validate enums and URLs

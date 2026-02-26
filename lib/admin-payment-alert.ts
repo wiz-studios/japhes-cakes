@@ -1,4 +1,3 @@
-import { sendSmtpMail } from "@/lib/smtp"
 import { formatDateTimeNairobi } from "@/lib/time"
 
 type PaymentStatus = "paid" | "deposit_paid"
@@ -19,7 +18,14 @@ type AdminPaymentAlertInput = {
   checkoutRequestId?: string | null
 }
 
-function parseRecipients(value?: string | null) {
+type WhatsAppAlertConfig = {
+  accessToken: string
+  phoneNumberId: string
+  apiVersion: string
+  recipients: string[]
+}
+
+function parseList(value?: string | null) {
   if (!value) return []
   return value
     .split(/[;,]/)
@@ -27,26 +33,48 @@ function parseRecipients(value?: string | null) {
     .filter(Boolean)
 }
 
-function getTransportConfig() {
-  const host = process.env.EMAIL_HOST
-  const port = Number(process.env.EMAIL_PORT || "")
-  const secure = `${process.env.EMAIL_SECURE}`.toLowerCase() === "true"
-  const user = process.env.EMAIL_USER
-  const pass = process.env.EMAIL_PASS
-  const from = process.env.EMAIL_FROM
-  const recipients = parseRecipients(
-    process.env.ADMIN_PAYMENT_ALERT_TO ||
-      process.env.ADMIN_ALERT_EMAIL ||
-      process.env.EMAIL_TO ||
-      process.env.ADMIN_EMAIL ||
-      process.env.EMAIL_USER
+function normalizeRecipient(value: string) {
+  const digits = value.replace(/\D/g, "")
+  if (!digits) return null
+  if (digits.startsWith("254") && digits.length === 12) return digits
+  if (digits.startsWith("0") && digits.length === 10) return `254${digits.slice(1)}`
+  if (digits.length === 9 && digits.startsWith("7")) return `254${digits}`
+  if (digits.length >= 10 && digits.length <= 15) return digits
+  return null
+}
+
+function getTransportConfig(): WhatsAppAlertConfig | null {
+  const accessToken = (
+    process.env.WHATSAPP_ALERT_ACCESS_TOKEN ||
+    process.env.WHATSAPP_ACCESS_TOKEN ||
+    ""
+  ).trim()
+  const phoneNumberId = (
+    process.env.WHATSAPP_ALERT_PHONE_NUMBER_ID ||
+    process.env.WHATSAPP_PHONE_NUMBER_ID ||
+    ""
+  ).trim()
+  const apiVersion = (process.env.WHATSAPP_ALERT_API_VERSION || "v22.0").trim()
+
+  const recipientsRaw = parseList(
+    process.env.ADMIN_PAYMENT_ALERT_WHATSAPP_TO ||
+      process.env.ADMIN_ALERT_WHATSAPP_TO ||
+      process.env.ADMIN_ALERT_WHATSAPP ||
+      process.env.ADMIN_WHATSAPP_TO
+  )
+  const recipients = Array.from(
+    new Set(
+      recipientsRaw
+        .map((value) => normalizeRecipient(value))
+        .filter((value): value is string => Boolean(value))
+    )
   )
 
-  if (!host || !port || !user || !pass || !from || recipients.length === 0) {
+  if (!accessToken || !phoneNumberId || recipients.length === 0) {
     return null
   }
 
-  return { host, port, secure, user, pass, from, recipients }
+  return { accessToken, phoneNumberId, apiVersion, recipients }
 }
 
 function isAlertEnabled() {
@@ -80,12 +108,6 @@ function getBaseUrl() {
     : `https://${normalized}`
 }
 
-function buildSubject(input: AdminPaymentAlertInput) {
-  const ref = input.friendlyId || input.orderId
-  const stage = input.paymentStatus === "paid" ? "fully paid" : "deposit received"
-  return `Order ${ref} ${stage} (${formatKes(input.amountReceived)})`
-}
-
 function buildMessage(input: AdminPaymentAlertInput) {
   const reference = input.friendlyId || input.orderId
   const now = formatDateTimeNairobi(new Date())
@@ -95,28 +117,57 @@ function buildMessage(input: AdminPaymentAlertInput) {
   const statusUrl = baseUrl && input.friendlyId ? `${baseUrl}/status?id=${encodeURIComponent(input.friendlyId)}` : ""
 
   return [
-    "ADMIN PAYMENT ALERT",
-    "-------------------",
-    "",
-    `Order Ref: ${reference}`,
+    `Japhe's Cakes Payment Alert`,
+    `Order: ${reference}`,
     `Stage: ${paymentStage}`,
-    `Amount Received: ${formatKes(input.amountReceived)}`,
-    `Total Paid: ${formatKes(input.totalPaid)} / ${formatKes(input.totalAmount)}`,
-    `Balance Due: ${formatKes(input.balanceDue)}`,
-    `Method: M-Pesa (${input.source.toUpperCase()})`,
-    `Transaction ID: ${input.transactionId || "N/A"}`,
-    `Checkout Request ID: ${input.checkoutRequestId || "N/A"}`,
+    `Received: ${formatKes(input.amountReceived)}`,
+    `Paid: ${formatKes(input.totalPaid)} / ${formatKes(input.totalAmount)}`,
+    `Balance: ${formatKes(input.balanceDue)}`,
+    `Method: M-Pesa ${input.source.toUpperCase()}`,
+    `Txn: ${input.transactionId || "N/A"}`,
+    `Checkout: ${input.checkoutRequestId || "N/A"}`,
     `Customer: ${input.customerName || "N/A"}`,
     `Phone: ${input.contactPhone || "N/A"}`,
-    "",
-    "Links",
-    `- Admin Order: ${adminOrderUrl || "N/A"}`,
-    `- Customer Status: ${statusUrl || "N/A"}`,
-    "",
-    "Meta",
-    `- Time (EAT): ${now}`,
-    `- Request ID: ${input.requestId}`,
+    `Admin: ${adminOrderUrl || "N/A"}`,
+    `Status: ${statusUrl || "N/A"}`,
+    `Time (EAT): ${now}`,
+    `Req: ${input.requestId}`,
   ].join("\n")
+}
+
+async function sendWhatsAppAlert(
+  config: WhatsAppAlertConfig,
+  recipient: string,
+  message: string,
+  requestId: string
+) {
+  const endpoint = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: recipient,
+      type: "text",
+      text: { body: message, preview_url: false },
+    }),
+  })
+
+  if (response.ok) return
+
+  let details = ""
+  try {
+    details = await response.text()
+  } catch {
+    details = "no response body"
+  }
+
+  throw new Error(
+    `[${requestId}] WhatsApp alert failed (${response.status} ${response.statusText}) -> ${recipient}: ${details}`
+  )
 }
 
 export async function sendAdminPaymentAlert(input: AdminPaymentAlertInput) {
@@ -124,26 +175,17 @@ export async function sendAdminPaymentAlert(input: AdminPaymentAlertInput) {
 
   const config = getTransportConfig()
   if (!config) {
-    console.warn(`[${input.requestId}] [PAYMENT-ALERT] Email transport or recipient not configured`)
+    console.warn(
+      `[${input.requestId}] [PAYMENT-ALERT] WhatsApp transport not configured. Set WHATSAPP_ALERT_ACCESS_TOKEN, WHATSAPP_ALERT_PHONE_NUMBER_ID, ADMIN_PAYMENT_ALERT_WHATSAPP_TO`
+    )
     return
   }
 
-  const subject = buildSubject(input)
-  const text = buildMessage(input)
+  const message = buildMessage(input)
 
   for (const recipient of config.recipients) {
     try {
-      await sendSmtpMail({
-        host: config.host,
-        port: config.port,
-        secure: config.secure,
-        user: config.user,
-        pass: config.pass,
-        from: config.from,
-        to: recipient,
-        subject,
-        text,
-      })
+      await sendWhatsAppAlert(config, recipient, message, input.requestId)
     } catch (error) {
       console.error(`[${input.requestId}] [PAYMENT-ALERT] Failed for ${recipient}`, error)
     }

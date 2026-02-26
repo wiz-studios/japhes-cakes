@@ -49,7 +49,7 @@ This project now includes baseline protections for traffic spikes, duplicate req
 - `GET /api/health`
 - `GET /api/health?deep=1` adds DB probe
 - Correlation/request IDs now included in critical logs for order/payment transitions
-- Admin paid-order alerts now send email automatically from STK + C2B success callbacks
+- Admin paid-order alerts now send WhatsApp messages automatically from STK + C2B success callbacks
 - `GET /api/cron/payment-reconcile` re-checks stuck M-Pesa STK requests against Daraja and syncs order/payment state
 
 ### Load testing scaffold
@@ -86,9 +86,12 @@ MPESA_CALLBACK_HMAC_SECRET=
 MPESA_C2B_CALLBACK_SECRET=
 MPESA_C2B_CALLBACK_HMAC_SECRET=
 
-# Optional admin payment alerts
+# Optional admin payment alerts (WhatsApp Cloud API)
 ENABLE_ADMIN_PAYMENT_ALERTS=true
-ADMIN_PAYMENT_ALERT_TO=
+ADMIN_PAYMENT_ALERT_WHATSAPP_TO=2547XXXXXXXX
+WHATSAPP_ALERT_ACCESS_TOKEN=
+WHATSAPP_ALERT_PHONE_NUMBER_ID=
+WHATSAPP_ALERT_API_VERSION=v22.0
 
 # Cron auth + reconciliation worker
 CRON_SECRET=
