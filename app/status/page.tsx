@@ -116,7 +116,7 @@ export default async function OrderStatusPage({
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
-      <div className="space-y-8 w-full max-w-6xl xl:max-w-7xl mx-auto px-6 md:px-10 py-12">
+      <div className="space-y-8 w-full max-w-6xl xl:max-w-7xl mx-auto px-6 md:px-10 pt-28 md:pt-32 pb-12">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Tracking</p>
           <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Track Your Order</h2>
