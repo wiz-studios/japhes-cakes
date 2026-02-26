@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle2, Clock, Truck, PackageCheck, UtensilsCrossed } from "lucide-react"
-import { format } from "date-fns"
+import { formatDateNairobi } from "@/lib/time"
 
 const statusConfig: Record<string, { label: string; icon: any; progress: number; color: string }> = {
   order_received: { label: "Order Received", icon: Clock, progress: 30, color: "text-blue-500" },
@@ -46,7 +46,7 @@ export function OrderStatusDisplay({ order }: { order: any }) {
           {order.preferred_date && (
             <div>
               <span className="text-muted-foreground block">Preferred Date</span>
-              <span className="font-medium">{format(new Date(order.preferred_date), "PPP")}</span>
+              <span className="font-medium">{formatDateNairobi(order.preferred_date, { month: "short", day: "numeric", year: "numeric" })}</span>
             </div>
           )}
           <div>

@@ -2,7 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { createClient } from "@supabase/supabase-js"
-import { addHours, isAfter, setHours, setMinutes } from "date-fns"
+import { addHours } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
@@ -13,6 +13,7 @@ import { applyBusyEtaWindow, DEFAULT_STORE_SETTINGS, normalizeStoreSettings } fr
 import { checkRateLimit } from "@/lib/rate-limit"
 import { runIdempotent } from "@/lib/idempotency"
 import { getDeliveryZoneByIdCached } from "@/lib/delivery-zones-cache"
+import { toNairobiDate } from "@/lib/time"
 import type { User } from "@supabase/supabase-js"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -592,10 +593,15 @@ export async function submitPizzaOrder(values: any) {
           return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
         }
         const now = new Date()
-        const cutoff = setMinutes(setHours(new Date(), 21), 0)
+        const nairobiNow = toNairobiDate(now)
         let preferredDate = values.preferredDate || now
 
-        if (isAfter(now, cutoff)) {
+        const isAfterCutoff =
+          nairobiNow.getHours() > 21 ||
+          (nairobiNow.getHours() === 21 &&
+            (nairobiNow.getMinutes() > 0 || nairobiNow.getSeconds() > 0))
+
+        if (isAfterCutoff) {
           preferredDate = addHours(now, 24)
         }
 

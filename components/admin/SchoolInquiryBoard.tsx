@@ -8,6 +8,7 @@ import {
   type SchoolInquiryStatus,
 } from "@/lib/school-inquiries"
 import { maskPhoneNumber } from "@/lib/phone"
+import { formatDateTimeNairobi } from "@/lib/time"
 
 type Props = {
   initialInquiries: SchoolInquiry[]
@@ -134,7 +135,7 @@ export default function SchoolInquiryBoard({ initialInquiries }: Props) {
                   </select>
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500">
-                  {new Date(item.created_at).toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}
+                  {formatDateTimeNairobi(item.created_at)}
                 </td>
               </tr>
             ))}

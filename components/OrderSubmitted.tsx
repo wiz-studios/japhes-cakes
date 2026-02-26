@@ -11,6 +11,7 @@ import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import BrandLogo from "@/components/BrandLogo"
 import { maskPhoneNumber } from "@/lib/phone"
+import { formatDateTimeNairobi } from "@/lib/time"
 
 type PaymentAttempt = {
   id?: string
@@ -357,7 +358,7 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
             </div>
             <div className="text-sm text-slate-600">
               <div><span className="font-semibold text-slate-900">Order:</span> {friendlyId}</div>
-              <div><span className="font-semibold text-slate-900">Date:</span> {new Date(liveOrder.created_at).toLocaleString()}</div>
+              <div><span className="font-semibold text-slate-900">Date:</span> {formatDateTimeNairobi(liveOrder.created_at)}</div>
             </div>
           </div>
 

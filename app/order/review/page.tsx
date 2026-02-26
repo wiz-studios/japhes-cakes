@@ -17,6 +17,7 @@ import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakePrice } from "@/lib/cake-pricing"
 import { isValidKenyaPhone, maskPhoneNumber, normalizeKenyaPhone } from "@/lib/phone"
+import { formatDateNairobi } from "@/lib/time"
 
 // Main review page component
 // Types for order and item
@@ -271,7 +272,12 @@ function OrderReviewContent() {
     if (order.scheduledDate) {
       return {
         label: "Scheduled Date",
-        value: new Date(order.scheduledDate).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+        value: formatDateNairobi(order.scheduledDate, {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
       }
     }
 

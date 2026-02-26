@@ -20,6 +20,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { submitCakeOrder } from "@/app/actions/orders"
 import { CAKE_FLAVORS, CAKE_SIZES, getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
+import { getNairobiHour } from "@/lib/time"
 
 const cakeSchema = z
   .object({
@@ -97,7 +98,7 @@ export function CakeOrderForm({ zones }: { zones: DeliveryZone[] }) {
         deliveryZone: zones.find((z) => z.id === values.deliveryZoneId)?.name || "",
         total: getCakePrice(values.cakeFlavor, values.cakeSize),
         scheduledDate: values.preferredDate ? values.preferredDate.toISOString().slice(0, 10) : "",
-        placedHour: new Date().getHours(),
+        placedHour: getNairobiHour(),
         phone: values.phone,
       }
       router.push(`/order/review?order=${encodeURIComponent(JSON.stringify(orderData))}`)

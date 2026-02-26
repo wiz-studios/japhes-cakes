@@ -21,6 +21,7 @@ import { orderThemes } from "./themes"
 import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails, isPizzaOfferDay } from "@/lib/pizza-offer"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
+import { getNairobiHour, toNairobiDate } from "@/lib/time"
 import type { StoreSettings } from "@/lib/store-settings"
 
 import dynamic from "next/dynamic"
@@ -158,9 +159,10 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
 
     // Check for late night orders
     useEffect(() => {
-        const now = new Date()
-        const cutoff = new Date(); cutoff.setHours(21, 0, 0, 0)
-        setLateNightWarning(now > cutoff)
+        const now = toNairobiDate(new Date())
+        const isAfterCutoff =
+            now.getHours() > 21 || (now.getHours() === 21 && (now.getMinutes() > 0 || now.getSeconds() > 0))
+        setLateNightWarning(isAfterCutoff)
     }, [])
 
     /**
@@ -198,7 +200,7 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
                 deliveryAddress: values.deliveryAddress, // Instructions
                 deliveryDistance: values.deliveryDistance,
                 customerName: values.customerName,
-                placedHour: new Date().getHours(),
+                placedHour: getNairobiHour(),
                 phone: values.phone,
             }
             router.push(`/order/review?order=${encodeURIComponent(JSON.stringify(orderData))}`)

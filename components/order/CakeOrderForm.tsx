@@ -22,6 +22,7 @@ import { OrderLayout } from "./OrderLayout"
 import { orderThemes } from "./themes"
 import { CAKE_FLAVORS, CAKE_SIZES, getCakeDisplayName, getCakePrice } from "@/lib/cake-pricing"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
+import { getNairobiHour } from "@/lib/time"
 import type { StoreSettings } from "@/lib/store-settings"
 import { uploadCakeDesignImage } from "@/app/actions/orders"
 
@@ -154,7 +155,7 @@ export function CakeOrderForm({ zones, storeSettings }: { zones: DeliveryZone[];
             deliveryDistance: values.deliveryDistance,
             customerName: values.customerName,
             scheduledDate: values.preferredDate ? values.preferredDate.toISOString().slice(0, 10) : "",
-            placedHour: new Date().getHours(),
+            placedHour: getNairobiHour(),
             phone: values.phone,
         }
         router.push(`/order/review?order=${encodeURIComponent(JSON.stringify(orderData))}`)

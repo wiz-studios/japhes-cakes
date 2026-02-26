@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Eye, Search, Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
-import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { formatFriendlyId } from "@/lib/order-helpers"
+import { formatDateTimeNairobi } from "@/lib/time"
 
 interface Order {
   id: string
@@ -97,6 +97,15 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
     setCurrentPage(1)
   }
 
+  const formatOrderDate = (value: string) =>
+    formatDateTimeNairobi(value, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -165,7 +174,7 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                     {formatFriendlyId(order)}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {format(new Date(order.created_at), "MMM d, HH:mm")}
+                    {formatOrderDate(order.created_at)}
                   </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
@@ -249,7 +258,7 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                 </Button>
               </div>
               <div className="mt-3 text-xs text-muted-foreground">
-                {format(new Date(order.created_at), "MMM d, HH:mm")}
+                {formatOrderDate(order.created_at)}
               </div>
               <div className="mt-3">
                 <p className="font-semibold text-slate-900">{order.customer_name || "Guest"}</p>

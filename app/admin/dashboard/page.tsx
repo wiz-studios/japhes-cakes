@@ -4,6 +4,7 @@ import { normalizeStoreSettings } from "@/lib/store-settings"
 import AdminOrderTable from "@/components/AdminOrderTable"
 import AdminAnalyticsOverview from "@/components/admin/AdminAnalyticsOverview"
 import BusyModePanel from "@/components/admin/BusyModePanel"
+import { NAIROBI_TIME_ZONE, getNairobiDayKey, getNairobiHour, toNairobiDate } from "@/lib/time"
 
 type DashboardOrder = {
   id: string
@@ -23,7 +24,6 @@ type DashboardOrder = {
   delivery_zones?: { name: string }[] | { name: string } | null
 }
 
-const NAIROBI_TZ = "Africa/Nairobi"
 const ORDER_SELECT =
   "id, friendly_id, created_at, customer_name, phone, status, payment_status, payment_method, payment_amount_paid, payment_deposit_amount, total_amount, order_type, fulfilment, order_items(item_name, quantity), delivery_zones(name)"
 const STATUS_OPTIONS = [
@@ -36,19 +36,6 @@ const STATUS_OPTIONS = [
   "collected",
   "cancelled",
 ]
-
-function toNairobiDate(dateInput: string | Date) {
-  return new Date(new Date(dateInput).toLocaleString("en-US", { timeZone: NAIROBI_TZ }))
-}
-
-function getDayKey(dateInput: string | Date) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: NAIROBI_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(dateInput))
-}
 
 function getRevenueContribution(order: DashboardOrder) {
   const totalAmount = Number(order.total_amount || 0)
@@ -176,8 +163,8 @@ export default async function AdminDashboard({
     total_amount: Number(order.total_amount || 0),
   }))
 
-  const todayKey = getDayKey(new Date())
-  const todayOrders = analyticsOrders.filter((order) => getDayKey(order.created_at) === todayKey)
+  const todayKey = getNairobiDayKey(new Date())
+  const todayOrders = analyticsOrders.filter((order) => getNairobiDayKey(order.created_at) === todayKey)
 
   const todayRevenue = todayOrders.reduce((sum, order) => sum + getRevenueContribution(order), 0)
   const pendingPaymentsToday = todayOrders.filter((order) => order.payment_status !== "paid").length
@@ -211,12 +198,12 @@ export default async function AdminDashboard({
     date.setDate(nowNairobi.getDate() - (6 - index))
     date.setHours(0, 0, 0, 0)
     const label = new Intl.DateTimeFormat("en-GB", {
-      timeZone: NAIROBI_TZ,
+      timeZone: NAIROBI_TIME_ZONE,
       weekday: "short",
       day: "numeric",
     }).format(date)
     return {
-      key: getDayKey(date),
+      key: getNairobiDayKey(date),
       label,
       revenue: 0,
       orders: 0,
@@ -225,7 +212,7 @@ export default async function AdminDashboard({
 
   const weeklyMap = new Map(weeklyTemplate.map((point) => [point.key, point]))
   for (const order of analyticsOrders) {
-    const key = getDayKey(order.created_at)
+    const key = getNairobiDayKey(order.created_at)
     const point = weeklyMap.get(key)
     if (!point) continue
     point.orders += 1
@@ -236,13 +223,7 @@ export default async function AdminDashboard({
   const pizzaCounter = new Map<string, number>()
   const hourlyCounter = new Map<number, number>()
   for (const order of analyticsOrders) {
-    const hour = Number(
-      new Intl.DateTimeFormat("en-GB", {
-        timeZone: NAIROBI_TZ,
-        hour: "2-digit",
-        hour12: false,
-      }).format(new Date(order.created_at))
-    )
+    const hour = getNairobiHour(order.created_at)
     incrementCount(hourlyCounter, hour)
 
     for (const item of order.order_items || []) {

@@ -4,6 +4,7 @@
  * Shop Location: Thika
  * Timezone: Africa/Nairobi (UTC+3)
  */
+import { getNairobiHour, getNairobiWeekday } from "@/lib/time"
 
 export const SHOP_LOCATION = {
     lat: -1.0396,
@@ -39,8 +40,7 @@ export const DELIVERY_RULES = {
  * Get Nairobi Hour (UTC+3)
  */
 function getNairobiTime(date: Date = new Date()): { hour: number; day: number } {
-    const nairobiDate = new Date(date.toLocaleString("en-US", { timeZone: "Africa/Nairobi" }))
-    return { hour: nairobiDate.getHours(), day: nairobiDate.getDay() }
+    return { hour: getNairobiHour(date), day: getNairobiWeekday(date) }
 }
 
 /**

@@ -4,6 +4,7 @@ import OrderStatusTimeline from "@/components/OrderStatusTimeline"
 import { StatusPaymentPanel } from "@/components/status-payment-panel"
 import { formatFriendlyId, getDeliveryEstimate } from "@/lib/order-helpers"
 import { normalizeKenyaPhone } from "@/lib/phone"
+import { formatDateTimeNairobi } from "@/lib/time"
 import { Clock } from "lucide-react"
 
 const ORDER_STATUS_SELECT =
@@ -227,7 +228,7 @@ export default async function OrderStatusPage({
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.25em] text-slate-400">Placed</p>
                     <p className="mt-1 font-semibold text-slate-900">
-                      {new Date(order.created_at).toLocaleString()}
+                      {formatDateTimeNairobi(order.created_at)}
                     </p>
                   </div>
                   <div>

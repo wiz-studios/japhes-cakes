@@ -1,5 +1,6 @@
 
-import { format, parseISO, isValid } from "date-fns"
+import { parseISO, isValid } from "date-fns"
+import { formatDateTimeNairobi } from "@/lib/time"
 
 export type Order = {
     id: string
@@ -53,7 +54,12 @@ export function getDeliveryEstimate(order: { delivery_window?: string, preferred
         const date = parseISO(order.preferred_date)
         if (isValid(date)) {
             // Simple logic: if preferred date is effectively "future", return formatted date
-            return `Scheduled for ${format(date, "MMM d, h:mm a")}`
+            return `Scheduled for ${formatDateTimeNairobi(date, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+            })}`
         }
     }
 

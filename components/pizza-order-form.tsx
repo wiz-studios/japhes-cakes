@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { submitPizzaOrder } from "@/app/actions/orders"
+import { getNairobiHour, toNairobiDate } from "@/lib/time"
 
 const pizzaSchema = z
   .object({
@@ -71,10 +72,10 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
   })
 
   useEffect(() => {
-    const now = new Date()
-    const cutoff = new Date()
-    cutoff.setHours(21, 0, 0, 0)
-    setLateNightWarning(now > cutoff)
+    const now = toNairobiDate(new Date())
+    const isAfterCutoff =
+      now.getHours() > 21 || (now.getHours() === 21 && (now.getMinutes() > 0 || now.getSeconds() > 0))
+    setLateNightWarning(isAfterCutoff)
   }, [])
 
   async function onSubmit(values: z.infer<typeof pizzaSchema>) {
@@ -109,7 +110,7 @@ export function PizzaOrderForm({ zones }: { zones: DeliveryZone[] }) {
         fulfilment: values.fulfilment,
         deliveryZone: zones.find((z) => z.id === values.deliveryZoneId)?.name || "",
         scheduledDate: new Date().toISOString().slice(0, 10),
-        placedHour: new Date().getHours(),
+        placedHour: getNairobiHour(),
         phone: values.phone,
       }
       router.push(`/order/review?order=${encodeURIComponent(JSON.stringify(orderData))}`)

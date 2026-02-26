@@ -6,6 +6,7 @@ import { sendSmtpMail } from "@/lib/smtp"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { fetchWithTimeout } from "@/lib/http"
 import { getClientIp, getRequestId, logWithRequestId } from "@/lib/request-meta"
+import { formatDateTimeNairobi } from "@/lib/time"
 
 const inquirySchema = z.object({
   name: z.string().trim().min(2, "Name is required"),
@@ -195,7 +196,7 @@ export async function POST(request: Request) {
 
     const config = getTransportConfig()
     if (config) {
-      const submittedAt = new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })
+      const submittedAt = formatDateTimeNairobi(new Date())
       const message = buildInquiryEmailText({
         submittedAt,
         ip,

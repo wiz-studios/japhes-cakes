@@ -8,6 +8,7 @@ import { AdminOrderActions } from "@/components/admin-order-actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { maskPhoneNumber } from "@/lib/phone"
+import { formatDateTimeNairobi } from "@/lib/time"
 
 export default async function AdminOrderDetailPage({
   params,
@@ -134,7 +135,7 @@ export default async function AdminOrderDetailPage({
                 {communicationTimeline.map((event, idx) => (
                   <div key={`${event.label}-${idx}`} className="text-sm">
                     <p className="font-medium text-slate-800">{event.label}</p>
-                    <p className="text-xs text-slate-500">{new Date(event.at).toLocaleString()}</p>
+                    <p className="text-xs text-slate-500">{formatDateTimeNairobi(event.at)}</p>
                   </div>
                 ))}
               </div>

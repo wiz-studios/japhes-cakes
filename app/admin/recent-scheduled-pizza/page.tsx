@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { formatDateNairobi, formatDateTimeNairobi, getNairobiDayKey, getNairobiHour } from "@/lib/time"
 
 
 // RecentScheduledPizzaOrders: Admin panel to view pizza orders placed after 9 PM and their scheduled dates
@@ -21,16 +22,6 @@ export default async function RecentScheduledPizzaOrders() {
       .eq("order_type", "pizza")
       .order("created_at", { ascending: false })
       .limit(200)
-
-    const getNairobiHour = (date: Date) => {
-      const parts = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Africa/Nairobi",
-        hour: "2-digit",
-        hour12: false,
-      }).formatToParts(date)
-      const hour = parts.find((part) => part.type === "hour")?.value
-      return hour ? Number(hour) : date.getHours()
-    }
 
     orders = (fallbackOrders || [])
       .filter((order) => {
@@ -77,15 +68,15 @@ export default async function RecentScheduledPizzaOrders() {
               const scheduled = order.scheduled_date ? new Date(order.scheduled_date) : null
               // Highlight if scheduled date is different from placed date
               const shifted = scheduled
-                ? placed.getDate() !== scheduled.getDate() || placed.getMonth() !== scheduled.getMonth() || placed.getFullYear() !== scheduled.getFullYear()
+                ? getNairobiDayKey(placed) !== getNairobiDayKey(scheduled)
                 : false
               return (
                 <tr key={order.order_id} className={shifted ? "bg-red-100" : ""}>
                   <td className="px-4 py-2 font-mono">{order.order_id}</td>
                   <td className="px-4 py-2">{order.customer_name}</td>
-                  <td className="px-4 py-2">{placed.toLocaleString("en-KE")}</td>
+                  <td className="px-4 py-2">{formatDateTimeNairobi(placed)}</td>
                   <td className="px-4 py-2">
-                    {scheduled ? scheduled.toLocaleDateString("en-KE") : "N/A"}
+                    {scheduled ? formatDateNairobi(scheduled) : "N/A"}
                     {shifted && (
                       // Show a note if the order was shifted to the next day
                       <span className="ml-2 text-xs text-red-600" title="Order placed after 9 PM, scheduled for next day">(Shifted)</span>
