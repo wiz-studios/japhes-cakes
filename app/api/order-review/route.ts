@@ -43,6 +43,13 @@ export async function POST(request: Request) {
       )
     }
 
+    if (comment.length > 0 && comment.length < 2) {
+      return NextResponse.json(
+        { ok: false, message: "Comment must be at least 2 characters.", requestId },
+        { status: 400 }
+      )
+    }
+
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select("id")

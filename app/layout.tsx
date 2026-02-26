@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import SiteHeader from "@/components/SiteHeader"
 import SiteFooter from "@/components/SiteFooter"
 import FloatingWhatsApp from "@/components/FloatingWhatsApp"
+import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 const cormorant = Cormorant_Garamond({
@@ -54,6 +55,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <FloatingWhatsApp />
+        <Toaster />
         <Analytics />
       </body>
     </html>

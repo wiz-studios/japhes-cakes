@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "@/hooks/use-toast"
 import { formatDateTimeNairobi } from "@/lib/time"
 
 type ReviewState = {
@@ -17,17 +18,23 @@ type OrderReviewFormProps = {
 }
 
 export default function OrderReviewForm({ orderId, initialReview = null }: OrderReviewFormProps) {
+  const hasInitialReview = Boolean(
+    initialReview &&
+      (typeof initialReview.rating === "number" || (initialReview.comment || "").trim().length > 0)
+  )
   const [rating, setRating] = useState<number | null>(initialReview?.rating ?? null)
   const [comment, setComment] = useState(initialReview?.comment ?? "")
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isDismissed, setIsDismissed] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(initialReview?.created_at || null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(
-    initialReview ? "Anonymous review received. You can edit and resubmit." : null
+    hasInitialReview ? "Anonymous review received. You can edit and resubmit." : null
   )
 
   const charsLeft = useMemo(() => 1200 - comment.length, [comment.length])
-  const canSubmit = (comment.trim().length > 0 || rating !== null) && !isSubmitting
+  const canSubmit = (comment.trim().length >= 2 || rating !== null) && !isSubmitting
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -56,11 +63,78 @@ export default function OrderReviewForm({ orderId, initialReview = null }: Order
 
       setMessage(payload.message || "Thanks for your feedback.")
       setSavedAt(new Date().toISOString())
+      setIsExpanded(false)
+      setIsDismissed(false)
+      toast({
+        title: "Feedback received",
+        description: "Thank you. Your anonymous review has been sent to admin.",
+      })
     } catch {
       setError("Could not save your review right now.")
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isDismissed) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Feedback</p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-slate-600">Feedback skipped for now.</p>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            onClick={() => {
+              setIsDismissed(false)
+              setIsExpanded(true)
+            }}
+          >
+            Leave feedback
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isExpanded) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Feedback</p>
+        <h3 className="mt-2 font-serif text-xl font-semibold text-slate-900">Leave a quick review</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          Optional and anonymous. Share a rating, a comment, or both.
+        </p>
+
+        {message ? (
+          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            {message}
+            {savedAt ? <span className="block text-xs mt-1">Saved: {formatDateTimeNairobi(savedAt)}</span> : null}
+          </div>
+        ) : null}
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            className="rounded-xl bg-slate-900 px-5 text-white hover:bg-slate-800"
+            onClick={() => setIsExpanded(true)}
+          >
+            {hasInitialReview ? "Edit feedback" : "Leave feedback"}
+          </Button>
+          {!hasInitialReview ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-xl text-slate-600 hover:bg-slate-100"
+              onClick={() => setIsDismissed(true)}
+            >
+              Not now
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -126,13 +200,26 @@ export default function OrderReviewForm({ orderId, initialReview = null }: Order
 
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-slate-500">No personal details are attached to this review.</p>
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            className="rounded-xl bg-slate-900 px-5 text-white hover:bg-slate-800"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Review"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-xl text-slate-600 hover:bg-slate-100"
+              onClick={() => {
+                setIsExpanded(false)
+                setIsDismissed(true)
+              }}
+            >
+              Not now
+            </Button>
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              className="rounded-xl bg-slate-900 px-5 text-white hover:bg-slate-800"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Review"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>
