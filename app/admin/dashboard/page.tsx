@@ -26,8 +26,12 @@ type DashboardOrder = {
 
 const ORDER_SELECT =
   "id, friendly_id, created_at, customer_name, phone, status, payment_status, payment_method, payment_amount_paid, payment_deposit_amount, total_amount, order_type, fulfilment, order_items(item_name, quantity), delivery_zones(name)"
+const TERMINAL_STATUSES = ["cancelled", "delivered", "collected", "completed"] as const
 const STATUS_OPTIONS = [
   "all",
+  "awaiting_payment",
+  "payment_failed",
+  "payment_expired",
   "order_received",
   "in_kitchen",
   "ready_for_pickup",
@@ -36,6 +40,38 @@ const STATUS_OPTIONS = [
   "collected",
   "cancelled",
 ]
+
+function applyStatusFilter<T>(query: T, statusFilter: string): T {
+  let scoped: any = query
+
+  if (statusFilter === "all") return scoped as T
+
+  if (statusFilter === "awaiting_payment") {
+    scoped = scoped.eq("payment_method", "mpesa").in("payment_status", ["pending", "initiated"])
+    for (const terminal of TERMINAL_STATUSES) {
+      scoped = scoped.neq("status", terminal)
+    }
+    return scoped as T
+  }
+
+  if (statusFilter === "payment_failed") {
+    scoped = scoped.eq("payment_method", "mpesa").eq("payment_status", "failed")
+    for (const terminal of TERMINAL_STATUSES) {
+      scoped = scoped.neq("status", terminal)
+    }
+    return scoped as T
+  }
+
+  if (statusFilter === "payment_expired") {
+    scoped = scoped.eq("payment_method", "mpesa").eq("payment_status", "expired")
+    for (const terminal of TERMINAL_STATUSES) {
+      scoped = scoped.neq("status", terminal)
+    }
+    return scoped as T
+  }
+
+  return scoped.eq("status", statusFilter) as T
+}
 
 function getRevenueContribution(order: DashboardOrder) {
   const totalAmount = Number(order.total_amount || 0)
@@ -110,9 +146,7 @@ export default async function AdminDashboard({
     .order("created_at", { ascending: false })
     .range(rangeStart, rangeEnd)
 
-  if (statusFilter !== "all") {
-    listQuery = listQuery.eq("status", statusFilter)
-  }
+  listQuery = applyStatusFilter(listQuery, statusFilter)
   if (fromFilter) {
     listQuery = listQuery.gte("created_at", `${fromFilter}T00:00:00.000Z`)
   }
@@ -128,9 +162,7 @@ export default async function AdminDashboard({
     .order("created_at", { ascending: false })
     .limit(1500)
 
-  if (statusFilter !== "all") {
-    analyticsQuery = analyticsQuery.eq("status", statusFilter)
-  }
+  analyticsQuery = applyStatusFilter(analyticsQuery, statusFilter)
   if (fromFilter) {
     analyticsQuery = analyticsQuery.gte("created_at", `${fromFilter}T00:00:00.000Z`)
   }
