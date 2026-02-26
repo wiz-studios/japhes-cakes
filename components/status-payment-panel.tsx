@@ -34,14 +34,6 @@ type LatestPaymentState = {
   createdAt: string
 } | null
 
-type NoticeVariant = "info" | "success" | "warning" | "error"
-
-type PaymentNotice = {
-  variant: NoticeVariant
-  title: string
-  description?: string
-} | null
-
 export function StatusPaymentPanel({
   orderId,
   fulfilment,
@@ -62,7 +54,6 @@ export function StatusPaymentPanel({
   const [activeCheckoutRequestId, setActiveCheckoutRequestId] = useState<string | null>(
     initialState.lastCheckoutRequestId || null
   )
-  const [notice, setNotice] = useState<PaymentNotice>(null)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
   const lastToastStatusRef = useRef<string | null>(null)
@@ -117,48 +108,6 @@ export function StatusPaymentPanel({
   }, [isPolling, loadSnapshot])
 
   useEffect(() => {
-    if (isPolling) {
-      setNotice({
-        variant: "warning",
-        title: "Waiting for M-Pesa confirmation",
-        description: "STK was sent. This page refreshes automatically every few seconds.",
-      })
-      return
-    }
-
-    const paymentStatus = String(payment.paymentStatus || "").toLowerCase()
-
-    if (paymentStatus === "paid") {
-      setNotice({
-        variant: "success",
-        title: "Payment confirmed",
-        description: "Your balance payment was received and this order is now fully paid.",
-      })
-      return
-    }
-
-    if (paymentStatus === "deposit_paid" && payment.balanceDue > 0) {
-      setNotice({
-        variant: "info",
-        title: "Deposit received",
-        description: `Balance due: ${payment.balanceDue.toLocaleString()} KES. You can clear it anytime before fulfilment.`,
-      })
-      return
-    }
-
-    if (paymentStatus === "failed" || paymentStatus === "expired") {
-      setNotice({
-        variant: "error",
-        title: paymentStatus === "expired" ? "Payment expired" : "Payment failed",
-        description: "No charge was confirmed. You can retry using the button below.",
-      })
-      return
-    }
-
-    setNotice(null)
-  }, [isPolling, payment.balanceDue, payment.paymentStatus])
-
-  useEffect(() => {
     const status = latestPayment?.status
     if (!status) return
 
@@ -209,6 +158,53 @@ export function StatusPaymentPanel({
     return paymentStatusToProgressState(payment.paymentStatus)
   }, [isPolling, latestPayment?.status, payment.balanceDue, payment.paymentStatus])
 
+  const paymentNotice = useMemo(() => {
+    const paymentStatus = String(payment.paymentStatus || "").toLowerCase()
+
+    // Final states take precedence over polling to avoid stale "waiting" banners.
+    if (paymentStatus === "paid") {
+      return {
+        variant: "success" as const,
+        title: "Payment confirmed",
+        description: "Your balance payment was received and this order is now fully paid.",
+      }
+    }
+
+    if (paymentStatus === "failed" || paymentStatus === "expired") {
+      return {
+        variant: "error" as const,
+        title: paymentStatus === "expired" ? "Payment expired" : "Payment failed",
+        description: "No charge was confirmed. You can retry using the button below.",
+      }
+    }
+
+    if (paymentStatus === "deposit_paid" && payment.balanceDue > 0) {
+      return {
+        variant: "info" as const,
+        title: "Deposit received",
+        description: `Balance due: ${payment.balanceDue.toLocaleString()} KES. You can clear it anytime before fulfilment.`,
+      }
+    }
+
+    if (isPolling || paymentStatus === "initiated") {
+      return {
+        variant: "warning" as const,
+        title: "Waiting for M-Pesa confirmation",
+        description: "STK was sent. This page refreshes automatically every few seconds.",
+      }
+    }
+
+    if (latestPayment?.status === "failed" && payment.balanceDue > 0) {
+      return {
+        variant: "error" as const,
+        title: "Latest payment attempt failed",
+        description: "You can retry using the button below.",
+      }
+    }
+
+    return null
+  }, [isPolling, latestPayment?.status, payment.balanceDue, payment.paymentStatus])
+
   const handleInitiatePayment = async () => {
     const normalizedPhone = normalizeKenyaPhone(phone)
     if (!isValidKenyaPhone(normalizedPhone)) {
@@ -222,11 +218,6 @@ export function StatusPaymentPanel({
     }
 
     setError(null)
-    setNotice({
-      variant: "warning",
-      title: "Waiting for M-Pesa confirmation",
-      description: "STK was sent. Check your phone and enter your PIN.",
-    })
     setIsSubmitting(true)
     try {
       const response = await initiateMpesaBalanceSTK(orderId, normalizedPhone)
@@ -252,11 +243,6 @@ export function StatusPaymentPanel({
     } catch (actionError) {
       console.error("[status-payment] Failed to initiate STK:", actionError)
       setError("Failed to initiate payment. Please try again.")
-      setNotice({
-        variant: "error",
-        title: "Payment request failed",
-        description: "Please retry in a few seconds.",
-      })
       toast({
         title: "Payment request failed",
         description: "Please retry in a few seconds.",
@@ -301,7 +287,13 @@ export function StatusPaymentPanel({
         </div>
       )}
 
-      {notice && <StateMessageCard variant={notice.variant} title={notice.title} description={notice.description} />}
+      {paymentNotice && (
+        <StateMessageCard
+          variant={paymentNotice.variant}
+          title={paymentNotice.title}
+          description={paymentNotice.description}
+        />
+      )}
 
       {error && (
         <StateMessageCard variant="error" title={error} />
