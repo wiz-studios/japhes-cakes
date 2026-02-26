@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/payment-reconcile",
+      "schedule": "*/3 * * * *"
+    },
+    {
+      "path": "/api/cron/payment-expiry",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
+

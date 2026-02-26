@@ -125,6 +125,15 @@ if (!hasValue("MPESA_CALLBACK_HMAC_SECRET")) {
 if (!hasValue("MPESA_C2B_CALLBACK_HMAC_SECRET")) {
   warnings.push("Optional env not set: MPESA_C2B_CALLBACK_HMAC_SECRET")
 }
+if (!hasValue("CRON_SECRET")) {
+  warnings.push("Optional env not set: CRON_SECRET (required to protect cron endpoints in production)")
+}
+if (!hasValue("MPESA_RECONCILE_BATCH_SIZE")) {
+  warnings.push("Optional env not set: MPESA_RECONCILE_BATCH_SIZE (default 25)")
+}
+if (!hasValue("MPESA_RECONCILE_LOOKBACK_MINUTES")) {
+  warnings.push("Optional env not set: MPESA_RECONCILE_LOOKBACK_MINUTES (default 360)")
+}
 
 // Validate enums and URLs
 const mpesaEnv = readEnv("MPESA_ENV")
@@ -142,6 +151,7 @@ warnIfNoToken("MPESA_C2B_VALIDATION_URL")
 // Migration files expected for production cutover
 checkFile("migrations/add_resilience_indexes_and_idempotency.sql")
 checkFile("migrations/rls_production_cutover.sql")
+checkFile("app/api/cron/payment-reconcile/route.ts")
 
 const sourceLabel = existsSync(ENV_FILE) ? ".env.local + process env" : "process env only"
 console.log(`Prelaunch check source: ${sourceLabel}`)

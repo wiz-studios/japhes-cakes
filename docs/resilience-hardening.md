@@ -50,6 +50,7 @@ This project now includes baseline protections for traffic spikes, duplicate req
 - `GET /api/health?deep=1` adds DB probe
 - Correlation/request IDs now included in critical logs for order/payment transitions
 - Admin paid-order alerts now send email automatically from STK + C2B success callbacks
+- `GET /api/cron/payment-reconcile` re-checks stuck M-Pesa STK requests against Daraja and syncs order/payment state
 
 ### Load testing scaffold
 - k6 script: `load-tests/k6-basic.js`
@@ -88,7 +89,17 @@ MPESA_C2B_CALLBACK_HMAC_SECRET=
 # Optional admin payment alerts
 ENABLE_ADMIN_PAYMENT_ALERTS=true
 ADMIN_PAYMENT_ALERT_TO=
+
+# Cron auth + reconciliation worker
+CRON_SECRET=
+MPESA_RECONCILE_BATCH_SIZE=25
+MPESA_RECONCILE_LOOKBACK_MINUTES=360
 ```
+
+## Recommended cron schedules (Vercel)
+
+- `/api/cron/payment-reconcile` every 3 minutes
+- `/api/cron/payment-expiry` every 10 minutes
 
 ## k6 usage
 

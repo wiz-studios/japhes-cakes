@@ -13,6 +13,17 @@ export type DarajaStkResponse = {
   CustomerMessage: string
 }
 
+export type DarajaStkQueryResponse = {
+  MerchantRequestID?: string
+  CheckoutRequestID?: string
+  ResponseCode?: string
+  ResponseDescription?: string
+  ResultCode?: string | number
+  ResultDesc?: string
+  errorCode?: string
+  errorMessage?: string
+}
+
 export type DarajaC2BRegisterResponse = {
   ConversationID?: string
   OriginatorCoversationID?: string
@@ -175,6 +186,62 @@ export async function initiateDarajaStkPush(params: {
   const data = (await res.json()) as DarajaStkResponse & { errorMessage?: string }
   if (!res.ok) {
     const message = data?.ResponseDescription || data?.errorMessage || "STK request failed"
+    throw new Error(message)
+  }
+
+  return data
+}
+
+export async function queryDarajaStkPushStatus(params: {
+  checkoutRequestId: string
+}): Promise<DarajaStkQueryResponse> {
+  const checkoutRequestId = params.checkoutRequestId?.trim()
+  if (!checkoutRequestId) {
+    throw new Error("checkoutRequestId is required")
+  }
+
+  const shortcode = getStkShortcode()
+  const passkey = process.env.MPESA_PASSKEY
+  if (!passkey) {
+    throw new Error("Missing MPESA_PASSKEY")
+  }
+
+  const timestamp = getDarajaTimestamp()
+  const password = buildDarajaPassword(shortcode, passkey, timestamp)
+  const token = await getDarajaAccessToken()
+
+  const payload = {
+    BusinessShortCode: shortcode,
+    Password: password,
+    Timestamp: timestamp,
+    CheckoutRequestID: checkoutRequestId,
+  }
+
+  const res = await fetchWithTimeout(`${getDarajaBaseUrl()}/mpesa/stkpushquery/v1/query`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    timeoutMs: getDarajaTimeoutMs(),
+  })
+
+  const text = await res.text()
+  let data: DarajaStkQueryResponse = {}
+  if (text) {
+    try {
+      data = JSON.parse(text) as DarajaStkQueryResponse
+    } catch {
+      if (!res.ok) {
+        throw new Error(`Daraja STK query failed: ${res.status} ${text}`)
+      }
+      data = { ResponseDescription: text }
+    }
+  }
+
+  if (!res.ok) {
+    const message = data.errorMessage || data.ResultDesc || data.ResponseDescription || "STK query failed"
     throw new Error(message)
   }
 

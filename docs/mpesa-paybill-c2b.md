@@ -32,6 +32,11 @@ C2B URL registration:
 - `MPESA_C2B_RESPONSE_TYPE` (`Completed` or `Cancelled`, default `Completed`)
 - `MPESA_C2B_REQUIRE_ORDER_MATCH` (`true` by default; set `false` to accept unknown bill refs)
 
+Reconciliation worker:
+- `CRON_SECRET` (required to protect cron endpoints in production)
+- `MPESA_RECONCILE_BATCH_SIZE` (optional, default `25`)
+- `MPESA_RECONCILE_LOOKBACK_MINUTES` (optional, default `360`)
+
 Optional route protection:
 - `MPESA_REGISTER_SECRET` (protects `POST /api/mpesa/c2b/register`)
 - `MPESA_CALLBACK_SECRET` (optional shared secret for custom webhook sources)
@@ -65,3 +70,9 @@ Use the local simulator for C2B confirmation:
 ```bash
 node scripts/simulate-c2b-confirmation.js <ORDER_REF> <AMOUNT>
 ```
+
+## Reconciliation endpoint
+
+- `GET /api/cron/payment-reconcile`
+- Query params (optional): `batch`, `lookbackMinutes`
+- Auth: send `x-cron-secret: <CRON_SECRET>` or `Authorization: Bearer <CRON_SECRET>`
