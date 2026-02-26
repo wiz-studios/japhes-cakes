@@ -25,6 +25,26 @@ interface Order {
   [key: string]: any
 }
 
+const TERMINAL_ORDER_STATUSES = new Set(["cancelled", "delivered", "collected", "completed"])
+
+function getDisplayWorkflowStatus(order: Order) {
+  const orderStatus = String(order.status || "").toLowerCase()
+  const paymentStatus = String(order.payment_status || "").toLowerCase()
+  const paymentMethod = String(order.payment_method || "").toLowerCase()
+
+  if (TERMINAL_ORDER_STATUSES.has(orderStatus)) {
+    return orderStatus
+  }
+
+  if (paymentMethod === "mpesa") {
+    if (paymentStatus === "failed") return "payment_failed"
+    if (paymentStatus === "expired") return "payment_expired"
+    if (paymentStatus === "pending" || paymentStatus === "initiated") return "awaiting_payment"
+  }
+
+  return orderStatus || "order_received"
+}
+
 // Status Color Map
 const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info"> = {
   order_received: "warning", // Yellow
@@ -42,6 +62,9 @@ const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive" | "o
 const getBadgeStyle = (status: string) => {
   switch (status) {
     case 'order_received': return "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200"
+    case 'awaiting_payment': return "bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
+    case 'payment_failed': return "bg-rose-100 text-rose-700 hover:bg-rose-200 border-rose-200"
+    case 'payment_expired': return "bg-slate-200 text-slate-700 hover:bg-slate-300 border-slate-300"
     case 'in_kitchen':
     case 'preparing': return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200"
     case 'ready_for_pickup':
@@ -57,13 +80,20 @@ const getBadgeStyle = (status: string) => {
 function getRiskBadges(order: Order) {
   const badges: Array<{ label: string; className: string }> = []
   const ageHours = (Date.now() - new Date(order.created_at).getTime()) / (1000 * 60 * 60)
+  const paymentStatus = String(order.payment_status || "").toLowerCase()
+  const isPaymentCleared = paymentStatus === "paid" || paymentStatus === "deposit_paid"
+  const displayStatus = getDisplayWorkflowStatus(order)
 
-  if (order.status !== "cancelled" && order.status !== "delivered" && order.status !== "collected" && ageHours >= 2) {
+  if (displayStatus !== "cancelled" && displayStatus !== "delivered" && displayStatus !== "collected" && isPaymentCleared && ageHours >= 2) {
     badges.push({ label: "Late", className: "bg-rose-100 text-rose-700 border-rose-200" })
   }
 
-  if (order.payment_status === "pending" && ageHours >= 0.5) {
+  if ((paymentStatus === "pending" || paymentStatus === "initiated") && ageHours >= 0.5) {
     badges.push({ label: "Pending >30m", className: "bg-amber-100 text-amber-700 border-amber-200" })
+  }
+
+  if (paymentStatus === "failed") {
+    badges.push({ label: "Payment failed", className: "bg-rose-100 text-rose-700 border-rose-200" })
   }
 
   return badges
@@ -164,12 +194,14 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedOrders.map((order) => (
-                <TableRow
-                  key={order.id}
-                  className="group hover:bg-white/60 transition-colors cursor-pointer"
-                  onClick={() => router.push(`/admin/order/${order.id}`)}
-                >
+              paginatedOrders.map((order) => {
+                const displayStatus = getDisplayWorkflowStatus(order)
+                return (
+                  <TableRow
+                    key={order.id}
+                    className="group hover:bg-white/60 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/admin/order/${order.id}`)}
+                  >
                   <TableCell className="font-mono font-medium text-gray-700 group-hover:text-gray-900">
                     {formatFriendlyId(order)}
                   </TableCell>
@@ -203,8 +235,8 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none ${getBadgeStyle(order.status)} border`}>
-                      {order.status.replace(/_/g, " ")}
+                    <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none ${getBadgeStyle(displayStatus)} border`}>
+                      {displayStatus.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium text-gray-900">
@@ -224,8 +256,9 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                       <span className="sr-only">View</span>
                     </Button>
                   </TableCell>
-                </TableRow>
-              ))
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
           </Table>
@@ -238,11 +271,13 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
             No orders found.
           </div>
         ) : (
-          paginatedOrders.map((order) => (
-            <div
-              key={order.id}
-              className="bg-white/90 rounded-2xl border border-white/60 p-4 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]"
-            >
+          paginatedOrders.map((order) => {
+            const displayStatus = getDisplayWorkflowStatus(order)
+            return (
+              <div
+                key={order.id}
+                className="bg-white/90 rounded-2xl border border-white/60 p-4 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]"
+              >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Order ID</p>
@@ -268,8 +303,8 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
                 <Badge variant="outline" className={order.order_type === 'cake' ? "border-rose-200 text-rose-700 bg-rose-50" : "border-orange-200 text-orange-700 bg-orange-50"}>
                   {order.order_type === 'cake' ? "Cake" : "Pizza"}
                 </Badge>
-                <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none ${getBadgeStyle(order.status)} border`}>
-                  {order.status.replace(/_/g, " ")}
+                <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none ${getBadgeStyle(displayStatus)} border`}>
+                  {displayStatus.replace(/_/g, " ")}
                 </Badge>
                 <Badge className={`uppercase text-[10px] tracking-wider font-bold shadow-none border ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
                   order.payment_status === 'deposit_paid' ? 'bg-amber-100 text-amber-700 border-amber-200' :
@@ -290,8 +325,9 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
               <div className="mt-2 text-[10px] text-muted-foreground uppercase tracking-wider">
                 {order.payment_method === 'mpesa' ? 'M-Pesa' : 'Cash'}
               </div>
-            </div>
-          ))
+              </div>
+            )
+          })
         )}
       </div>
 
