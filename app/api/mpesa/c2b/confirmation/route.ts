@@ -9,6 +9,7 @@ import {
 import { verifyWebhookRequest } from "@/lib/webhook-auth"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getClientIp, getRequestId, logWithRequestId } from "@/lib/request-meta"
+import { sendAdminPaymentAlert } from "@/lib/admin-payment-alert"
 
 type C2BConfirmationPayload = {
   TransID?: string
@@ -149,6 +150,22 @@ async function processConfirmation(payload: C2BConfirmationPayload, requestId: s
       nextStatus,
       nextPaid,
       nextDue,
+    })
+
+    await sendAdminPaymentAlert({
+      source: "c2b",
+      requestId,
+      orderId: order.id,
+      friendlyId: order.friendly_id,
+      customerName: null,
+      contactPhone: hasValidPhone ? normalizedPhone : order.mpesa_phone || rawPhone || null,
+      paymentStatus: nextStatus,
+      amountReceived: increment,
+      totalAmount,
+      totalPaid: nextPaid,
+      balanceDue: nextDue,
+      transactionId: transId,
+      checkoutRequestId: null,
     })
   }
 

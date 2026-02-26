@@ -49,6 +49,7 @@ This project now includes baseline protections for traffic spikes, duplicate req
 - `GET /api/health`
 - `GET /api/health?deep=1` adds DB probe
 - Correlation/request IDs now included in critical logs for order/payment transitions
+- Admin paid-order alerts now send email automatically from STK + C2B success callbacks
 
 ### Load testing scaffold
 - k6 script: `load-tests/k6-basic.js`
@@ -83,6 +84,10 @@ MPESA_CALLBACK_SECRET=
 MPESA_CALLBACK_HMAC_SECRET=
 MPESA_C2B_CALLBACK_SECRET=
 MPESA_C2B_CALLBACK_HMAC_SECRET=
+
+# Optional admin payment alerts
+ENABLE_ADMIN_PAYMENT_ALERTS=true
+ADMIN_PAYMENT_ALERT_TO=
 ```
 
 ## k6 usage

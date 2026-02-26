@@ -3,6 +3,7 @@ import { NextResponse, after } from "next/server"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getClientIp, getRequestId, logWithRequestId } from "@/lib/request-meta"
 import { verifyWebhookRequest } from "@/lib/webhook-auth"
+import { sendAdminPaymentAlert } from "@/lib/admin-payment-alert"
 
 type ParsedStkCallback = {
   checkoutRequestId: string
@@ -179,7 +180,7 @@ async function processStkCallback(payload: any, requestId: string) {
   const { data: order, error: findError } = await supabase
     .from("orders")
     .select(
-      "id, payment_status, payment_plan, total_amount, payment_amount_paid, payment_deposit_amount, payment_last_request_amount, mpesa_transaction_id"
+      "id, friendly_id, customer_name, phone, mpesa_phone, payment_status, payment_plan, total_amount, payment_amount_paid, payment_deposit_amount, payment_last_request_amount, mpesa_transaction_id"
     )
     .eq("mpesa_checkout_request_id", callback.checkoutRequestId)
     .single()
@@ -283,6 +284,22 @@ async function processStkCallback(payload: any, requestId: string) {
       nextStatus,
       nextPaid,
       nextDue,
+    })
+
+    await sendAdminPaymentAlert({
+      source: "stk",
+      requestId,
+      orderId: order.id,
+      friendlyId: order.friendly_id,
+      customerName: order.customer_name,
+      contactPhone: order.mpesa_phone || order.phone || callback.callbackPhone,
+      paymentStatus: nextStatus,
+      amountReceived: increment,
+      totalAmount,
+      totalPaid: nextPaid,
+      balanceDue: nextDue,
+      transactionId: callback.mpesaReceiptNumber || order.mpesa_transaction_id || null,
+      checkoutRequestId: callback.checkoutRequestId,
     })
   } else {
     const { error: updateError } = await supabase
