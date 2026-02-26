@@ -8,6 +8,7 @@ import { normalizeKenyaPhone } from "@/lib/phone"
 import { formatDateTimeNairobi } from "@/lib/time"
 import { Clock } from "lucide-react"
 import Link from "next/link"
+import StatusAutoRefresh from "@/components/status-auto-refresh"
 
 const ORDER_STATUS_SELECT =
   "id, friendly_id, created_at, customer_name, order_type, fulfilment, status, phone, mpesa_phone, total_amount, delivery_fee, delivery_zone_id, preferred_date, delivery_window, payment_status, payment_method, payment_plan, payment_amount_paid, payment_amount_due, mpesa_checkout_request_id, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
@@ -212,8 +213,11 @@ export default async function OrderStatusPage({
             <div className={`${cardClass} p-6`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Order Timeline</h3>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <Clock className="h-4 w-4" /> Updated live
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Clock className="h-4 w-4" /> Updated live
+                  </div>
+                  <StatusAutoRefresh intervalMs={10_000} />
                 </div>
               </div>
               <div className="mt-6">
