@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase"
-import { BookOpenCheck, CalendarDays, Images, LayoutDashboard, MapPin, MessageSquare, Moon, Search, ShieldCheck, Sun } from "lucide-react"
+import { BookOpenCheck, CalendarDays, Images, LayoutDashboard, MapPin, MessageSquare, Search, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -25,16 +25,8 @@ export default function AdminLayout({
   const pathname = usePathname()
   const router = useRouter()
   const isLogin = pathname === "/admin/login"
-  const [isDark, setIsDark] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const supabase = useMemo(() => createClient(), [])
-
-  useEffect(() => {
-    const saved = localStorage.getItem("admin.theme")
-    const dark = saved === "dark"
-    setIsDark(dark)
-    document.documentElement.classList.toggle("dark", dark)
-  }, [])
 
   useEffect(() => {
     if (isLogin) return
@@ -74,15 +66,6 @@ export default function AdminLayout({
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [])
-
-  const toggleTheme = () => {
-    setIsDark((prev) => {
-      const next = !prev
-      document.documentElement.classList.toggle("dark", next)
-      localStorage.setItem("admin.theme", next ? "dark" : "light")
-      return next
-    })
-  }
 
   if (isLogin) {
     return (
@@ -170,14 +153,6 @@ export default function AdminLayout({
                   >
                     <Search className="h-3.5 w-3.5" />
                     Quick Actions
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
-                    {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-                    {isDark ? "Light" : "Dark"}
                   </button>
                   <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
                     Logged in as admin

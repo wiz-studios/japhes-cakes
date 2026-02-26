@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { motion } from "framer-motion"
 import { Eye, Search, Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -104,6 +104,7 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [isRefreshing, startRefresh] = useTransition()
   const ITEMS_PER_PAGE = 10
 
   const filtered = orders.filter((o: Order) => {
@@ -159,9 +160,15 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
             variant="outline"
             size="sm"
             className="gap-2 flex-1 md:flex-none"
-            onClick={() => router.refresh()}
+            disabled={isRefreshing}
+            onClick={() =>
+              startRefresh(() => {
+                router.refresh()
+              })
+            }
           >
-            <RefreshCw className="h-4 w-4" /> Refresh
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </Button>
           <Button variant="outline" size="sm" className="gap-2 flex-1 md:flex-none">
             <Filter className="h-4 w-4" /> Filter
