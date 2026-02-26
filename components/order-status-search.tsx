@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { AlertCircle, Search } from "lucide-react"
+import { Search } from "lucide-react"
 import { normalizeKenyaPhone } from "@/lib/phone"
+import { StateMessageCard } from "@/components/ui/state-message-card"
 
 export function OrderStatusSearch({
   initialId = "",
@@ -40,10 +41,11 @@ export function OrderStatusSearch({
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
-          <AlertCircle size={16} />
-          {error}
-        </div>
+        <StateMessageCard
+          variant="error"
+          title="Unable to find a trackable order"
+          description={error}
+        />
       )}
 
       <div className="grid gap-4 md:grid-cols-2">

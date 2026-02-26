@@ -7,6 +7,7 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-
 import { Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import BrandLogo from "@/components/BrandLogo"
+import SystemStatusBanner from "@/components/SystemStatusBanner"
 
 export default function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -48,14 +49,14 @@ export default function SiteHeader() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out border-b",
           isScrolled
-            ? "bg-white/85 backdrop-blur-xl border-white/60 shadow-[0_20px_60px_-45px_rgba(15,20,40,0.6)] py-3"
-            : "bg-white/55 backdrop-blur-xl border-white/40 py-5"
+            ? "bg-white/85 backdrop-blur-xl border-white/60 shadow-[0_20px_60px_-45px_rgba(15,20,40,0.6)]"
+            : "bg-white/55 backdrop-blur-xl border-white/40"
         )}
         initial={{ y: 0, opacity: 1 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="container mx-auto px-6 h-full flex items-center justify-between">
+        <div className={cn("container mx-auto flex h-full items-center justify-between px-6 transition-[padding] duration-300", isScrolled ? "py-3" : "py-5")}>
           <BrandLogo size="md" />
 
           <nav className="hidden md:flex items-center gap-8">
@@ -91,6 +92,7 @@ export default function SiteHeader() {
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
+        <SystemStatusBanner compact />
       </motion.header>
 
       <AnimatePresence>

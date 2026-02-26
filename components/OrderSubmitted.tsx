@@ -13,6 +13,9 @@ import BrandLogo from "@/components/BrandLogo"
 import OrderReviewForm from "@/components/OrderReviewForm"
 import { maskPhoneNumber } from "@/lib/phone"
 import { formatDateTimeNairobi } from "@/lib/time"
+import { useToast } from "@/hooks/use-toast"
+import { StateMessageCard } from "@/components/ui/state-message-card"
+import PaymentProgressTracker, { paymentStatusToProgressState } from "@/components/PaymentProgressTracker"
 
 type PaymentAttempt = {
   id?: string
@@ -78,6 +81,7 @@ export default function OrderSubmitted({
   const [isRetrying, setIsRetrying] = useState(false)
   const [retryCooldown, setRetryCooldown] = useState(0)
   const [isDownloading, setIsDownloading] = useState(false)
+  const { toast } = useToast()
   const receiptRef = useRef<HTMLDivElement | null>(null)
   const retryIdempotencyRef = useRef<string | null>(null)
 
@@ -144,6 +148,10 @@ export default function OrderSubmitted({
       if (res.success) {
         // Optimistic update
         setLiveOrder((prev: any) => ({ ...prev, payment_status: "initiated" }))
+        toast({
+          title: "STK request sent",
+          description: "Check your phone and enter your M-Pesa PIN.",
+        })
         // Cooldown for button (Hardening: 60s to prevent spam)
         setRetryCooldown(60)
         const timer = setInterval(() => {
@@ -153,10 +161,18 @@ export default function OrderSubmitted({
           })
         }, 1000)
       } else {
-        alert("Retry failed: " + res.error)
+        toast({
+          title: "Retry failed",
+          description: res.error || "Unable to resend STK request.",
+          variant: "destructive",
+        })
       }
     } catch (e) {
-      alert("Unexpected error retrying payment")
+      toast({
+        title: "Unexpected retry error",
+        description: "Please try again in a few seconds.",
+        variant: "destructive",
+      })
     } finally {
       setIsRetrying(false)
     }
@@ -211,8 +227,17 @@ export default function OrderSubmitted({
       const imageData = canvas.toDataURL("image/png")
       pdf.addImage(imageData, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST")
       pdf.save(`Receipt-${friendlyId}.pdf`)
+      toast({
+        title: "Receipt downloaded",
+        description: `Saved as Receipt-${friendlyId}.pdf`,
+      })
     } catch (error) {
       console.error("[receipt-download] Failed to generate PDF:", error)
+      toast({
+        title: "PDF generation failed",
+        description: "Opening print dialog as fallback.",
+        variant: "destructive",
+      })
       window.print()
     } finally {
       setIsDownloading(false)
@@ -287,6 +312,7 @@ export default function OrderSubmitted({
         transition={{ delay: 0.45 }}
         className="w-full mb-6 print:hidden"
       >
+        <PaymentProgressTracker state={paymentStatusToProgressState(liveOrder.payment_status)} className="mb-4" />
         <OrderPaymentStatusCard
           paymentStatus={liveOrder.payment_status}
           paymentMethod={liveOrder.payment_method}
@@ -330,7 +356,7 @@ export default function OrderSubmitted({
 
         {/* Initiated Waiting Message (Hardened Copy) */}
         {liveOrder.payment_status === "initiated" && (
-          <div className="mt-4 bg-white/80 p-3 rounded-2xl border border-white/60">
+          <div className="mt-4">
             <div className="mb-2 flex items-center justify-center gap-2" aria-hidden="true">
               {[0, 1, 2].map((dot) => (
                 <motion.span
@@ -346,12 +372,11 @@ export default function OrderSubmitted({
                 />
               ))}
             </div>
-            <p className="text-sm text-amber-800 font-medium">
-              Waiting for M-Pesa confirmation...
-            </p>
-            <p className="text-sm text-amber-700 mt-1">
-              Please check your phone ({maskPhoneNumber(liveOrder.mpesa_phone || "")}) and enter your PIN.
-            </p>
+            <StateMessageCard
+              variant="warning"
+              title="Waiting for M-Pesa confirmation"
+              description={`Please check your phone (${maskPhoneNumber(liveOrder.mpesa_phone || "")}) and enter your PIN.`}
+            />
           </div>
         )}
       </motion.div>

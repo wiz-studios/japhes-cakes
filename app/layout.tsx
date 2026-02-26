@@ -1,10 +1,13 @@
 import type React from "react"
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import { Cormorant_Garamond, Manrope } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import SiteHeader from "@/components/SiteHeader"
 import SiteFooter from "@/components/SiteFooter"
 import FloatingWhatsApp from "@/components/FloatingWhatsApp"
+import SupportDrawer from "@/components/SupportDrawer"
+import SystemStatusBanner from "@/components/SystemStatusBanner"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
@@ -52,9 +55,13 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${manrope.variable} ${cormorant.variable} font-sans antialiased min-h-screen bg-background flex flex-col`}>
         <SiteHeader />
+        <SystemStatusBanner onlyOrderPages compact />
         <main className="flex-1">{children}</main>
         <SiteFooter />
         <FloatingWhatsApp />
+        <Suspense fallback={null}>
+          <SupportDrawer />
+        </Suspense>
         <Toaster />
         <Analytics />
       </body>

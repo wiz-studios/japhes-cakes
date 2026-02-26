@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { formatFriendlyId } from "@/lib/order-helpers"
 import { formatDateTimeNairobi } from "@/lib/time"
+import { StateMessageCard } from "@/components/ui/state-message-card"
 
 interface Order {
   id: string
@@ -189,8 +190,13 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
           <TableBody>
             {paginatedOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                  No orders found.
+                <TableCell colSpan={8} className="h-32">
+                  <StateMessageCard
+                    variant="empty"
+                    title="No orders found"
+                    description="Try a different search term or reset your filters."
+                    className="mx-6"
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -267,8 +273,12 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
       {/* Cards (Mobile) */}
       <div className="md:hidden grid gap-4">
         {paginatedOrders.length === 0 ? (
-          <div className="bg-white/90 rounded-2xl border border-white/60 p-6 text-center text-muted-foreground shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]">
-            No orders found.
+          <div className="bg-white/90 rounded-2xl border border-white/60 p-3 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]">
+            <StateMessageCard
+              variant="empty"
+              title="No orders found"
+              description="Try a different search term or reset your filters."
+            />
           </div>
         ) : (
           paginatedOrders.map((order) => {

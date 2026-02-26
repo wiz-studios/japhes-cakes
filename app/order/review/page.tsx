@@ -7,6 +7,10 @@ import Image from "next/image"
 import OrderSummary from "@/components/OrderSummary"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import PaymentProgressTracker, { type PaymentProgressState } from "@/components/PaymentProgressTracker"
+import { StateMessageCard } from "@/components/ui/state-message-card"
+import { ReceiptPageSkeleton } from "@/components/ui/app-skeleton"
+import { useToast } from "@/hooks/use-toast"
 
 // Import backend submission functions
 import { submitPizzaOrder, submitCakeOrder } from "@/app/actions/orders"
@@ -68,6 +72,8 @@ function OrderReviewContent() {
   const [progress, setProgress] = useState(80) // 80%: review step
   const [discountTotal, setDiscountTotal] = useState(0)
   const [submitIdempotencyKey] = useState(() => crypto.randomUUID())
+  const [paymentProgress, setPaymentProgress] = useState<PaymentProgressState>("idle")
+  const { toast } = useToast()
 
   // Payment state
   const paymentMethod: PaymentMethod = "mpesa"
@@ -149,6 +155,7 @@ function OrderReviewContent() {
     console.log("Order data:", order)
 
     setSubmitting(true)
+    setPaymentProgress("initiated")
     // setError("") // Don't clear error here if it's a blocking validation, but we re-validate below anyway. 
     // Actually better to keep existing flow but ensure we don't proceed if validation fails.
 
@@ -158,11 +165,23 @@ function OrderReviewContent() {
     if (!normalizedMpesaPhone) {
       console.log("Validation failed: M-Pesa phone required")
       setError("Please enter your M-Pesa phone number")
+      setPaymentProgress("failed")
+      toast({
+        title: "M-Pesa number required",
+        description: "Enter the number that should receive the STK prompt.",
+        variant: "destructive",
+      })
       setSubmitting(false)
       return
     }
     if (!isValidKenyaPhone(normalizedMpesaPhone)) {
       setError("Use 07XXXXXXXX or 01XXXXXXXX")
+      setPaymentProgress("failed")
+      toast({
+        title: "Invalid phone number",
+        description: "Use 07XXXXXXXX or 01XXXXXXXX.",
+        variant: "destructive",
+      })
       setSubmitting(false)
       return
     }
@@ -228,14 +247,26 @@ function OrderReviewContent() {
         // STK Push: wait for initiation so prompt shows before redirect
         if (normalizedMpesaPhone) {
           console.log("Triggering STK Push for:", result.orderId)
+          setPaymentProgress("initiated")
           const stkResult = await initiateMpesaSTK(result.orderId, normalizedMpesaPhone, {
             idempotencyKey: `stk-init:${submitIdempotencyKey}`,
           })
           if (!stkResult.success) {
             setError(stkResult.error || "Failed to initiate M-Pesa prompt")
+            setPaymentProgress("failed")
+            toast({
+              title: "STK initiation failed",
+              description: stkResult.error || "Unable to trigger M-Pesa prompt.",
+              variant: "destructive",
+            })
             setSubmitting(false)
             return
           }
+          setPaymentProgress("prompted")
+          toast({
+            title: "STK sent",
+            description: "Check your phone and enter your M-Pesa PIN.",
+          })
         }
 
         setProgress(100)
@@ -247,10 +278,22 @@ function OrderReviewContent() {
         const errorMsg = result?.error || "Failed to submit order"
         console.error("Order submission failed:", errorMsg)
         setError(errorMsg)
+        setPaymentProgress("failed")
+        toast({
+          title: "Order submission failed",
+          description: errorMsg,
+          variant: "destructive",
+        })
       }
     } catch (err) {
       console.error("Order submission error:", err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
+      setPaymentProgress("failed")
+      toast({
+        title: "Unexpected error",
+        description: "Please try again.",
+        variant: "destructive",
+      })
     } finally {
       // Clear submitting state (redirect may follow)
       setSubmitting(false)
@@ -324,13 +367,15 @@ function OrderReviewContent() {
       </motion.div>
 
       {/* Main Section */}
-      <main className="flex-1 flex flex-col items-center justify-center px-2 pb-16 md:pb-24">
+      <main className="flex-1 flex flex-col items-center justify-center px-3 pb-16 md:px-4 md:pb-24">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="w-full max-w-lg"
         >
+          <PaymentProgressTracker state={paymentProgress} className="mb-4" />
+
           <div className="mb-4 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm">
             Review your order details below. If you need to make changes, tap <span className="font-semibold text-slate-900">Back</span>.
           </div>
@@ -450,20 +495,20 @@ function OrderReviewContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="mt-4 text-center text-red-600 font-semibold bg-red-50 rounded p-2"
+                className="mt-4"
                 role="alert"
               >
-                {error}
+                <StateMessageCard variant="error" title={error} />
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Navigation Buttons */}
-          <div className="mt-8 flex items-center gap-4 px-1">
+          <div className="mt-8 grid grid-cols-1 gap-3 px-2 sm:grid-cols-2 sm:px-0">
             <Button
               type="button"
               variant="outline"
-              className="h-12 min-w-0 flex-1 rounded-full shadow-[0_16px_40px_-28px_rgba(15,20,40,0.35)]"
+              className="h-12 w-full min-w-0 rounded-full shadow-[0_16px_40px_-28px_rgba(15,20,40,0.35)]"
               onClick={handleBack}
             >
               Back
@@ -471,7 +516,7 @@ function OrderReviewContent() {
             <Button
               type="button"
               onClick={handleSubmit}
-              className={`h-12 min-w-0 flex-1 rounded-full text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] ${submitButtonColor}`}
+              className={`h-12 w-full min-w-0 rounded-full text-white font-semibold shadow-[0_18px_45px_-28px_rgba(15,20,40,0.6)] ${submitButtonColor}`}
               disabled={submitting}
             >
               {submitting ? (
@@ -489,7 +534,7 @@ function OrderReviewContent() {
 
 export default function OrderReviewPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>}>
+    <Suspense fallback={<ReceiptPageSkeleton />}>
       <OrderReviewContent />
     </Suspense>
   )

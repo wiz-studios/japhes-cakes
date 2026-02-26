@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label"
 import { getOrderPaymentSnapshot, initiateMpesaBalanceSTK } from "@/app/actions/payments"
 import { isValidKenyaPhone, maskPhoneNumber, normalizeKenyaPhone } from "@/lib/phone"
 import type { Fulfilment, PaymentMethod, PaymentStatus } from "@/lib/types/payment"
+import { StateMessageCard } from "@/components/ui/state-message-card"
+import PaymentProgressTracker, { paymentStatusToProgressState } from "@/components/PaymentProgressTracker"
+import { useToast } from "@/hooks/use-toast"
 
 type PaymentState = {
   orderStatus: string
@@ -53,6 +56,9 @@ export function StatusPaymentPanel({
   )
   const [feedback, setFeedback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
+  const lastToastStatusRef = useRef<string | null>(null)
+  const didHydrateStatusRef = useRef(false)
 
   const loadSnapshot = useCallback(async (trackedCheckoutOverride?: string | null) => {
     const response = await getOrderPaymentSnapshot(orderId, normalizeKenyaPhone(initialPhone || ""))
@@ -102,6 +108,39 @@ export function StatusPaymentPanel({
     return () => clearInterval(timer)
   }, [isPolling, loadSnapshot])
 
+  useEffect(() => {
+    const status = latestPayment?.status
+    if (!status) return
+
+    if (!didHydrateStatusRef.current) {
+      didHydrateStatusRef.current = true
+      lastToastStatusRef.current = status
+      return
+    }
+
+    if (lastToastStatusRef.current === status) return
+    lastToastStatusRef.current = status
+
+    if (status === "success") {
+      toast({
+        title: "Payment confirmed",
+        description:
+          payment.balanceDue > 0
+            ? "Your payment was received. Remaining balance is updated."
+            : "Your order is now fully paid.",
+      })
+      return
+    }
+
+    if (status === "failed") {
+      toast({
+        title: "Payment failed",
+        description: "Retry payment when ready.",
+        variant: "destructive",
+      })
+    }
+  }, [latestPayment?.status, payment.balanceDue, toast])
+
   const canInitiateBalancePayment = useMemo(() => {
     if (payment.orderStatus === "cancelled") return false
     if (payment.paymentMethod !== "mpesa") return false
@@ -114,10 +153,21 @@ export function StatusPaymentPanel({
     return "Pay Now"
   }, [payment.paymentStatus])
 
+  const paymentProgress = useMemo(() => {
+    if (latestPayment?.status === "failed" && payment.balanceDue > 0) return "failed"
+    if (isPolling) return "prompted"
+    return paymentStatusToProgressState(payment.paymentStatus)
+  }, [isPolling, latestPayment?.status, payment.balanceDue, payment.paymentStatus])
+
   const handleInitiatePayment = async () => {
     const normalizedPhone = normalizeKenyaPhone(phone)
     if (!isValidKenyaPhone(normalizedPhone)) {
       setError("Enter a valid M-Pesa phone number (07XXXXXXXX or 01XXXXXXXX).")
+      toast({
+        title: "Invalid phone number",
+        description: "Use 07XXXXXXXX or 01XXXXXXXX for M-Pesa prompts.",
+        variant: "destructive",
+      })
       return
     }
 
@@ -128,11 +178,20 @@ export function StatusPaymentPanel({
       const response = await initiateMpesaBalanceSTK(orderId, normalizedPhone)
       if (!response.success) {
         setError(response.error)
+        toast({
+          title: "Could not start payment",
+          description: response.error,
+          variant: "destructive",
+        })
         return
       }
 
       setDialogOpen(false)
       setFeedback("STK sent, check your phone to complete payment.")
+      toast({
+        title: "STK sent",
+        description: "Check your phone and enter your M-Pesa PIN.",
+      })
       const checkoutForTracking = response.checkoutRequestId || activeCheckoutRequestId || null
       setActiveCheckoutRequestId(checkoutForTracking)
       setIsPolling(true)
@@ -140,6 +199,11 @@ export function StatusPaymentPanel({
     } catch (actionError) {
       console.error("[status-payment] Failed to initiate STK:", actionError)
       setError("Failed to initiate payment. Please try again.")
+      toast({
+        title: "Payment request failed",
+        description: "Please retry in a few seconds.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -147,6 +211,8 @@ export function StatusPaymentPanel({
 
   return (
     <div className="space-y-3">
+      <PaymentProgressTracker state={paymentProgress} />
+
       <OrderPaymentStatusCard
         paymentStatus={payment.paymentStatus as PaymentStatus}
         paymentMethod={payment.paymentMethod as PaymentMethod}
@@ -178,25 +244,27 @@ export function StatusPaymentPanel({
       )}
 
       {feedback && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {feedback}
-        </div>
+        <StateMessageCard variant="success" title={feedback} />
       )}
 
       {isPolling && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          Waiting for M-Pesa confirmation. This page refreshes automatically every few seconds.
-        </div>
+        <StateMessageCard
+          variant="warning"
+          title="Waiting for M-Pesa confirmation"
+          description="This page refreshes automatically every few seconds."
+        />
       )}
 
       {latestPayment && latestPayment.status === "failed" && payment.balanceDue > 0 && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          Latest payment attempt failed. You can retry using the button above.
-        </div>
+        <StateMessageCard
+          variant="error"
+          title="Latest payment attempt failed"
+          description="You can retry using the button above."
+        />
       )}
 
       {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        <StateMessageCard variant="error" title={error} />
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
