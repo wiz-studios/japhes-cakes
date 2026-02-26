@@ -46,6 +46,8 @@ async function main() {
       "migrations/add_school_gallery.sql",
       "migrations/add_resilience_indexes_and_idempotency.sql",
       "migrations/rls_production_cutover.sql",
+      "migrations/add_order_reviews.sql",
+      "migrations/order_reviews_optional_anonymous.sql",
       "scripts/06-get-recent-scheduled-pizza-orders.sql",
       "scripts/02-seed-zones.sql",
     ]

@@ -61,10 +61,17 @@ export default async function OrderSubmittedPage({
     .eq("order_id", order.id)
     .order("created_at", { ascending: true })
 
+  const { data: review } = await supabase
+    .from("order_reviews")
+    .select("rating, comment, created_at")
+    .eq("order_id", order.id)
+    .maybeSingle()
+
   return (
     <OrderSubmitted
       order={order}
       paymentAttempts={paymentAttempts || []}
+      initialReview={review || null}
       isSandbox={process.env.PAYMENTS_ENV === "sandbox"}
       enableReorder={enableReorder}
       reorderHref={enableReorder ? buildReorderHref(order as any) : null}

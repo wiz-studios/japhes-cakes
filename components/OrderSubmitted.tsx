@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { OrderPaymentStatusCard } from "@/components/OrderPaymentStatusCard"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import BrandLogo from "@/components/BrandLogo"
+import OrderReviewForm from "@/components/OrderReviewForm"
 import { maskPhoneNumber } from "@/lib/phone"
 import { formatDateTimeNairobi } from "@/lib/time"
 
@@ -24,6 +25,11 @@ type PaymentAttempt = {
 type OrderSubmittedProps = {
   order: any
   paymentAttempts?: PaymentAttempt[]
+  initialReview?: {
+    rating: number | null
+    comment: string | null
+    created_at?: string | null
+  } | null
   isSandbox?: boolean
   enableReorder?: boolean
   reorderHref?: string | null
@@ -32,6 +38,7 @@ type OrderSubmittedProps = {
 export default function OrderSubmitted({
   order,
   paymentAttempts = [],
+  initialReview = null,
   isSandbox,
   enableReorder = false,
   reorderHref = null,
@@ -469,6 +476,15 @@ export default function OrderSubmitted({
             </a>
           </p>
         </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.52 }}
+        className="w-full mb-8 print:hidden"
+      >
+        <OrderReviewForm orderId={liveOrder.id} initialReview={initialReview} />
       </motion.div>
 
       <motion.div
