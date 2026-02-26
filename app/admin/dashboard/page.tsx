@@ -390,6 +390,8 @@ export default async function AdminDashboard({
         </div>
       </section>
 
+      <AdminOrderTable orders={tableOrders} />
+
       <section className="rounded-2xl border border-white/60 bg-white/90 p-4 shadow-[0_20px_60px_-50px_rgba(15,20,40,0.5)]">
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Attention Queue</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -424,8 +426,6 @@ export default async function AdminDashboard({
           busiestDay,
         }}
       />
-
-      <AdminOrderTable orders={tableOrders} />
       <BusyModePanel initial={settings} />
     </div>
   )
