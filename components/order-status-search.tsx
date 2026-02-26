@@ -74,7 +74,7 @@ export function OrderStatusSearch({
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <p className="text-xs text-slate-500">
-          If you enter both, we will match the exact order linked to that phone number.
+          If you enter both, we match the order using your contact phone or M-Pesa phone.
         </p>
         <Button
           className="w-full md:w-auto h-11 px-7 rounded-full bg-slate-900 text-white hover:bg-slate-800"

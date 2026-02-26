@@ -142,7 +142,7 @@ export async function getOrderPaymentSnapshot(orderId: string, phone?: string): 
   const { data: order, error } = await supabase
     .from("orders")
     .select(
-      "id, status, phone, payment_method, payment_status, payment_plan, total_amount, payment_amount_paid, payment_amount_due, mpesa_transaction_id, mpesa_checkout_request_id"
+      "id, status, phone, mpesa_phone, payment_method, payment_status, payment_plan, total_amount, payment_amount_paid, payment_amount_due, mpesa_transaction_id, mpesa_checkout_request_id"
     )
     .eq("id", trimmedOrderId)
     .maybeSingle()
@@ -152,7 +152,9 @@ export async function getOrderPaymentSnapshot(orderId: string, phone?: string): 
   }
 
   const normalizedPhone = phone?.trim() ? normalizeKenyaPhone(phone) : null
-  if (normalizedPhone && normalizeKenyaPhone(order.phone || "") !== normalizedPhone) {
+  const matchesOrderPhone = normalizeKenyaPhone(order.phone || "") === normalizedPhone
+  const matchesMpesaPhone = normalizeKenyaPhone(order.mpesa_phone || "") === normalizedPhone
+  if (normalizedPhone && !matchesOrderPhone && !matchesMpesaPhone) {
     return { success: false, error: "Order lookup failed for this phone number" }
   }
 

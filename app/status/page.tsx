@@ -47,14 +47,19 @@ export default async function OrderStatusPage({
         query = query.eq("friendly_id", normalizedId)
       }
 
-      if (normalizedPhone) {
-        query = query.eq("phone", normalizedPhone)
-      }
-
       const { data: directData } = await query.maybeSingle()
 
       if (directData) {
-        order = directData
+        const matchesPhone =
+          !normalizedPhone ||
+          normalizeKenyaPhone(directData.phone || "") === normalizedPhone ||
+          normalizeKenyaPhone(directData.mpesa_phone || "") === normalizedPhone
+
+        if (!matchesPhone) {
+          order = null
+        } else {
+          order = directData
+        }
       }
     }
 
@@ -62,7 +67,7 @@ export default async function OrderStatusPage({
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
         .select(ORDER_STATUS_SELECT)
-        .eq("phone", normalizedPhone)
+        .or(`phone.eq.${normalizedPhone},mpesa_phone.eq.${normalizedPhone}`)
         .order("created_at", { ascending: false })
         .limit(1)
 
@@ -75,7 +80,7 @@ export default async function OrderStatusPage({
       const { data: phoneOrders, error: phoneError } = await supabase
         .from("orders")
         .select(ORDER_STATUS_SELECT)
-        .eq("phone", normalizedPhone)
+        .or(`phone.eq.${normalizedPhone},mpesa_phone.eq.${normalizedPhone}`)
         .order("created_at", { ascending: false })
         .limit(5)
 
