@@ -95,3 +95,13 @@ k6 run load-tests/k6-basic.js \
 ```
 
 For realistic payment-init tests, use a real test order ID and phone in sandbox.
+
+## One-command prelaunch check
+
+Run before production cutover:
+
+```bash
+npm run prelaunch:check
+```
+
+This validates required env vars, callback URL shape, and required migration files.
