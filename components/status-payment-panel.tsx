@@ -34,6 +34,14 @@ type LatestPaymentState = {
   createdAt: string
 } | null
 
+type NoticeVariant = "info" | "success" | "warning" | "error"
+
+type PaymentNotice = {
+  variant: NoticeVariant
+  title: string
+  description?: string
+} | null
+
 export function StatusPaymentPanel({
   orderId,
   fulfilment,
@@ -54,7 +62,7 @@ export function StatusPaymentPanel({
   const [activeCheckoutRequestId, setActiveCheckoutRequestId] = useState<string | null>(
     initialState.lastCheckoutRequestId || null
   )
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [notice, setNotice] = useState<PaymentNotice>(null)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
   const lastToastStatusRef = useRef<string | null>(null)
@@ -107,6 +115,48 @@ export function StatusPaymentPanel({
 
     return () => clearInterval(timer)
   }, [isPolling, loadSnapshot])
+
+  useEffect(() => {
+    if (isPolling) {
+      setNotice({
+        variant: "warning",
+        title: "Waiting for M-Pesa confirmation",
+        description: "STK was sent. This page refreshes automatically every few seconds.",
+      })
+      return
+    }
+
+    const paymentStatus = String(payment.paymentStatus || "").toLowerCase()
+
+    if (paymentStatus === "paid") {
+      setNotice({
+        variant: "success",
+        title: "Payment confirmed",
+        description: "Your balance payment was received and this order is now fully paid.",
+      })
+      return
+    }
+
+    if (paymentStatus === "deposit_paid" && payment.balanceDue > 0) {
+      setNotice({
+        variant: "info",
+        title: "Deposit received",
+        description: `Balance due: ${payment.balanceDue.toLocaleString()} KES. You can clear it anytime before fulfilment.`,
+      })
+      return
+    }
+
+    if (paymentStatus === "failed" || paymentStatus === "expired") {
+      setNotice({
+        variant: "error",
+        title: paymentStatus === "expired" ? "Payment expired" : "Payment failed",
+        description: "No charge was confirmed. You can retry using the button below.",
+      })
+      return
+    }
+
+    setNotice(null)
+  }, [isPolling, payment.balanceDue, payment.paymentStatus])
 
   useEffect(() => {
     const status = latestPayment?.status
@@ -172,7 +222,11 @@ export function StatusPaymentPanel({
     }
 
     setError(null)
-    setFeedback(null)
+    setNotice({
+      variant: "warning",
+      title: "Waiting for M-Pesa confirmation",
+      description: "STK was sent. Check your phone and enter your PIN.",
+    })
     setIsSubmitting(true)
     try {
       const response = await initiateMpesaBalanceSTK(orderId, normalizedPhone)
@@ -187,7 +241,6 @@ export function StatusPaymentPanel({
       }
 
       setDialogOpen(false)
-      setFeedback("STK sent, check your phone to complete payment.")
       toast({
         title: "STK sent",
         description: "Check your phone and enter your M-Pesa PIN.",
@@ -199,6 +252,11 @@ export function StatusPaymentPanel({
     } catch (actionError) {
       console.error("[status-payment] Failed to initiate STK:", actionError)
       setError("Failed to initiate payment. Please try again.")
+      setNotice({
+        variant: "error",
+        title: "Payment request failed",
+        description: "Please retry in a few seconds.",
+      })
       toast({
         title: "Payment request failed",
         description: "Please retry in a few seconds.",
@@ -243,25 +301,7 @@ export function StatusPaymentPanel({
         </div>
       )}
 
-      {feedback && (
-        <StateMessageCard variant="success" title={feedback} />
-      )}
-
-      {isPolling && (
-        <StateMessageCard
-          variant="warning"
-          title="Waiting for M-Pesa confirmation"
-          description="This page refreshes automatically every few seconds."
-        />
-      )}
-
-      {latestPayment && latestPayment.status === "failed" && payment.balanceDue > 0 && (
-        <StateMessageCard
-          variant="error"
-          title="Latest payment attempt failed"
-          description="You can retry using the button above."
-        />
-      )}
+      {notice && <StateMessageCard variant={notice.variant} title={notice.title} description={notice.description} />}
 
       {error && (
         <StateMessageCard variant="error" title={error} />
