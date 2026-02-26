@@ -1,6 +1,6 @@
 
 import { parseISO, isValid } from "date-fns"
-import { formatDateTimeNairobi } from "@/lib/time"
+import { formatDateNairobi, formatInNairobi } from "@/lib/time"
 
 export type Order = {
     id: string
@@ -45,26 +45,58 @@ export function formatFriendlyId(order: { id: string, created_at: string | Date,
     }
 }
 
-export function getDeliveryEstimate(order: { delivery_window?: string, preferred_date?: string, status: string }) {
-    if (order.status === "delivered") return "Delivered"
-    if (order.status === "cancelled") return "Cancelled"
+export function getDeliveryEstimate(order: {
+    delivery_window?: string
+    preferred_date?: string
+    status: string
+    fulfilment?: string
+    created_at?: string
+}) {
+    const status = String(order.status || "").toLowerCase()
+    const fulfilment = String(order.fulfilment || "").toLowerCase()
 
-    // If there's a specific preferred date in the future (more than 24h away roughly), show that
+    if (status === "delivered") return "Delivered"
+    if (status === "collected") return "Collected"
+    if (status === "cancelled") return "Cancelled"
+
+    // Status takes precedence over scheduled fields.
+    if (status === "ready_for_pickup") {
+        return fulfilment === "delivery" ? "Ready for dispatch" : "Ready now"
+    }
+    if (status === "out_for_delivery") return "Rider on the way"
+
     if (order.preferred_date) {
         const date = parseISO(order.preferred_date)
         if (isValid(date)) {
-            // Simple logic: if preferred date is effectively "future", return formatted date
-            return `Scheduled for ${formatDateTimeNairobi(date, {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-            })}`
+            const now = new Date()
+            const diffMs = date.getTime() - now.getTime()
+            const isFutureSchedule = diffMs > 45 * 60 * 1000
+            const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(order.preferred_date.trim())
+
+            if (isFutureSchedule || isDateOnly) {
+                if (isDateOnly) {
+                    return `Scheduled for ${formatDateNairobi(date, {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                    })}`
+                }
+
+                return `Scheduled for ${formatInNairobi(date, {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                })}`
+            }
         }
     }
 
-    // Fallback to delivery window or generic estimate
-    return order.delivery_window || "45-60 mins"
+    if (order.delivery_window && order.delivery_window.trim()) return order.delivery_window.trim()
+    return fulfilment === "pickup" ? "Ready in 30-45 mins" : "45-60 mins"
 }
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
