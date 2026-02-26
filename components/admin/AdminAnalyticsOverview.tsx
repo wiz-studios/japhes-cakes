@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 type DailyMetrics = {
   todayOrders: number
   todayRevenue: number
+  monthOrders: number
+  monthRevenue: number
   pendingPaymentsToday: number
   paidToday: number
   unpaidToday: number
@@ -21,6 +23,7 @@ type Insights = {
   bestCake: string
   bestPizza: string
   peakHour: string
+  busiestDay: string
 }
 
 export default function AdminAnalyticsOverview({
@@ -36,7 +39,7 @@ export default function AdminAnalyticsOverview({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
         <StatCard
           title="Today Orders"
           value={metrics.todayOrders.toLocaleString()}
@@ -67,6 +70,18 @@ export default function AdminAnalyticsOverview({
           value={`${metrics.weekRevenue.toLocaleString()} KES`}
           icon={TrendingUp}
           tone="purple"
+        />
+        <StatCard
+          title="Month Orders"
+          value={metrics.monthOrders.toLocaleString()}
+          icon={Receipt}
+          tone="blue"
+        />
+        <StatCard
+          title="Month Revenue"
+          value={`${metrics.monthRevenue.toLocaleString()} KES`}
+          icon={Wallet}
+          tone="emerald"
         />
         <StatCard
           title="Top Item"
@@ -107,11 +122,12 @@ export default function AdminAnalyticsOverview({
           <CardHeader>
             <CardTitle className="text-base">Order Insights</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <InsightItem label="Best Selling Cake" value={insights.bestCake} icon={CakeSlice} />
             <InsightItem label="Best Selling Pizza" value={insights.bestPizza} icon={Pizza} />
             <InsightItem label="Peak Order Time" value={insights.peakHour} icon={Clock3} />
             <InsightItem label="Top Item Today" value={metrics.topItemToday} icon={TrendingUp} />
+            <InsightItem label="Busiest Day (30d)" value={insights.busiestDay} icon={TrendingUp} />
           </CardContent>
         </Card>
       </div>

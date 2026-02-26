@@ -243,12 +243,26 @@ export default async function AdminDashboard({
   })
 
   const weeklyMap = new Map(weeklyTemplate.map((point) => [point.key, point]))
+  const dailyFrequency = new Map<string, number>()
+  const monthStart = new Date(nowNairobi.getFullYear(), nowNairobi.getMonth(), 1)
+  monthStart.setHours(0, 0, 0, 0)
+  let monthOrders = 0
+  let monthRevenue = 0
+
   for (const order of analyticsOrders) {
     const key = getNairobiDayKey(order.created_at)
     const point = weeklyMap.get(key)
     if (!point) continue
     point.orders += 1
     point.revenue += getRevenueContribution(order)
+
+    incrementCount(dailyFrequency, key)
+
+    const orderNairobi = toNairobiDate(order.created_at)
+    if (orderNairobi >= monthStart && orderNairobi <= nowNairobi) {
+      monthOrders += 1
+      monthRevenue += getRevenueContribution(order)
+    }
   }
 
   const cakeCounter = new Map<string, number>()
@@ -269,6 +283,20 @@ export default async function AdminDashboard({
   const bestPizza = [...pizzaCounter.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "No pizza orders yet"
   const peakHourRaw = [...hourlyCounter.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
   const peakHour = Number.isFinite(peakHourRaw) ? formatHourRange(Number(peakHourRaw)) : "No data yet"
+  const busiestDayEntry = [...dailyFrequency.entries()].sort((a, b) => b[1] - a[1])[0]
+  const busiestDay = (() => {
+    if (!busiestDayEntry) return "No data yet"
+    const [dayKey, count] = busiestDayEntry
+    const [year, month, day] = dayKey.split("-").map(Number)
+    const dayDate = new Date(year, month - 1, day)
+    const formatted = new Intl.DateTimeFormat("en-GB", {
+      timeZone: NAIROBI_TIME_ZONE,
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }).format(dayDate)
+    return `${formatted} (${count} orders)`
+  })()
 
   const settings = normalizeStoreSettings(settingsResult.data)
 
@@ -376,13 +404,12 @@ export default async function AdminDashboard({
         </div>
       </section>
 
-      <AdminOrderTable orders={tableOrders} />
-      <BusyModePanel initial={settings} />
-
       <AdminAnalyticsOverview
         metrics={{
           todayOrders: todayOrders.length,
           todayRevenue,
+          monthOrders,
+          monthRevenue,
           pendingPaymentsToday,
           paidToday,
           unpaidToday,
@@ -394,8 +421,12 @@ export default async function AdminDashboard({
           bestCake,
           bestPizza,
           peakHour,
+          busiestDay,
         }}
       />
+
+      <AdminOrderTable orders={tableOrders} />
+      <BusyModePanel initial={settings} />
     </div>
   )
 }

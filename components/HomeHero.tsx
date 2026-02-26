@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { ArrowUpRight, MapPin, Sparkles, Timer } from "lucide-react"
+import { ArrowUpRight, MapPin, Sparkles, Star, Timer } from "lucide-react"
 
 const featureItems = [
   {
@@ -23,7 +23,14 @@ const featureItems = [
   },
 ]
 
-export default function HomeHero() {
+type HomeReview = {
+  id: string
+  rating: number | null
+  comment: string
+  orderType: "pizza" | "cake" | "order"
+}
+
+export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
   const router = useRouter()
 
   return (
@@ -181,6 +188,51 @@ export default function HomeHero() {
             )
           })}
         </motion.div>
+
+        {reviews.length > 0 && (
+          <motion.section
+            initial={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.22 }}
+            className="rounded-[32px] border border-white/40 bg-white/75 p-6 shadow-[0_30px_80px_-55px_rgba(15,20,40,0.45)] backdrop-blur-sm md:p-8"
+            aria-label="Recent customer reviews"
+          >
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Social Proof</p>
+                <h2 className="text-2xl font-semibold font-serif text-slate-900">Recent customer reviews</h2>
+              </div>
+              <button
+                onClick={() => router.push("/status")}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-700 transition hover:bg-slate-50"
+              >
+                Track Your Order <ArrowUpRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {reviews.map((review) => (
+                <article
+                  key={review.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_50px_-40px_rgba(15,20,40,0.5)]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                      Verified {review.orderType} order
+                    </p>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+                      {review.rating ? `${review.rating}/5` : "Comment"}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-700">
+                    {review.comment || "Great service and smooth ordering experience."}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         <motion.div
           initial={{ opacity: 1, y: 0 }}
