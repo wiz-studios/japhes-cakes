@@ -72,7 +72,7 @@ export default function SiteHeader() {
           </nav>
 
           <div className="hidden md:block">
-            <Link href="/order/cake">
+            <Link href="/order">
               <motion.button
                 whileHover={{ scale: 1.02, boxShadow: "0 16px 30px rgba(15,23,42,0.18)" }}
                 whileTap={{ scale: 0.98 }}
@@ -128,7 +128,7 @@ export default function SiteHeader() {
                 transition={{ delay: 0.4 }}
                 className="mt-8"
               >
-                <Link href="/order/cake" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href="/order" onClick={() => setIsMobileMenuOpen(false)}>
                   <button className="bg-[#0f1116] text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-[#191c24] transition-colors">
                     Order Now
                   </button>
