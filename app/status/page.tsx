@@ -13,6 +13,12 @@ const ORDER_STATUS_SELECT =
   "id, friendly_id, created_at, customer_name, order_type, fulfilment, status, phone, mpesa_phone, total_amount, delivery_fee, delivery_zone_id, preferred_date, delivery_window, payment_status, payment_method, payment_plan, payment_amount_paid, payment_amount_due, mpesa_checkout_request_id, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
 
 const ENABLE_REORDER = ["1", "true", "yes", "on"].includes((process.env.ENABLE_REORDER || "").toLowerCase())
+const TRACKABLE_PAYMENT_STATUSES = new Set(["paid", "deposit_paid"])
+
+function isTrackableOrder(order: any) {
+  const status = String(order?.payment_status || "").toLowerCase()
+  return TRACKABLE_PAYMENT_STATUSES.has(status)
+}
 
 export default async function OrderStatusPage({
   searchParams,
@@ -22,14 +28,25 @@ export default async function OrderStatusPage({
   const { id, phone } = await searchParams
   const supabase = createServiceSupabaseClient()
 
-  let order = null
+  let order: any = null
   let error = null
+  let paymentGateReason: "failed" | "unpaid" | null = null
 
   const trimmedId = id?.trim()
   const trimmedPhone = phone?.trim()
   const normalizedPhone = trimmedPhone ? normalizeKenyaPhone(trimmedPhone) : undefined
   const normalizedId = trimmedId ? trimmedId.toUpperCase() : undefined
   const isUuid = !!trimmedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmedId)
+
+  const considerOrderCandidate = (candidate: any | null) => {
+    if (!candidate) return
+    if (isTrackableOrder(candidate)) {
+      order = candidate
+      return
+    }
+    const status = String(candidate.payment_status || "").toLowerCase()
+    paymentGateReason = status === "failed" ? "failed" : "unpaid"
+  }
 
   if (trimmedId || normalizedPhone) {
     // Never allow direct UUID lookup without a phone match.
@@ -55,10 +72,8 @@ export default async function OrderStatusPage({
           normalizeKenyaPhone(directData.phone || "") === normalizedPhone ||
           normalizeKenyaPhone(directData.mpesa_phone || "") === normalizedPhone
 
-        if (!matchesPhone) {
-          order = null
-        } else {
-          order = directData
+        if (matchesPhone) {
+          considerOrderCandidate(directData)
         }
       }
     }
@@ -72,7 +87,7 @@ export default async function OrderStatusPage({
         .limit(1)
 
       if (!phoneError && phoneOrders && phoneOrders.length > 0) {
-        order = phoneOrders[0]
+        considerOrderCandidate(phoneOrders[0])
       }
     }
 
@@ -87,17 +102,23 @@ export default async function OrderStatusPage({
       if (!phoneError && phoneOrders) {
         const matchedOrder = phoneOrders.find(o => formatFriendlyId(o) === normalizedId)
         if (matchedOrder) {
-          order = matchedOrder
+          considerOrderCandidate(matchedOrder)
         }
       }
     }
 
     if (!order && !error) {
-      error = trimmedId && normalizedPhone
-        ? "Order not found. Please check your order number and phone number."
-        : trimmedId
-          ? "Order not found. Please check your order number."
-          : "Order not found. Please check your phone number."
+      if (paymentGateReason === "failed") {
+        error = "Payment failed for this order. Tracking starts after a successful payment."
+      } else if (paymentGateReason === "unpaid") {
+        error = "This order is not trackable yet. Complete payment first, then track your order."
+      } else {
+        error = trimmedId && normalizedPhone
+          ? "Order not found. Please check your order number and phone number."
+          : trimmedId
+            ? "Order not found. Please check your order number."
+            : "Order not found. Please check your phone number."
+      }
     }
   }
 
