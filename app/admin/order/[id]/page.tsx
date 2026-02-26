@@ -128,7 +128,11 @@ export default async function AdminOrderDetailPage({
             <CardTitle>Management</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <Button asChild variant="outline" className="w-full"><Link href={`/admin/order/${order.id}`}>Open Printable Receipt View</Link></Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href={`/order/submitted?id=${order.id}`} target="_blank" rel="noopener noreferrer">
+                Open Printable Receipt View
+              </Link>
+            </Button>
             <div className="rounded-xl border p-3">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Communication Timeline</p>
               <div className="mt-2 space-y-2">
