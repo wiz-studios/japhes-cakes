@@ -3,12 +3,16 @@ import { OrderStatusSearch } from "@/components/order-status-search"
 import OrderStatusTimeline from "@/components/OrderStatusTimeline"
 import { StatusPaymentPanel } from "@/components/status-payment-panel"
 import { formatFriendlyId, getDeliveryEstimate } from "@/lib/order-helpers"
+import { buildReorderHref } from "@/lib/reorder"
 import { normalizeKenyaPhone } from "@/lib/phone"
 import { formatDateTimeNairobi } from "@/lib/time"
 import { Clock } from "lucide-react"
+import Link from "next/link"
 
 const ORDER_STATUS_SELECT =
-  "id, friendly_id, created_at, order_type, fulfilment, status, phone, mpesa_phone, total_amount, delivery_window, payment_status, payment_method, payment_plan, payment_amount_paid, payment_amount_due, mpesa_checkout_request_id, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
+  "id, friendly_id, created_at, customer_name, order_type, fulfilment, status, phone, mpesa_phone, total_amount, delivery_fee, delivery_zone_id, preferred_date, delivery_window, payment_status, payment_method, payment_plan, payment_amount_paid, payment_amount_due, mpesa_checkout_request_id, mpesa_transaction_id, order_items(item_name, quantity, notes), delivery_zones(name)"
+
+const ENABLE_REORDER = ["1", "true", "yes", "on"].includes((process.env.ENABLE_REORDER || "").toLowerCase())
 
 export default async function OrderStatusPage({
   searchParams,
@@ -113,6 +117,7 @@ export default async function OrderStatusPage({
     "rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)]"
   const metaLabelClass =
     "text-[10px] uppercase tracking-[0.16em] leading-tight text-slate-400 sm:text-[11px] sm:tracking-[0.24em]"
+  const reorderHref = order && ENABLE_REORDER ? buildReorderHref(order as any) : null
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
@@ -205,6 +210,23 @@ export default async function OrderStatusPage({
                 lastCheckoutRequestId: order.mpesa_checkout_request_id || null,
               }}
             />
+
+            {reorderHref && (
+              <div className={`${cardClass} p-5`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold">Need the same order?</p>
+                    <p className="text-sm text-slate-600 mt-1">Start with your previous item details prefilled.</p>
+                  </div>
+                  <Link
+                    href={reorderHref}
+                    className="inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800"
+                  >
+                    Reorder
+                  </Link>
+                </div>
+              </div>
+            )}
 
             <div className={`${cardClass} p-6`}>
               <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-4">Items</h3>

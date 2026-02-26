@@ -25,9 +25,17 @@ type OrderSubmittedProps = {
   order: any
   paymentAttempts?: PaymentAttempt[]
   isSandbox?: boolean
+  enableReorder?: boolean
+  reorderHref?: string | null
 }
 
-export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox }: OrderSubmittedProps) {
+export default function OrderSubmitted({
+  order,
+  paymentAttempts = [],
+  isSandbox,
+  enableReorder = false,
+  reorderHref = null,
+}: OrderSubmittedProps) {
   const router = useRouter()
   // Badge Logic: Only show if explicitly in Sandbox Mode AND not in Production Build (or if intended)
   // User Feedback: "Gate this behind NODE_ENV !== 'production'"
@@ -474,6 +482,17 @@ export default function OrderSubmitted({ order, paymentAttempts = [], isSandbox 
             Track Order <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
         </Link>
+
+        {enableReorder && reorderHref && (
+          <Link href={reorderHref} className="w-full">
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-xl border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+            >
+              Reorder
+            </Button>
+          </Link>
+        )}
 
         <Button
           variant="ghost"

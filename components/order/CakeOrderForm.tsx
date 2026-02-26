@@ -83,7 +83,15 @@ export function CakeOrderForm({ zones, storeSettings }: { zones: DeliveryZone[];
     const busyEtaMode = storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta"
 
     // Retrieve existing order data from URL if editing an order
-    const rawOrder = searchParams.get("order") ? JSON.parse(decodeURIComponent(searchParams.get("order")!)) : null
+    const rawOrderParam = searchParams.get("order")
+    let rawOrder: any = null
+    if (rawOrderParam) {
+        try {
+            rawOrder = JSON.parse(decodeURIComponent(rawOrderParam))
+        } catch {
+            rawOrder = null
+        }
+    }
 
     // Map the nested order object (from Review page) back to flat form fields
     const defaultValues: Partial<z.infer<typeof cakeSchema>> = rawOrder?.items ? {

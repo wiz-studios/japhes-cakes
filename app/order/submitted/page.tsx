@@ -3,6 +3,7 @@ import dynamic from "next/dynamic"
 import { createServiceSupabaseClient } from "@/lib/supabase-service"
 import { notFound } from "next/navigation"
 import { formatFriendlyId } from "@/lib/order-helpers"
+import { buildReorderHref } from "@/lib/reorder"
 
 const OrderSubmitted = dynamic(() => import("@/components/OrderSubmitted"))
 
@@ -39,6 +40,7 @@ export default async function OrderSubmittedPage({
 }) {
   const { id } = await searchParams
   const supabase = createServiceSupabaseClient()
+  const enableReorder = ["1", "true", "yes", "on"].includes((process.env.ENABLE_REORDER || "").toLowerCase())
 
   if (!id) return notFound()
 
@@ -64,6 +66,8 @@ export default async function OrderSubmittedPage({
       order={order}
       paymentAttempts={paymentAttempts || []}
       isSandbox={process.env.PAYMENTS_ENV === "sandbox"}
+      enableReorder={enableReorder}
+      reorderHref={enableReorder ? buildReorderHref(order as any) : null}
     />
   )
 }

@@ -122,11 +122,40 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
     const busyEtaMode = storeSettings.busyModeEnabled && storeSettings.busyModeAction === "increase_eta"
 
     // Load existing order from URL query if present (for editing from Review page)
-    const initialOrder = searchParams.get("order") ? JSON.parse(decodeURIComponent(searchParams.get("order")!)) : null
+    const initialOrderRaw = searchParams.get("order")
+    let initialOrder: any = null
+    if (initialOrderRaw) {
+        try {
+            initialOrder = JSON.parse(decodeURIComponent(initialOrderRaw))
+        } catch {
+            initialOrder = null
+        }
+    }
+
+    const orderItem = initialOrder?.items?.[0] || null
+    const initialValues = orderItem
+        ? {
+            fulfilment: initialOrder.fulfilment || "pickup",
+            pizzaType: orderItem.name || "",
+            pizzaSize: orderItem.size || "Medium",
+            quantity: Number(orderItem.quantity || 1),
+            customerName: initialOrder.customerName || "",
+            phone: initialOrder.phone || "",
+            notes: orderItem.notes || "",
+            extraCheese: Array.isArray(orderItem.toppings) && orderItem.toppings.includes("Extra Cheese"),
+            extraToppings: Array.isArray(orderItem.toppings) && orderItem.toppings.includes("Extra Toppings"),
+            deliveryZoneId: initialOrder.deliveryZoneId || "",
+            deliveryLat: initialOrder.deliveryLat,
+            deliveryLng: initialOrder.deliveryLng,
+            deliveryAddress: initialOrder.deliveryAddress || "",
+            deliveryFee: initialOrder.deliveryFee,
+            deliveryDistance: initialOrder.deliveryDistance,
+        }
+        : initialOrder
 
     const form = useForm<z.infer<typeof pizzaSchema>>({
         resolver: zodResolver(pizzaSchema),
-        defaultValues: initialOrder || {
+        defaultValues: initialValues || {
             fulfilment: "pickup", pizzaType: "", pizzaSize: "Medium", quantity: 1, customerName: "", phone: "",
             notes: "", deliveryZoneId: "", extraCheese: false, extraToppings: false,
         },
