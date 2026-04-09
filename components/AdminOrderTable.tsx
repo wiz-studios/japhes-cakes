@@ -351,11 +351,11 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-muted-foreground">
             Showing {startIndex + 1} to {Math.min(endIndex, filtered.length)} of {filtered.length} orders
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <Button
               variant="outline"
               size="sm"
@@ -366,7 +366,7 @@ export default function AdminOrderTable({ orders }: { orders: Order[] }) {
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <div className="flex items-center gap-1">
+            <div className="flex max-w-full flex-wrap items-center gap-1">
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                 // Show first page, current page and neighbors, last page
                 let pageNum;

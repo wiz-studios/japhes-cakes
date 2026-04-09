@@ -282,7 +282,7 @@ export default function OrderSubmitted({
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="text-muted-foreground text-lg mb-8 print:text-sm print:mb-4"
+        className="mb-8 text-balance text-lg text-muted-foreground print:mb-4 print:text-sm"
       >
         Thank you, {liveOrder.customer_name?.split(' ')[0] || "Guest"}.<br />
         {isDelivery
@@ -300,7 +300,7 @@ export default function OrderSubmitted({
         <div className="text-sm text-muted-foreground uppercase tracking-wider font-semibold mb-1">
           Order Number
         </div>
-        <div className="text-2xl font-mono font-bold tracking-tight text-gray-900">
+        <div className="break-all text-2xl font-mono font-bold tracking-tight text-gray-900">
           {friendlyId}
         </div>
       </motion.div>
@@ -389,14 +389,14 @@ export default function OrderSubmitted({
         className="w-full mb-8 break-inside-avoid page-break-inside-avoid print:mb-0"
       >
         <div ref={receiptRef} className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-[0_18px_50px_-40px_rgba(15,23,42,0.35)] print:shadow-none print:border-2 print:p-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-slate-200 pb-4">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.32em] text-slate-400 font-semibold">Receipt</p>
               <div className="mt-2">
                 <BrandLogo size="sm" />
               </div>
             </div>
-            <div className="text-sm text-slate-600">
+            <div className="space-y-1 text-sm text-slate-600">
               <div><span className="font-semibold text-slate-900">Order:</span> {friendlyId}</div>
               <div><span className="font-semibold text-slate-900">Date:</span> {formatDateTimeNairobi(liveOrder.created_at)}</div>
             </div>
@@ -424,47 +424,47 @@ export default function OrderSubmitted({
             <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold mb-2">Items</p>
             <div className="space-y-3 text-sm text-slate-700">
               {(liveOrder.order_items || []).map((item: any, idx: number) => (
-                <div key={idx} className="flex items-start justify-between gap-4">
+                <div key={idx} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-900">{item.item_name}</p>
                     {item.notes && <p className="text-xs text-slate-500 mt-1">{item.notes}</p>}
                   </div>
-                  {item.quantity && <span className="text-xs font-semibold text-slate-500">Qty {item.quantity}</span>}
+                  {item.quantity && <span className="text-xs font-semibold text-slate-500 sm:text-right">Qty {item.quantity}</span>}
                 </div>
               ))}
             </div>
           </div>
 
           <div className="border-t border-slate-200 mt-4 pt-4 text-sm">
-            <div className="flex justify-between text-slate-600">
+            <div className="flex flex-col gap-1 text-slate-600 sm:flex-row sm:items-center sm:justify-between">
               <span>Subtotal</span>
               <span className="font-semibold text-slate-900">
                 {formatMoney(Math.max((liveOrder.total_amount || 0) - (liveOrder.delivery_fee || 0), 0))}
               </span>
             </div>
-            <div className="flex justify-between text-slate-600">
+            <div className="mt-2 flex flex-col gap-1 text-slate-600 sm:flex-row sm:items-center sm:justify-between">
               <span>Delivery Fee</span>
               <span className="font-semibold text-slate-900">{formatMoney(liveOrder.delivery_fee || 0)}</span>
             </div>
-            <div className="flex justify-between text-slate-900 font-semibold text-base mt-2">
+            <div className="mt-2 flex flex-col gap-1 text-base font-semibold text-slate-900 sm:flex-row sm:items-center sm:justify-between">
               <span>Total</span>
               <span>{formatMoney(liveOrder.total_amount || 0)}</span>
             </div>
           </div>
 
           <div className="border-t border-slate-200 mt-4 pt-4 text-sm text-slate-600">
-            <div className="flex justify-between">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <span>Payment Status</span>
               <span className="font-semibold text-slate-900">{liveOrder.payment_status?.replace(/_/g, " ")}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <span>Method</span>
               <span className="font-semibold text-slate-900">{liveOrder.payment_method === "mpesa" ? "M-Pesa" : "Cash"}</span>
             </div>
             {liveOrder.mpesa_transaction_id && (
-              <div className="flex justify-between">
+              <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                 <span>Latest Transaction ID</span>
-                <span className="font-mono font-semibold text-slate-900">{liveOrder.mpesa_transaction_id}</span>
+                <span className="break-all font-mono font-semibold text-slate-900 sm:text-right">{liveOrder.mpesa_transaction_id}</span>
               </div>
             )}
             {successfulAttempts.length > 0 && (
@@ -479,7 +479,7 @@ export default function OrderSubmitted({
                       className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 sm:gap-3 text-sm items-center"
                     >
                       <span>{label}</span>
-                      <span className="font-mono font-semibold text-slate-900">
+                      <span className="break-all font-mono font-semibold text-slate-900">
                         {attempt.mpesa_receipt}
                       </span>
                       {typeof attempt.amount === "number" ? (

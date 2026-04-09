@@ -355,19 +355,19 @@ function OrderReviewContent() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
-        className="py-8 text-center"
+        className="px-4 py-8 text-center sm:px-6"
       >
-        <h1 className={`text-3xl md:text-4xl font-extrabold mb-2 animate-pulse ${titleColor}`}>
+        <h1 className={`mb-2 text-balance text-3xl font-extrabold animate-pulse md:text-4xl ${titleColor}`}>
           Review Your Order
         </h1>
-        <p className="text-muted-foreground text-lg">Almost there! Just confirm your delicious order.</p>
+        <p className="text-lg text-muted-foreground">Almost there! Just confirm your delicious order.</p>
         <div className="max-w-xs mx-auto mt-4">
           <Progress value={progress} className="h-2 bg-white/60" />
         </div>
       </motion.div>
 
       {/* Main Section */}
-      <main className="flex-1 flex flex-col items-center justify-center px-3 pb-16 md:px-4 md:pb-24">
+      <main className="flex flex-1 flex-col items-center justify-center px-3 pb-16 md:px-4 md:pb-24">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -381,9 +381,9 @@ function OrderReviewContent() {
           </div>
           {/* Editable Order Items */}
           {order.items.map((item, idx) => (
-            <div key={idx} className="lux-card p-6 mb-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
+            <div key={idx} className="mb-4 lux-card p-5 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <p className="text-lg font-semibold text-slate-900">{item.name}</p>
                   {order.type === "pizza" ? (
                     <p className="mt-1 text-sm text-slate-600">
@@ -395,7 +395,7 @@ function OrderReviewContent() {
                     </p>
                   )}
                 </div>
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <span className="w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                   {order.type === "pizza" ? "Pizza" : "Cake"}
                 </span>
               </div>
@@ -449,20 +449,20 @@ function OrderReviewContent() {
           ))}
 
           {/* Delivery/Pickup Info */}
-          <div className="lux-card p-5 mb-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+          <div className="mb-4 flex flex-col gap-3 lux-card p-5">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <span className="font-semibold">{order.fulfilment === "delivery" ? "Delivery" : "Pickup"}:</span>
-              <span className={`font-bold ${highlightColor}`}>
+              <span className={`break-words font-bold ${highlightColor}`}>
                 {order.fulfilment === "pickup" ? "Thika" : order.deliveryZone}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <span className="font-semibold">{dateLabel}:</span>
               <span className="text-amber-600 font-bold">
                 {dateValue}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <span className="font-semibold">Phone:</span>
               <span className="text-gray-700">{maskPhoneNumber(order.phone || "")}</span>
             </div>

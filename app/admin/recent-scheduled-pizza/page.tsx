@@ -41,15 +41,60 @@ export default async function RecentScheduledPizzaOrders() {
   // Render the admin table
   return (
     // Main container for the admin panel
-    <div className="max-w-4xl mx-auto py-8">
+    <div className="mx-auto max-w-4xl py-8">
       {/* Title */}
-      <h2 className="text-2xl font-bold mb-6">Recent Scheduled Pizza Orders (After 9 PM)</h2>
+      <h2 className="mb-6 text-balance text-2xl font-bold">Recent Scheduled Pizza Orders (After 9 PM)</h2>
       {/* Refresh button to reload the page */}
       <form action="/admin/recent-scheduled-pizza">
         <Button type="submit" variant="outline" className="mb-4">Refresh</Button>
       </form>
       {/* Table container */}
-      <div className="overflow-x-auto">
+      <div className="space-y-4">
+        <div className="grid gap-4 md:hidden">
+          {orders?.map((order: any) => {
+            const placed = new Date(order.placed_at)
+            const scheduled = order.scheduled_date ? new Date(order.scheduled_date) : null
+            const shifted = scheduled
+              ? getNairobiDayKey(placed) !== getNairobiDayKey(scheduled)
+              : false
+
+            return (
+              <article
+                key={order.order_id}
+                className={`rounded-2xl border bg-white p-4 shadow-sm ${shifted ? "border-red-200 bg-red-50/70" : "border-slate-200"}`}
+              >
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-mono font-semibold text-slate-900">{order.order_id}</p>
+                    <p className="mt-1 text-slate-700">{order.customer_name || "Guest"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Placed At</p>
+                    <p className="mt-1 text-slate-700">{formatDateTimeNairobi(placed)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Scheduled Date</p>
+                    <p className="mt-1 text-slate-700">
+                      {scheduled ? formatDateNairobi(scheduled) : "N/A"}
+                      {shifted ? " (Shifted)" : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge>{order.status}</Badge>
+                    <Badge variant={order.payment_status === "paid" ? "default" : "outline"}>{order.payment_status}</Badge>
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+          {(!orders || orders.length === 0) && (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-muted-foreground">
+              No late-night pizza orders found.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full border text-sm">
           <thead>
             <tr className="bg-muted">
@@ -95,6 +140,7 @@ export default async function RecentScheduledPizzaOrders() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
       {/* Explanatory note for admins */}
       <div className="mt-4 text-xs text-muted-foreground">

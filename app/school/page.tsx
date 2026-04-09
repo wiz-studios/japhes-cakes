@@ -256,7 +256,7 @@ export default async function SchoolPage() {
                 <div className="relative h-64 overflow-hidden rounded-2xl">
                   <Image src="/shop-cake.jpg" alt="Students practicing cake decoration" fill className="object-cover" priority />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between rounded-xl bg-white/85 px-3 py-2 backdrop-blur">
+                  <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-2 rounded-xl bg-white/85 px-3 py-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">Next intake</p>
                       <p className="text-sm font-semibold text-slate-900">Limited slots available</p>
@@ -265,7 +265,7 @@ export default async function SchoolPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+                <div className="mt-4 grid gap-3 text-center sm:grid-cols-3">
                   <div className="rounded-xl border border-slate-200/70 bg-white/90 px-2 py-3">
                     <p className="text-lg font-semibold text-slate-900">3</p>
                     <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Levels</p>

@@ -71,10 +71,10 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
 
             <div className="p-5 space-y-4">
                 {/* Header */}
-                <div className="flex justify-between items-start">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="font-mono text-lg font-bold text-gray-900">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <span className="break-all font-mono text-lg font-bold text-gray-900">
                                 #{order.friendly_id || order.id.slice(0, 6).toUpperCase()}
                             </span>
                             <Badge variant="outline" className={order.order_type === 'cake' ? "bg-rose-100 text-rose-700" : "bg-orange-100 text-orange-700"}>
@@ -87,7 +87,7 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
                         </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                         <div className="font-semibold text-gray-900">{(order.customer_name || "Guest").split(" ")[0]}</div>
                         <div className="text-xs uppercase font-bold tracking-wider text-muted-foreground">{order.fulfilment}</div>
                     </div>
@@ -101,8 +101,8 @@ export function KitchenOrderCard({ order }: KitchenOrderCardProps) {
                     {order.order_items?.map((item: any) => (
                         <div key={item.id} className="text-gray-900">
                             <div className="flex items-start gap-2">
-                                <span className="font-bold text-lg min-w-[24px]">{item.quantity}x</span>
-                                <div>
+                                <span className="min-w-[24px] text-lg font-bold">{item.quantity}x</span>
+                                <div className="min-w-0">
                                     <div className="text-lg leading-tight font-medium">
                                         {item.item_name}
                                     </div>

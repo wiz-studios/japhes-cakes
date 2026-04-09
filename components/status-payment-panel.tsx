@@ -311,15 +311,15 @@ export function StatusPaymentPanel({
 
           <div className="space-y-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-              <div className="flex justify-between">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <span>Total</span>
                 <span className="font-semibold text-slate-900">{payment.totalAmount.toLocaleString()} KES</span>
               </div>
-              <div className="mt-1 flex justify-between">
+              <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <span>Paid</span>
                 <span className="font-semibold text-emerald-700">{payment.amountPaid.toLocaleString()} KES</span>
               </div>
-              <div className="mt-1 flex justify-between">
+              <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <span>Balance Due</span>
                 <span className="font-semibold text-slate-900">{payment.balanceDue.toLocaleString()} KES</span>
               </div>
@@ -339,7 +339,7 @@ export function StatusPaymentPanel({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               variant="outline"

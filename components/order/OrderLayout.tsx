@@ -38,7 +38,7 @@ export function OrderLayout({
         <div className={cn("min-h-screen pb-20 md:pb-0", theme.colors.background)}>
             {/* Top Navigation Bar */}
             <div className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-white/60">
-                <div className="container mx-auto px-5 h-16 flex items-center justify-between">
+                <div className="mx-auto flex h-16 w-full max-w-4xl items-center justify-between px-4 sm:px-5">
                     <Link
                         href="/"
                         className="p-2 -ml-2 rounded-full hover:bg-black/5 transition-colors"
@@ -46,8 +46,8 @@ export function OrderLayout({
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
 
-                    <div className="flex flex-col items-center">
-                        <span className={cn("text-lg font-semibold tracking-wide", theme.fonts.heading, theme.colors.accent)}>
+                    <div className="flex min-w-0 flex-1 flex-col items-center px-3 text-center">
+                        <span className={cn("max-w-full truncate text-base font-semibold tracking-wide sm:text-lg", theme.fonts.heading, theme.colors.accent)}>
                             {title}
                         </span>
                     </div>
@@ -65,21 +65,21 @@ export function OrderLayout({
                 </div>
             </div>
 
-            <main className="container mx-auto px-5 py-10 max-w-3xl">
+            <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-5 sm:py-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <div className="mb-8 text-center space-y-2">
-                        <h1 className={cn("text-3xl md:text-4xl font-semibold", theme.fonts.heading)}>
+                    <div className="mb-8 space-y-2 text-center">
+                        <h1 className={cn("text-balance text-3xl font-semibold md:text-4xl", theme.fonts.heading)}>
                             {title}
                         </h1>
-                        <p className="text-muted-foreground">{subtitle}</p>
+                        <p className="mx-auto max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">{subtitle}</p>
                     </div>
 
                     <div className={cn(
-                        "lux-card p-6 md:p-8 transition-transform",
+                        "lux-card p-4 sm:p-6 md:p-8 transition-transform",
                         theme.colors.border,
                         theme.animation.hover
                     )}>

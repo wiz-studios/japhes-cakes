@@ -102,25 +102,25 @@ export function OrderPaymentStatusCard({
             {/* Transaction Details */}
             <div className="mt-4 divide-y divide-slate-100 text-sm">
                 {mpesaTransactionId && (
-                    <div className="flex justify-between py-2 text-slate-600">
+                    <div className="flex flex-col gap-1 py-2 text-slate-600 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                         <span>Transaction ID</span>
-                        <span className="font-mono font-semibold text-slate-900">{mpesaTransactionId}</span>
+                        <span className="break-all font-mono font-semibold text-slate-900 sm:text-right">{mpesaTransactionId}</span>
                     </div>
                 )}
-                <div className="flex justify-between py-2 text-slate-600">
+                <div className="flex flex-col gap-1 py-2 text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <span>Amount</span>
-                    <span className="font-semibold text-slate-900">{totalAmount.toLocaleString()} KES</span>
+                    <span className="font-semibold text-slate-900 sm:text-right">{totalAmount.toLocaleString()} KES</span>
                 </div>
                 {typeof amountPaid === "number" && amountPaid > 0 && (
-                    <div className="flex justify-between py-2 text-slate-600">
+                    <div className="flex flex-col gap-1 py-2 text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                         <span>Paid</span>
-                        <span className="font-semibold text-emerald-700">{amountPaid.toLocaleString()} KES</span>
+                        <span className="font-semibold text-emerald-700 sm:text-right">{amountPaid.toLocaleString()} KES</span>
                     </div>
                 )}
                 {typeof amountDue === "number" && amountDue > 0 && (
-                    <div className="flex justify-between py-2 text-slate-600">
+                    <div className="flex flex-col gap-1 py-2 text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                         <span>Balance Due</span>
-                        <span className="font-semibold text-slate-900">{amountDue.toLocaleString()} KES</span>
+                        <span className="font-semibold text-slate-900 sm:text-right">{amountDue.toLocaleString()} KES</span>
                     </div>
                 )}
             </div>

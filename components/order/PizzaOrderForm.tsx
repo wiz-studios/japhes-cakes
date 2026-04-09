@@ -285,10 +285,10 @@ export function PizzaOrderForm({ zones, storeSettings }: { zones: DeliveryZone[]
                     )}
 
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex flex-col gap-2 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
                             <h3 className={cn("text-lg font-bold", theme.colors.accent)}>1. Pizza Selection</h3>
                             {estimatedPrice > 0 && (
-                                <span className="text-xl font-bold text-orange-600">
+                                <span className="text-xl font-bold text-orange-600 sm:text-right">
                                     {estimatedPrice.toLocaleString()} KES
                                 </span>
                             )}

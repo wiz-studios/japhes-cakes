@@ -1,11 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Smartphone, Banknote } from "lucide-react"
-import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
+import { normalizeKenyaPhone } from "@/lib/phone"
 import type { PaymentPlan, Fulfilment } from "@/lib/types/payment"
 
 interface PaymentMethodSelectorProps {
@@ -33,11 +32,11 @@ export function PaymentMethodSelector({
         <div className="space-y-4">
             <Label className="text-base font-semibold font-serif">Payment</Label>
 
-            <RadioGroup value={value} onValueChange={(v) => onChange(v as PaymentPlan)}>
+            <RadioGroup value={value} onValueChange={(v) => onChange(v as PaymentPlan)} className="space-y-3">
                 {/* Pay Full */}
                 <div className="relative">
                     <div className={`
-            flex items-start space-x-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-[0_12px_40px_-30px_rgba(15,20,40,0.4)]
+            flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-[0_12px_40px_-30px_rgba(15,20,40,0.4)]
             ${value === "full"
                             ? "border-emerald-400/60 bg-emerald-50/40"
                             : "border-white/60 hover:border-emerald-200 bg-white/90"
@@ -53,7 +52,7 @@ export function PaymentMethodSelector({
                                 Clear the full balance now.
                             </p>
 
-                            <div className="mt-2 text-sm font-semibold text-emerald-700">
+                            <div className="mt-2 break-words text-sm font-semibold text-emerald-700">
                                 {safeTotal.toLocaleString()} KES
                             </div>
                         </div>
@@ -63,7 +62,7 @@ export function PaymentMethodSelector({
                 {/* Deposit Option */}
                 <div className="relative">
                     <div className={`
-            flex items-start space-x-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-[0_12px_40px_-30px_rgba(15,20,40,0.4)]
+            flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-[0_12px_40px_-30px_rgba(15,20,40,0.4)]
             ${value === "deposit"
                             ? "border-blue-400/60 bg-blue-50/40"
                             : "border-white/60 hover:border-blue-200 bg-white/90"
@@ -78,8 +77,8 @@ export function PaymentMethodSelector({
                             <p className="text-sm text-gray-600 mt-1">
                                 Clear the balance on pickup or delivery, or pay the rest now.
                             </p>
-                            <div className="mt-2 text-sm font-semibold text-blue-700">
-                                {depositAmount.toLocaleString()} KES now · {remainingAmount.toLocaleString()} KES later
+                            <div className="mt-2 break-words text-sm font-semibold text-blue-700">
+                                {depositAmount.toLocaleString()} KES now, {remainingAmount.toLocaleString()} KES later
                             </div>
                         </div>
                     </div>

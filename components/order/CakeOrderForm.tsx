@@ -231,10 +231,10 @@ export function CakeOrderForm({ zones, storeSettings }: { zones: DeliveryZone[];
                     )}
 
                     <div className="space-y-6">
-                        <div className="flex justify-between items-center border-b pb-2">
+                        <div className="flex flex-col gap-2 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
                             <h3 className={cn("text-lg font-bold", theme.colors.accent)}>1. Cake Details</h3>
                             {estimatedTotal > 0 && (
-                                <span className="text-xl font-bold text-rose-600">
+                                <span className="text-xl font-bold text-rose-600 sm:text-right">
                                     {estimatedTotal.toLocaleString()} KES
                                 </span>
                             )}

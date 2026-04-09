@@ -43,7 +43,7 @@ export function ZoneForm() {
           <Plus className="mr-2" size={16} /> Add Zone
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add New Delivery Zone</DialogTitle>
         </DialogHeader>
@@ -52,7 +52,7 @@ export function ZoneForm() {
             <Label>Zone Name</Label>
             <Input name="name" required placeholder="e.g. Ruiru Delivery" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Fee (KES)</Label>
               <Input name="fee" type="number" required placeholder="150" />

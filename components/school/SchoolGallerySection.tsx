@@ -131,7 +131,7 @@ export default function SchoolGallerySection({ items }: Props) {
       )}
 
       {selected && (
-        <div className="fixed inset-0 z-[100] bg-black/75 px-4 py-6">
+        <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/75 px-4 py-6">
           <div className="mx-auto flex h-full w-full max-w-5xl flex-col rounded-2xl bg-slate-950/70 p-4 backdrop-blur">
             <div className="mb-3 flex items-center justify-between">
               <div>

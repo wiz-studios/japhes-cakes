@@ -72,10 +72,10 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
             <div className="p-5 space-y-4">
 
                 {/* header */}
-                <div className="flex justify-between items-start">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="font-mono text-2xl font-black text-gray-900 tracking-tight">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <span className="break-all font-mono text-2xl font-black tracking-tight text-gray-900">
                                 #{order.friendly_id || order.id.slice(0, 5).toUpperCase()}
                             </span>
                             {isOut && <Badge className="bg-blue-600 hover:bg-blue-700 animate-pulse">ON THE WAY</Badge>}
@@ -85,7 +85,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                             {formatDistanceToNow(new Date(order.created_at || new Date()))} ago
                         </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                         <Badge variant="outline" className="mb-1 text-xs">
                             {order.order_type === 'cake' ? "CAKE" : "PIZZA"}
                         </Badge>
@@ -107,7 +107,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                     </div>
                     <div className="flex items-center gap-3">
                         <Phone className="h-5 w-5 text-gray-400" />
-                        <a href={`tel:${order.phone}`} className="font-mono font-bold text-blue-600 underline">
+                        <a href={`tel:${order.phone}`} className="break-all font-mono font-bold text-blue-600 underline">
                             {maskPhoneNumber(order.phone || "")}
                         </a>
                     </div>
@@ -121,7 +121,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                     ? "bg-amber-50 border-amber-200"
                     : "bg-emerald-50 border-emerald-200"
                     }`}>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">
                             {(order.payment_method === 'cash' || order.payment_status === 'deposit_paid') ? (
                                 <Banknote className="h-5 w-5 text-amber-700" />
@@ -133,7 +133,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
                                 {(order.payment_method === 'cash' || order.payment_status === 'deposit_paid') ? "Collect Balance" : "Paid (M-Pesa)"}
                             </span>
                         </div>
-                        <div className="text-xl font-black text-gray-900">
+                        <div className="text-xl font-black text-gray-900 sm:text-right">
                             {(order.payment_status === 'deposit_paid' ? order.payment_amount_due : order.total_amount)?.toLocaleString()} KES
                         </div>
                     </div>

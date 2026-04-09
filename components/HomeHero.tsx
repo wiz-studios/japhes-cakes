@@ -45,14 +45,14 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
         <div className="absolute inset-0 hero-grain" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-[calc(6.5rem+env(safe-area-inset-top))] md:pt-24 lg:pt-28">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-16 pt-[calc(6rem+env(safe-area-inset-top))] sm:px-6 md:gap-16 md:pt-24 lg:pt-28">
         <motion.div
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center"
         >
-          <div className="space-y-6 rounded-[32px] p-8 pt-10 text-white lux-glass md:p-10">
+          <div className="space-y-5 rounded-[32px] p-6 pt-8 text-white lux-glass sm:p-8 sm:pt-10 md:p-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white/85">
               Thika - Nairobi - Delivery
             </div>
@@ -61,31 +61,31 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
               2-for-1 Tue & Thu (Medium/Large)
             </div>
 
-            <h1 className="text-4xl font-semibold leading-tight text-white md:text-6xl font-serif">
+            <h1 className="text-balance text-4xl font-semibold leading-tight text-white md:text-6xl font-serif">
               Japhes Cakes & Pizza, crafted for the days you want to remember.
             </h1>
 
-            <p className="max-w-xl text-lg text-white/80">
+            <p className="max-w-xl text-base text-white/80 sm:text-lg">
               Celebrate with indulgent cakes or settle in with stone-fired pizzas. Every order is
               baked, finished, and delivered by a real kitchen that cares.
             </p>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 onClick={() => router.push("/order/cake")}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-magenta-deep)] shadow-lg shadow-black/25 transition hover:-translate-y-0.5 hover:bg-white/90"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-magenta-deep)] shadow-lg shadow-black/25 transition hover:-translate-y-0.5 hover:bg-white/90 sm:w-auto"
               >
                 Order Cakes <ArrowUpRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => router.push("/order/pizza")}
-                className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/20"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/60 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/20 sm:w-auto"
               >
                 Order Pizza <ArrowUpRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => router.push("/status")}
-                className="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-3 text-sm font-semibold text-white/75 transition hover:text-white"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-transparent px-4 py-3 text-sm font-semibold text-white/75 transition hover:text-white sm:w-auto"
               >
                 Track Order
               </button>
@@ -111,18 +111,18 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent" />
                 </div>
-                <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-7 text-white md:min-h-[18rem]">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/70">
-                    Signature Cakes
+                <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-5 text-white sm:p-7 md:min-h-[18rem]">
+                  <div className="flex flex-col gap-3 text-xs uppercase tracking-[0.35em] text-white/70 sm:flex-row sm:items-center sm:justify-between">
+                    <span>Signature Cakes</span>
                     <button
                       onClick={() => router.push("/order/cake")}
-                      className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80 transition hover:bg-white/15"
+                      className="w-fit rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80 transition hover:bg-white/15"
                     >
                       Order Now
                     </button>
                   </div>
                   <div className="space-y-3">
-                    <p className="text-3xl font-semibold font-serif">Velvet & Citrus</p>
+                    <p className="text-2xl font-semibold font-serif sm:text-3xl">Velvet & Citrus</p>
                     <p className="text-sm text-white/80">
                       Hand-finished layers with custom details, made for celebrations and gifting.
                     </p>
@@ -144,18 +144,18 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent" />
                 </div>
-                <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-7 text-white md:min-h-[18rem]">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/70">
-                    Stone-Fired Pizza
+                <div className="relative flex min-h-[16rem] flex-col justify-between gap-6 p-5 text-white sm:p-7 md:min-h-[18rem]">
+                  <div className="flex flex-col gap-3 text-xs uppercase tracking-[0.35em] text-white/70 sm:flex-row sm:items-center sm:justify-between">
+                    <span>Stone-Fired Pizza</span>
                     <button
                       onClick={() => router.push("/order/pizza")}
-                      className="rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80 transition hover:bg-white/15"
+                      className="w-fit rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80 transition hover:bg-white/15"
                     >
                       Order Hot
                     </button>
                   </div>
                   <div className="space-y-3">
-                    <p className="text-3xl font-semibold font-serif">Fire & Cheese</p>
+                    <p className="text-2xl font-semibold font-serif sm:text-3xl">Fire & Cheese</p>
                     <p className="text-sm text-white/80">
                       Crisp edges, molten cheese, and bold toppings baked to order every time.
                     </p>
@@ -238,7 +238,7 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.25 }}
-          className="relative overflow-hidden rounded-[32px] border border-white/40 bg-white/70 px-8 py-8 shadow-[0_30px_80px_-55px_rgba(15,20,40,0.45)] backdrop-blur-sm md:flex md:items-center md:justify-between"
+            className="relative overflow-hidden rounded-[32px] border border-white/40 bg-white/70 px-6 py-8 shadow-[0_30px_80px_-55px_rgba(15,20,40,0.45)] backdrop-blur-sm md:flex md:items-center md:justify-between md:px-8"
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(216,47,125,0.15),transparent_55%),radial-gradient(circle_at_right,rgba(58,78,216,0.2),transparent_45%)]" />
           <div className="relative space-y-3">
@@ -252,7 +252,7 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
           </div>
           <button
             onClick={() => router.push("/school")}
-            className="relative mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#0f1116] px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#191c24] md:mt-0"
+            className="relative mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#0f1116] px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#191c24] md:mt-0 md:w-auto"
           >
             Explore the School <ArrowUpRight className="h-4 w-4" />
           </button>
@@ -262,7 +262,7 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="flex flex-col gap-6 rounded-[32px] border border-white/30 bg-[linear-gradient(120deg,var(--brand-magenta),var(--brand-blue))] px-8 py-10 text-white shadow-2xl shadow-black/25 md:flex-row md:items-center md:justify-between"
+          className="flex flex-col gap-6 rounded-[32px] border border-white/30 bg-[linear-gradient(120deg,var(--brand-magenta),var(--brand-blue))] px-6 py-8 text-white shadow-2xl shadow-black/25 md:flex-row md:items-center md:justify-between md:px-8 md:py-10"
         >
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">Orders Open Daily</p>
@@ -275,7 +275,7 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
           </div>
           <button
             onClick={() => router.push("/order/cake")}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-blue-deep)] transition hover:-translate-y-0.5"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-blue-deep)] transition hover:-translate-y-0.5 md:w-auto"
           >
             Start an Order <ArrowUpRight className="h-4 w-4" />
           </button>

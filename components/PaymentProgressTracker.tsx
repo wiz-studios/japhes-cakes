@@ -56,13 +56,13 @@ export default function PaymentProgressTracker({
   return (
     <div className={`rounded-xl border border-slate-200 bg-white px-4 py-3 ${className}`}>
       <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Payment Progress</p>
-      <div className="mt-3 flex items-start">
+      <div className="mt-3 grid gap-4 sm:flex sm:items-start">
         {labels.map((label, idx) => {
           const stepState = getStepState(idx as 0 | 1 | 2, state)
           const tone = getStepTone(stepState)
           const connectorActive = state === "success" || state === "failed" || (state === "prompted" && idx === 0)
           return (
-            <div key={label} className="flex min-w-0 flex-1 items-center">
+            <div key={label} className="flex min-w-0 items-center sm:flex-1">
               <div className="flex min-w-0 flex-col items-center text-center">
                 <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold ${tone}`}>
                   {stepState === "complete" ? (
@@ -73,10 +73,10 @@ export default function PaymentProgressTracker({
                     <Circle className="h-3.5 w-3.5" />
                   )}
                 </span>
-                <span className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</span>
+                <span className="mt-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500 sm:text-[10px] sm:tracking-[0.18em]">{label}</span>
               </div>
               {idx < labels.length - 1 && (
-                <div className={`mx-2 h-px flex-1 ${connectorActive ? "bg-slate-500" : "bg-slate-200"}`} />
+                <div className={`mx-2 hidden h-px flex-1 sm:block ${connectorActive ? "bg-slate-500" : "bg-slate-200"}`} />
               )}
             </div>
           )

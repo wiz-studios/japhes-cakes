@@ -80,7 +80,7 @@ export default function SchoolInquiryBoard({ initialInquiries }: Props) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search name, phone, course..."
-          className="h-10 min-w-[220px] flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none ring-0 focus:border-slate-400"
+          className="h-10 min-w-0 w-full flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none ring-0 focus:border-slate-400 sm:min-w-[220px]"
         />
         <select
           value={statusFilter}
@@ -100,32 +100,30 @@ export default function SchoolInquiryBoard({ initialInquiries }: Props) {
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700">{feedback}</div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Lead</th>
-              <th className="px-4 py-3">Course</th>
-              <th className="px-4 py-3">Message</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((item) => (
-              <tr key={item.id} className="border-b border-slate-100 align-top">
-                <td className="px-4 py-3">
+      <div className="space-y-4">
+        <div className="grid gap-4 md:hidden">
+          {filtered.map((item) => (
+            <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="space-y-3">
+                <div>
                   <p className="font-semibold text-slate-900">{item.name}</p>
                   <p className="text-xs text-slate-600">{maskPhoneNumber(item.phone || "")}</p>
-                </td>
-                <td className="px-4 py-3 text-slate-700">{item.course}</td>
-                <td className="px-4 py-3 text-slate-600">{item.message || "—"}</td>
-                <td className="px-4 py-3">
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Course</p>
+                  <p className="mt-1 text-sm text-slate-700">{item.course}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Message</p>
+                  <p className="mt-1 text-sm text-slate-600">{item.message || "No message"}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Status</p>
                   <select
                     value={item.status}
                     onChange={(event) => onStatusChange(item.id, event.target.value as SchoolInquiryStatus)}
                     disabled={isPending}
-                    className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs uppercase tracking-[0.1em]"
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs uppercase tracking-[0.1em]"
                   >
                     {SCHOOL_INQUIRY_STATUSES.map((status) => (
                       <option key={status} value={status}>
@@ -133,17 +131,63 @@ export default function SchoolInquiryBoard({ initialInquiries }: Props) {
                       </option>
                     ))}
                   </select>
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-500">
-                  {formatDateTimeNairobi(item.created_at)}
-                </td>
+                </div>
+                <p className="text-xs text-slate-500">{formatDateTimeNairobi(item.created_at)}</p>
+              </div>
+            </article>
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+              No inquiries match your filters yet.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white md:block">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Lead</th>
+                <th className="px-4 py-3">Course</th>
+                <th className="px-4 py-3">Message</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Created</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-slate-500">No inquiries match your filters yet.</div>
-        )}
+            </thead>
+            <tbody>
+              {filtered.map((item) => (
+                <tr key={item.id} className="border-b border-slate-100 align-top">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-slate-900">{item.name}</p>
+                    <p className="text-xs text-slate-600">{maskPhoneNumber(item.phone || "")}</p>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">{item.course}</td>
+                  <td className="px-4 py-3 text-slate-600">{item.message || "No message"}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={item.status}
+                      onChange={(event) => onStatusChange(item.id, event.target.value as SchoolInquiryStatus)}
+                      disabled={isPending}
+                      className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs uppercase tracking-[0.1em]"
+                    >
+                      {SCHOOL_INQUIRY_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">
+                    {formatDateTimeNairobi(item.created_at)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-slate-500">No inquiries match your filters yet.</div>
+          )}
+        </div>
       </div>
     </div>
   )

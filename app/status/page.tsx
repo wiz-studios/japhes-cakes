@@ -148,10 +148,10 @@ export default async function OrderStatusPage({
 
   return (
     <div className="min-h-screen bg-[#f5f7fb]">
-      <div className="space-y-8 w-full max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 md:px-10 pt-28 md:pt-32 pb-12">
+      <div className="mx-auto w-full max-w-6xl space-y-8 px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32 xl:max-w-7xl">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.35em] text-slate-400 font-semibold">Order Tracking</p>
-          <h2 className="text-3xl md:text-4xl font-semibold text-slate-900">Track Your Order</h2>
+          <h2 className="text-balance text-3xl font-semibold text-slate-900 md:text-4xl">Track Your Order</h2>
           <p className="text-slate-500 max-w-3xl">
             Enter your order number or phone to see production, payment, and delivery updates.
           </p>
@@ -169,7 +169,7 @@ export default async function OrderStatusPage({
                     {formatFriendlyId(order)}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold">Status</p>
                     <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusTone}`}>
@@ -210,10 +210,10 @@ export default async function OrderStatusPage({
               </div>
             </div>
 
-            <div className={`${cardClass} p-6`}>
-              <div className="flex items-center justify-between">
+              <div className={`${cardClass} p-6`}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Order Timeline</h3>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2 text-xs text-slate-500">
                     <Clock className="h-4 w-4" /> Updated live
                   </div>
@@ -262,13 +262,13 @@ export default async function OrderStatusPage({
               <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400 mb-4">Items</h3>
               <div className="divide-y divide-slate-100">
                 {(order.order_items || []).map((item: any, idx: number) => (
-                  <div key={idx} className="py-4 flex items-start justify-between gap-4">
+                  <div key={idx} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-900">{item.item_name}</p>
                       {item.notes && <p className="text-xs text-slate-500 mt-1">{item.notes}</p>}
                     </div>
                     {item.quantity && (
-                      <span className="text-xs font-semibold text-slate-500">Qty: {item.quantity}</span>
+                      <span className="text-xs font-semibold text-slate-500 sm:text-right">Qty: {item.quantity}</span>
                     )}
                   </div>
                 ))}

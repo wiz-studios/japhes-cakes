@@ -162,7 +162,7 @@ function StatCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{title}</p>
-            <p className="mt-2 text-xl font-semibold text-slate-900">{value}</p>
+            <p className="mt-2 break-words text-lg font-semibold text-slate-900 sm:text-xl">{value}</p>
             {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
           </div>
           <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${toneStyles[tone]}`}>
@@ -189,7 +189,7 @@ function InsightItem({
         <Icon className="h-3.5 w-3.5" />
         {label}
       </div>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-900">{value}</p>
     </div>
   )
 }
