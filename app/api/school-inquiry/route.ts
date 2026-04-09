@@ -6,6 +6,7 @@ import { sendSmtpMail } from "@/lib/smtp"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { fetchWithTimeout } from "@/lib/http"
 import { getClientIp, getRequestId, logWithRequestId } from "@/lib/request-meta"
+import { requireJsonRequest } from "@/lib/request-security"
 import { formatDateTimeNairobi } from "@/lib/time"
 
 const inquirySchema = z.object({
@@ -153,6 +154,9 @@ function buildInquiryEmailText(input: {
 }
 
 export async function POST(request: Request) {
+  const contentTypeError = requireJsonRequest(request)
+  if (contentTypeError) return contentTypeError
+
   const requestId = getRequestId(request)
   const ip = getClientIp(request)
 

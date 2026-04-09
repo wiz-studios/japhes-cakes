@@ -25,6 +25,7 @@ import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
 import { getNairobiHour } from "@/lib/time"
 import type { StoreSettings } from "@/lib/store-settings"
 import { uploadCakeDesignImage } from "@/app/actions/orders"
+import { sanitizeImageForUpload } from "@/lib/client-image"
 
 import dynamic from "next/dynamic"
 
@@ -174,8 +175,9 @@ export function CakeOrderForm({ zones, storeSettings }: { zones: DeliveryZone[];
         setDesignImageError("")
         setDesignImageUploading(true)
         try {
+            const sanitized = await sanitizeImageForUpload(file)
             const formData = new FormData()
-            formData.append("file", file)
+            formData.append("file", sanitized.file)
             const result = await uploadCakeDesignImage(formData)
             if (!result.success || !result.url) {
                 setDesignImageError(result.error || "Image upload failed.")

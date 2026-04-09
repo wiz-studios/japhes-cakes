@@ -3,6 +3,7 @@ import { z } from "zod"
 import { createServiceSupabaseClient } from "@/lib/supabase-service"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getClientIp, getRequestId } from "@/lib/request-meta"
+import { requireJsonRequest } from "@/lib/request-security"
 
 const reviewSchema = z.object({
   orderId: z.string().uuid("Invalid order id."),
@@ -11,6 +12,9 @@ const reviewSchema = z.object({
 })
 
 export async function POST(request: Request) {
+  const contentTypeError = requireJsonRequest(request)
+  if (contentTypeError) return contentTypeError
+
   const requestId = getRequestId(request)
   const ip = getClientIp(request)
 

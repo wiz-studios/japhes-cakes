@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server"
+import { timingSafeEqual } from "node:crypto"
+import { noStoreJson } from "@/lib/request-security"
 
 const CORE_KEYS = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]
 
@@ -21,8 +22,15 @@ export async function GET(request: Request) {
   const token = request.headers.get("x-admin-health-token")
   const expected = process.env.ADMIN_HEALTH_TOKEN
 
-  if (!expected || token !== expected) {
-    return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 })
+  const providedBytes = Buffer.from(token || "")
+  const expectedBytes = Buffer.from(expected || "")
+  const authorized =
+    providedBytes.length > 0 &&
+    providedBytes.length === expectedBytes.length &&
+    timingSafeEqual(providedBytes, expectedBytes)
+
+  if (!authorized) {
+    return noStoreJson({ ok: false, message: "Unauthorized" }, { status: 401 })
   }
 
   const checks = CORE_KEYS.map((key) => ({ key, present: Boolean(process.env[key]) }))
@@ -35,5 +43,5 @@ export async function GET(request: Request) {
     }
   })
 
-  return NextResponse.json({ ok: true, checks, groups })
+  return noStoreJson({ ok: true, checks, groups })
 }

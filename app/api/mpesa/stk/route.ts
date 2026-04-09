@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getClientIp, getRequestId } from "@/lib/request-meta"
+import { requireJsonRequest } from "@/lib/request-security"
 
 type StkInitBody = {
   orderId?: string
@@ -11,6 +12,9 @@ type StkInitBody = {
 }
 
 export async function POST(req: Request) {
+  const contentTypeError = requireJsonRequest(req)
+  if (contentTypeError) return contentTypeError
+
   const requestId = getRequestId(req)
   const ip = getClientIp(req)
 

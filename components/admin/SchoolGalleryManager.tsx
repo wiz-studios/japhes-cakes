@@ -13,6 +13,7 @@ import {
   SCHOOL_GALLERY_CATEGORY_LABELS,
   type SchoolGalleryItem,
 } from "@/lib/school-gallery"
+import { sanitizeImageForUpload } from "@/lib/client-image"
 
 type Props = {
   initialItems: SchoolGalleryItem[]
@@ -62,12 +63,13 @@ export default function SchoolGalleryManager({ initialItems }: Props) {
       return
     }
 
+    const sanitized = await sanitizeImageForUpload(createFile)
     const formData = new FormData()
     formData.set("title", createForm.title)
     formData.set("category", createForm.category)
     formData.set("sort_order", String(createForm.sort_order))
     formData.set("is_featured", createForm.is_featured ? "true" : "false")
-    formData.set("image", createFile)
+    formData.set("image", sanitized.file)
 
     const result = await createSchoolGalleryItem(formData)
     if (!result.success) {

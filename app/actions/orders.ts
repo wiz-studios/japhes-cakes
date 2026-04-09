@@ -14,6 +14,7 @@ import { checkRateLimit } from "@/lib/rate-limit"
 import { runIdempotent } from "@/lib/idempotency"
 import { getDeliveryZoneByIdCached } from "@/lib/delivery-zones-cache"
 import { toNairobiDate } from "@/lib/time"
+import { buildStorageAssetUrl } from "@/lib/storage-urls"
 import type { User } from "@supabase/supabase-js"
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -150,8 +151,8 @@ export async function uploadCakeDesignImage(formData: FormData) {
     return { success: false, error: clientError || "Failed to initialize upload service." }
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg"
   const safeName = sanitizeUploadFileName(file.name || "cake-design")
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg"
   const path = `orders/${new Date().getFullYear()}/${Date.now()}-${safeName}.${ext}`
 
   const bytes = await file.arrayBuffer()
@@ -166,8 +167,7 @@ export async function uploadCakeDesignImage(formData: FormData) {
     return { success: false, error: uploadError.message }
   }
 
-  const { data: urlData } = supabase.storage.from("cake-designs").getPublicUrl(path)
-  return { success: true, url: urlData.publicUrl }
+  return { success: true, url: buildStorageAssetUrl("cake-designs", path) }
 }
 
 export async function updateOrderStatus(orderId: string, newStatus: string) {

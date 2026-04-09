@@ -7,6 +7,7 @@ import {
   type SchoolGalleryCategory,
   type SchoolGalleryItem,
 } from "@/lib/school-gallery"
+import { buildStorageAssetUrl, extractStoragePath } from "@/lib/storage-urls"
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
@@ -38,13 +39,6 @@ function sanitizeFileName(name: string) {
     .slice(0, 50)
 }
 
-function extractStoragePath(publicUrl: string) {
-  const marker = "/school-gallery/"
-  const idx = publicUrl.indexOf(marker)
-  if (idx === -1) return null
-  return publicUrl.slice(idx + marker.length)
-}
-
 export async function listSchoolGalleryAdmin() {
   const { client: supabase, error: clientError } = getAdminSupabase()
   if (!supabase) {
@@ -61,7 +55,13 @@ export async function listSchoolGalleryAdmin() {
     return { success: false, error: error.message, data: [] as SchoolGalleryItem[] }
   }
 
-  return { success: true, data: (data || []) as SchoolGalleryItem[] }
+  const normalized = ((data || []) as SchoolGalleryItem[]).map((item) => {
+    const path = extractStoragePath(item.image_url, "school-gallery")
+    if (!path) return item
+    return { ...item, image_url: buildStorageAssetUrl("school-gallery", path) }
+  })
+
+  return { success: true, data: normalized }
 }
 
 export async function createSchoolGalleryItem(formData: FormData) {
@@ -86,8 +86,8 @@ export async function createSchoolGalleryItem(formData: FormData) {
   const { client: supabase, error: clientError } = getAdminSupabase()
   if (!supabase) return { success: false, error: clientError || "Failed to initialize Supabase." }
 
-  const ext = imageFile.name.split(".").pop()?.toLowerCase() || "jpg"
   const safeName = sanitizeFileName(imageFile.name || title || "gallery")
+  const ext = imageFile.name.split(".").pop()?.toLowerCase() || "jpg"
   const filePath = `${new Date().getFullYear()}/${Date.now()}-${safeName}.${ext}`
 
   const bytes = await imageFile.arrayBuffer()
@@ -102,13 +102,12 @@ export async function createSchoolGalleryItem(formData: FormData) {
     return { success: false, error: uploadError.message }
   }
 
-  const { data: urlData } = supabase.storage.from("school-gallery").getPublicUrl(filePath)
-  const publicUrl = urlData.publicUrl
+  const assetUrl = buildStorageAssetUrl("school-gallery", filePath)
 
   const { error: insertError } = await supabase.from("school_gallery").insert({
     title,
     category,
-    image_url: publicUrl,
+    image_url: assetUrl,
     sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
     is_featured: isFeatured,
     is_visible: true,
@@ -179,7 +178,7 @@ export async function deleteSchoolGalleryItem(id: string) {
 
   if (deleteError) return { success: false, error: deleteError.message }
 
-  const path = extractStoragePath(item.image_url)
+  const path = extractStoragePath(item.image_url, "school-gallery")
   if (path) {
     await supabase.storage.from("school-gallery").remove([path])
   }

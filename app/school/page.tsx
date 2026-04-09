@@ -6,6 +6,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server"
 import type { SchoolGalleryItem } from "@/lib/school-gallery"
 import SchoolGallerySection from "@/components/school/SchoolGallerySection"
 import SchoolInquiryForm from "@/components/school/SchoolInquiryForm"
+import { buildStorageAssetUrl, extractStoragePath } from "@/lib/storage-urls"
 
 export const metadata: Metadata = {
   title: "School of Cakes | Japhe's Cakes & Pizza",
@@ -180,9 +181,13 @@ export default async function SchoolPage() {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false })
 
-  const galleryItems = ((galleryRows || []) as SchoolGalleryItem[]).filter(
-    (item) => item.title !== "Pizza Shop Interior" && item.title !== "Cake Shop Front"
-  )
+  const galleryItems = ((galleryRows || []) as SchoolGalleryItem[])
+    .map((item) => {
+      const path = extractStoragePath(item.image_url, "school-gallery")
+      if (!path) return item
+      return { ...item, image_url: buildStorageAssetUrl("school-gallery", path) }
+    })
+    .filter((item) => item.title !== "Pizza Shop Interior" && item.title !== "Cake Shop Front")
   const inquiryCourseOptions = [
     "Basic Cake Making & Decoration",
     "Intermediate Cake Making & Decoration",

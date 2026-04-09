@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { noStoreJson } from "@/lib/request-security"
 
 function getServiceSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     if (!supabase) {
       payload.ok = false
       payload.database = "missing-service-credentials"
-      return NextResponse.json(payload, { status: 503 })
+      return noStoreJson(payload, { status: 503 })
     }
 
     const started = Date.now()
@@ -33,12 +33,12 @@ export async function GET(request: Request) {
 
     if (error) {
       payload.ok = false
-      payload.database = error.message
-      return NextResponse.json(payload, { status: 503 })
+      payload.database = "unavailable"
+      return noStoreJson(payload, { status: 503 })
     }
 
     payload.database = "ok"
   }
 
-  return NextResponse.json(payload, { status: 200 })
+  return noStoreJson(payload, { status: 200 })
 }
