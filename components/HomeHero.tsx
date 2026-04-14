@@ -18,7 +18,7 @@ const featureItems = [
   },
   {
     title: "M-Pesa Friendly",
-    description: "Pay 50% deposit via M-Pesa and clear the balance on pickup or delivery.",
+    description: "Cake orders can start with a 50% M-Pesa deposit. Pizza and drinks are paid in full.",
     icon: Sparkles,
   },
 ]
@@ -81,7 +81,7 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
                 onClick={() => router.push("/order/pizza")}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/60 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/20 sm:w-auto"
               >
-                Order Pizza <ArrowUpRight className="h-4 w-4" />
+                Order Pizza & More <ArrowUpRight className="h-4 w-4" />
               </button>
               <button
                 onClick={() => router.push("/status")}
@@ -151,7 +151,7 @@ export default function HomeHero({ reviews = [] }: { reviews?: HomeReview[] }) {
                       onClick={() => router.push("/order/pizza")}
                       className="w-fit rounded-full border border-white/30 px-3 py-1 text-[10px] tracking-[0.3em] text-white/80 transition hover:bg-white/15"
                     >
-                      Order Hot
+                      Order Menu
                     </button>
                   </div>
                   <div className="space-y-3">

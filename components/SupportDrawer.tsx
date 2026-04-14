@@ -28,6 +28,7 @@ export default function SupportDrawer() {
     pathname?.startsWith("/kitchen") ||
     pathname?.startsWith("/delivery") ||
     pathname?.startsWith("/staff")
+  const isOrderFlow = pathname?.startsWith("/order") || pathname?.startsWith("/status")
 
   const orderId = searchParams.get("id")?.trim() || ""
   const whatsappLink = useMemo(() => {
@@ -37,7 +38,7 @@ export default function SupportDrawer() {
     return `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(body)}`
   }, [orderId])
 
-  if (isStaffArea) return null
+  if (isStaffArea || isOrderFlow) return null
 
   return (
     <Drawer>

@@ -17,7 +17,13 @@ import { submitPizzaOrder, submitCakeOrder } from "@/app/actions/orders"
 import { initiateMpesaSTK } from "@/lib/mpesa"
 import { PaymentMethodSelector } from "@/components/PaymentMethodSelector"
 import type { PaymentMethod, PaymentPlan } from "@/lib/types/payment"
-import { getPizzaUnitPrice } from "@/lib/pizza-pricing"
+import {
+  getMenuCategoryLabel,
+  getMenuUnitPrice,
+  inferMenuCategory,
+  isPizzaMenuCategory,
+  type PizzaSideCategory,
+} from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakePrice } from "@/lib/cake-pricing"
 import { isValidKenyaPhone, maskPhoneNumber, normalizeKenyaPhone } from "@/lib/phone"
@@ -29,6 +35,7 @@ type PizzaOrderItem = {
   name: string
   quantity: number
   size: string
+  category?: PizzaSideCategory
   toppings?: string[]
   notes?: string
   customerName?: string
@@ -52,7 +59,7 @@ type Order = {
   deliveryZone: string
   deliveryZoneId?: string
   customerName?: string
-  scheduledDate: string
+  scheduledDate?: string
   placedHour: number
   phone: string
 }
@@ -77,7 +84,7 @@ function OrderReviewContent() {
 
   // Payment state
   const paymentMethod: PaymentMethod = "mpesa"
-  const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("deposit")
+  const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>(initialOrder?.type === "cake" ? "deposit" : "full")
   const [mpesaPhone, setMpesaPhone] = useState("")
 
   // Live price calculation
@@ -95,15 +102,26 @@ function OrderReviewContent() {
         lineTotal = unitPrice * cakeItem.quantity
       } else {
         const pizzaItem = item as PizzaOrderItem
+        const menuCategory = pizzaItem.category || inferMenuCategory(pizzaItem.name)
         const toppingsCount = pizzaItem.toppings?.length || 0
-        const unitPrice = getPizzaUnitPrice(pizzaItem.size, pizzaItem.name, toppingsCount)
-        const offer = getPizzaOfferDetails({
-          size: pizzaItem.size,
-          quantity: pizzaItem.quantity,
-          unitPrice,
-        })
-        lineTotal = unitPrice * pizzaItem.quantity - offer.discount
-        discount += offer.discount
+        const unitPrice = getMenuUnitPrice(
+          menuCategory,
+          pizzaItem.size,
+          pizzaItem.name,
+          isPizzaMenuCategory(menuCategory) ? toppingsCount : 0
+        )
+
+        if (isPizzaMenuCategory(menuCategory)) {
+          const offer = getPizzaOfferDetails({
+            size: pizzaItem.size,
+            quantity: pizzaItem.quantity,
+            unitPrice,
+          })
+          lineTotal = unitPrice * pizzaItem.quantity - offer.discount
+          discount += offer.discount
+        } else {
+          lineTotal = unitPrice * pizzaItem.quantity
+        }
       }
       return sum + lineTotal
     }, 0)
@@ -119,6 +137,12 @@ function OrderReviewContent() {
       setMpesaPhone(normalizeKenyaPhone(order.phone))
     }
   }, [order?.phone, mpesaPhone])
+
+  useEffect(() => {
+    if (order?.type === "pizza" && paymentPlan !== "full") {
+      setPaymentPlan("full")
+    }
+  }, [order?.type, paymentPlan])
 
   // Validation (example: Nairobi min order, late-night cutoff)
   useEffect(() => {
@@ -146,13 +170,7 @@ function OrderReviewContent() {
     if (error && error.includes("Date required")) {
       return
     }
-
-    console.log("=== SUBMIT CLICKED ===")
-    console.log("Payment method:", paymentMethod)
-    console.log("Payment plan:", paymentPlan)
     const normalizedMpesaPhone = normalizeKenyaPhone(mpesaPhone || order?.phone || "")
-    console.log("M-Pesa phone:", normalizedMpesaPhone)
-    console.log("Order data:", order)
 
     setSubmitting(true)
     setPaymentProgress("initiated")
@@ -163,7 +181,6 @@ function OrderReviewContent() {
 
     // Re-validate M-Pesa phone if selected
     if (!normalizedMpesaPhone) {
-      console.log("Validation failed: M-Pesa phone required")
       setError("Please enter your M-Pesa phone number")
       setPaymentProgress("failed")
       toast({
@@ -192,23 +209,28 @@ function OrderReviewContent() {
     try {
       let result
       if (order.type === "pizza") {
+        const menuItem = order.items[0] as PizzaOrderItem
+        const menuCategory = menuItem.category || inferMenuCategory(menuItem.name)
         // Map order data back to pizza form shape
         const pizzaData = {
-          pizzaType: order.items[0].name,
-          pizzaSize: order.items[0].size,
-          quantity: order.items[0].quantity,
-          toppings: (order.items[0] as PizzaOrderItem).toppings || [],
+          menuCategory,
+          menuItem: menuItem.name,
+          menuSize: menuItem.size,
+          pizzaType: menuItem.name,
+          pizzaSize: menuItem.size,
+          quantity: menuItem.quantity,
+          toppings: menuItem.toppings || [],
           fulfilment: order.fulfilment,
           deliveryZoneId: order.deliveryZoneId,
           deliveryLat: (order as any).deliveryLat,
           deliveryLng: (order as any).deliveryLng,
           deliveryAddress: (order as any).deliveryAddress,
           deliveryDistance: (order as any).deliveryDistance,
-          customerName: order.customerName || order.items[0].customerName || "",
+          customerName: order.customerName || menuItem.customerName || "",
           phone: order.phone,
-          notes: order.items[0].notes,
+          notes: menuItem.notes,
           paymentMethod,
-          paymentPlan,
+          paymentPlan: "full",
           mpesaPhone: normalizedMpesaPhone,
           idempotencyKey: `order-submit:${submitIdempotencyKey}`,
         }
@@ -246,7 +268,6 @@ function OrderReviewContent() {
 
         // STK Push: wait for initiation so prompt shows before redirect
         if (normalizedMpesaPhone) {
-          console.log("Triggering STK Push for:", result.orderId)
           setPaymentProgress("initiated")
           const stkResult = await initiateMpesaSTK(result.orderId, normalizedMpesaPhone, {
             idempotencyKey: `stk-init:${submitIdempotencyKey}`,
@@ -382,12 +403,18 @@ function OrderReviewContent() {
           {/* Editable Order Items */}
           {order.items.map((item, idx) => (
             <div key={idx} className="mb-4 lux-card p-5 sm:p-6">
+              {(() => {
+                const menuItem = item as PizzaOrderItem
+                const menuCategory = order.type === "pizza" ? menuItem.category || inferMenuCategory(menuItem.name) : null
+
+                return (
+                  <>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-lg font-semibold text-slate-900">{item.name}</p>
                   {order.type === "pizza" ? (
                     <p className="mt-1 text-sm text-slate-600">
-                      {(item as PizzaOrderItem).size} - Qty {(item as PizzaOrderItem).quantity}
+                      {menuItem.size} - Qty {menuItem.quantity}
                     </p>
                   ) : (
                     <p className="mt-1 text-sm text-slate-600">
@@ -396,15 +423,15 @@ function OrderReviewContent() {
                   )}
                 </div>
                 <span className="w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  {order.type === "pizza" ? "Pizza" : "Cake"}
+                  {order.type === "pizza" && menuCategory ? getMenuCategoryLabel(menuCategory) : "Cake"}
                 </span>
               </div>
 
-              {order.type === "pizza" && (item as PizzaOrderItem).toppings?.length ? (
+              {order.type === "pizza" && menuCategory && isPizzaMenuCategory(menuCategory) && menuItem.toppings?.length ? (
                 <div className="mt-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Extras</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {(item as PizzaOrderItem).toppings?.map((topping) => (
+                    {menuItem.toppings?.map((topping) => (
                       <span
                         key={topping}
                         className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
@@ -445,6 +472,9 @@ function OrderReviewContent() {
                   <p className="mt-1 text-sm text-slate-700">{item.notes}</p>
                 </div>
               ) : null}
+                  </>
+                )
+              })()}
             </div>
           ))}
 
@@ -475,6 +505,7 @@ function OrderReviewContent() {
               value={paymentPlan}
               onChange={setPaymentPlan}
               totalAmount={order.total}
+              allowDeposit={isCakeOrder}
               mpesaPhone={mpesaPhone}
               onMpesaPhoneChange={(value) => setMpesaPhone(normalizeKenyaPhone(value))}
             />
@@ -484,7 +515,7 @@ function OrderReviewContent() {
           <OrderSummary
             order={order}
             paymentPlan={paymentPlan}
-            depositAmount={Math.ceil(order.total * 0.5)}
+            depositAmount={isCakeOrder ? Math.ceil(order.total * 0.5) : undefined}
             discountAmount={discountTotal}
           />
 

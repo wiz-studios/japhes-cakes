@@ -5,6 +5,7 @@ import Link from "next/link"
 
 export default function FloatingWhatsApp() {
   const pathname = usePathname()
+  const isOrderFlow = pathname?.startsWith("/order") || pathname?.startsWith("/status")
   const isCake = pathname?.startsWith("/order/cake")
   const isPizza = pathname?.startsWith("/order/pizza")
   const isSchool = pathname?.startsWith("/school")
@@ -13,7 +14,7 @@ export default function FloatingWhatsApp() {
   if (isPizza) phone = "+254112345632"
   if (isCake || isSchool) phone = "+254708244764"
 
-  if (!phone) return null
+  if (!phone || isOrderFlow) return null
 
   const clean = phone.replace(/[^\d]/g, "")
 

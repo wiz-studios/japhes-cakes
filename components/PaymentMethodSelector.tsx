@@ -12,6 +12,7 @@ interface PaymentMethodSelectorProps {
     value: PaymentPlan
     onChange: (plan: PaymentPlan) => void
     totalAmount: number
+    allowDeposit?: boolean
     mpesaPhone?: string
     onMpesaPhoneChange?: (phone: string) => void
 }
@@ -21,6 +22,7 @@ export function PaymentMethodSelector({
     value,
     onChange,
     totalAmount,
+    allowDeposit = true,
     mpesaPhone = "",
     onMpesaPhoneChange
 }: PaymentMethodSelectorProps) {
@@ -59,30 +61,35 @@ export function PaymentMethodSelector({
                     </div>
                 </div>
 
-                {/* Deposit Option */}
-                <div className="relative">
-                    <div className={`
+                {allowDeposit ? (
+                    <div className="relative">
+                        <div className={`
             flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer shadow-[0_12px_40px_-30px_rgba(15,20,40,0.4)]
             ${value === "deposit"
                             ? "border-blue-400/60 bg-blue-50/40"
                             : "border-white/60 hover:border-blue-200 bg-white/90"
                         }
           `}>
-                        <RadioGroupItem value="deposit" id="pay-deposit" className="mt-1" />
-                        <div className="flex-1">
-                            <Label htmlFor="pay-deposit" className="flex items-center gap-2 cursor-pointer font-semibold">
-                                <Banknote className="h-5 w-5 text-blue-600" />
-                                Pay 50% Deposit Now
-                            </Label>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Clear the balance on pickup or delivery, or pay the rest now.
-                            </p>
-                            <div className="mt-2 break-words text-sm font-semibold text-blue-700">
-                                {depositAmount.toLocaleString()} KES now, {remainingAmount.toLocaleString()} KES later
+                            <RadioGroupItem value="deposit" id="pay-deposit" className="mt-1" />
+                            <div className="flex-1">
+                                <Label htmlFor="pay-deposit" className="flex items-center gap-2 cursor-pointer font-semibold">
+                                    <Banknote className="h-5 w-5 text-blue-600" />
+                                    Pay 50% Deposit Now
+                                </Label>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Clear the balance on pickup or delivery, or pay the rest now.
+                                </p>
+                                <div className="mt-2 break-words text-sm font-semibold text-blue-700">
+                                    {depositAmount.toLocaleString()} KES now, {remainingAmount.toLocaleString()} KES later
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600">
+                        Pizza, burgers, juices, and mocktails are confirmed on full payment only. Cake orders can still use the 50% deposit option.
+                    </div>
+                )}
             </RadioGroup>
 
             <div className="mt-2">

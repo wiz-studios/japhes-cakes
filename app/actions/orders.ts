@@ -6,7 +6,14 @@ import { addHours } from "date-fns"
 import { getInitialPaymentStatus, canProgressToStatus } from "@/lib/payment-rules"
 import { validateDeliveryRequest } from "@/lib/delivery-logic"
 import { KENYA_PHONE_REGEX, normalizeKenyaPhone } from "@/lib/phone"
-import { getPizzaUnitPrice, PIZZA_BASE_PRICES, PIZZA_TYPE_PRICES } from "@/lib/pizza-pricing"
+import {
+  getMenuUnitPrice,
+  inferMenuCategory,
+  isMenuItemValid,
+  isMenuSizeValid,
+  isPizzaMenuCategory,
+  isPizzaSideCategory,
+} from "@/lib/pizza-pricing"
 import { getPizzaOfferDetails } from "@/lib/pizza-offer"
 import { getCakeDisplayName, getCakePrice, CAKE_FLAVORS, CAKE_SIZES } from "@/lib/cake-pricing"
 import { applyBusyEtaWindow, DEFAULT_STORE_SETTINGS, normalizeStoreSettings } from "@/lib/store-settings"
@@ -564,11 +571,21 @@ export async function submitPizzaOrder(values: any) {
           return { success: false, error: busyModeBlock }
         }
 
-        if (!Object.keys(PIZZA_TYPE_PRICES).includes(values.pizzaType)) {
-          return { success: false, error: "Invalid pizza type selected." }
+        const menuCategoryRaw =
+          typeof values.menuCategory === "string"
+            ? values.menuCategory
+            : inferMenuCategory(typeof values.menuItem === "string" ? values.menuItem : values.pizzaType || "")
+        if (!isPizzaSideCategory(menuCategoryRaw)) {
+          return { success: false, error: "Invalid menu category selected." }
         }
-        if (!Object.keys(PIZZA_BASE_PRICES).includes(values.pizzaSize)) {
-          return { success: false, error: "Invalid pizza size selected." }
+        const menuCategory = menuCategoryRaw
+        const menuItemName = sanitizeText(values.menuItem || values.pizzaType, MAX_TEXT_LENGTHS.customerName)
+        if (!isMenuItemValid(menuCategory, menuItemName)) {
+          return { success: false, error: "Invalid menu item selected." }
+        }
+        const menuSize = sanitizeText(values.menuSize || values.pizzaSize, 40)
+        if (!isMenuSizeValid(menuCategory, menuSize)) {
+          return { success: false, error: "Invalid item option selected." }
         }
         if (values.fulfilment !== "pickup" && values.fulfilment !== "delivery") {
           return { success: false, error: "Invalid fulfilment method." }
@@ -590,7 +607,7 @@ export async function submitPizzaOrder(values: any) {
         }
 
         if (values.paymentMethod !== "mpesa") {
-          return { success: false, error: "M-Pesa payment is required (50% deposit or full)." }
+          return { success: false, error: "M-Pesa payment in full is required for pizza, burgers, and drinks." }
         }
         const now = new Date()
         const nairobiNow = toNairobiDate(now)
@@ -608,11 +625,13 @@ export async function submitPizzaOrder(values: any) {
         let deliveryFee = 0
         let deliveryWindow = "As soon as possible"
 
-        const toppings: string[] = Array.isArray(values.toppings) ? values.toppings : []
-        if (toppings.length > 2 || toppings.some((entry) => !ALLOWED_PIZZA_TOPPINGS.has(entry))) {
-          return { success: false, error: "Invalid pizza extras selected." }
+        const toppings: string[] = isPizzaMenuCategory(menuCategory) && Array.isArray(values.toppings) ? values.toppings : []
+        if (isPizzaMenuCategory(menuCategory)) {
+          if (toppings.length > 2 || toppings.some((entry) => !ALLOWED_PIZZA_TOPPINGS.has(entry))) {
+            return { success: false, error: "Invalid pizza extras selected." }
+          }
         }
-        const toppingsCount = toppings.length
+        const toppingsCount = isPizzaMenuCategory(menuCategory) ? toppings.length : 0
         let safeDeliveryLat: number | null = null
         let safeDeliveryLng: number | null = null
 
@@ -635,11 +654,11 @@ export async function submitPizzaOrder(values: any) {
             const zone = await getDeliveryZoneByIdCached(supabase, values.deliveryZoneId)
             if (zone) {
               const isNairobi = zone.name.toLowerCase().includes("nairobi")
-              const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
+              const unitPrice = getMenuUnitPrice(menuCategory, menuSize, menuItemName, toppingsCount)
               const totalItemsValue = unitPrice * safeQuantity
 
               if (isNairobi && totalItemsValue < 2000) {
-                return { success: false, error: "Nairobi pizza orders require a minimum value of KES 2,000" }
+                return { success: false, error: "Nairobi delivery orders require a minimum value of KES 2,000" }
               }
 
               deliveryFee = zone.delivery_fee
@@ -657,22 +676,23 @@ export async function submitPizzaOrder(values: any) {
           deliveryWindow = applyBusyEtaWindow(deliveryWindow, storeSettings.busyModeExtraMinutes)
         }
 
-        const unitPrice = getPizzaUnitPrice(values.pizzaSize, values.pizzaType, toppingsCount)
+        const unitPrice = getMenuUnitPrice(menuCategory, menuSize, menuItemName, toppingsCount)
         const quantity = safeQuantity || 1
         const rawSubtotal = unitPrice * quantity
-        const offer = getPizzaOfferDetails({
-          size: values.pizzaSize,
-          quantity,
-          unitPrice,
-        })
+        const offer = isPizzaMenuCategory(menuCategory)
+          ? getPizzaOfferDetails({
+              size: menuSize,
+              quantity,
+              unitPrice,
+            })
+          : { discount: 0, freeQuantity: 0 }
         const itemTotal = rawSubtotal - offer.discount
         const total = itemTotal + deliveryFee
         const paymentPlanRaw = values.paymentPlan || "full"
-        if (paymentPlanRaw !== "full" && paymentPlanRaw !== "deposit") {
-          return { success: false, error: "Invalid payment plan." }
+        if (paymentPlanRaw !== "full") {
+          return { success: false, error: "Pizza, burgers, juices, and mocktails require full payment." }
         }
-        const paymentPlan = paymentPlanRaw as "full" | "deposit"
-        const depositAmount = Math.ceil(total * 0.5)
+        const paymentPlan = "full" as const
 
         let order = null
         let orderError = null
@@ -700,7 +720,7 @@ export async function submitPizzaOrder(values: any) {
               payment_plan: paymentPlan,
               payment_amount_paid: 0,
               payment_amount_due: total,
-              payment_deposit_amount: depositAmount,
+              payment_deposit_amount: null,
               mpesa_phone: values.paymentMethod === "mpesa" ? normalizedMpesaPhone : null,
             })
             .select("id")
@@ -722,10 +742,12 @@ export async function submitPizzaOrder(values: any) {
           toppingsCount > 0 ? `Extras: ${toppings.join(", ")} (+${(toppingsCount * 100).toLocaleString()} KES)` : ""
         const offerNote = offer.discount > 0 ? `Offer: 2-for-1 applied (${offer.freeQuantity} free)` : ""
         const combinedNotes = [notes, extrasNote, offerNote].filter(Boolean).join(" | ")
+        const itemLabel =
+          menuCategory === "pizza" ? `${menuSize} ${menuItemName} Pizza` : `${menuItemName} (${menuSize})`
 
         const { error: itemError } = await supabase.from("order_items").insert({
           order_id: order.id,
-          item_name: `${values.pizzaSize} ${values.pizzaType} Pizza`,
+          item_name: itemLabel,
           quantity: safeQuantity,
           notes: combinedNotes,
         })
